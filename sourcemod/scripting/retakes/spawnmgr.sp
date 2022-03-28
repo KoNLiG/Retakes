@@ -6,9 +6,21 @@
 
 #define max(%1,%2) (((%1) > (%2)) ? (%1) : (%2))
 
-void HookSpawnMgr()
+float m_bombsiteCenter[Bombsite_Max][3];
+
+void HookSpawnEvents()
 {
 	HookEvent("player_spawn", Event_PlayerSpawn);
+}
+
+void InitializeMapSites()
+{
+	int cs_player_manager = GetPlayerResourceEntity();
+	if (cs_player_manager != -1)
+	{
+		GetEntPropVector(cs_player_manager, Prop_Send, "m_bombsiteCenterA", m_bombsiteCenter[Bombsite_A]);
+		GetEntPropVector(cs_player_manager, Prop_Send, "m_bombsiteCenterB", m_bombsiteCenter[Bombsite_B]);
+	}
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -55,11 +67,19 @@ bool IsValidSpawn(float pos[3], float ent_mins[3], float ent_maxs[3])
 	// Create a global trace hull that will ensure the entity will not stuck inside the world/another entity
 	TR_TraceHull(pos, pos, ent_mins, ent_maxs, MASK_ALL);
 	
-	// If the trace hull did hit something, the position is invalid, so we will return false
+	// If the trace hull did hit something, the position is invalid.
 	return !TR_DidHit();
 }
 
 bool Filter_ExcludePlayers(int entity, int contentsMask)
 {
 	return !(1 <= entity <= MaxClients);
+}
+
+// Builds an angles vector towards pt2 from pt1.
+void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float angles[3])
+{
+	float result[3];
+	MakeVectorFromPoints(pt1, pt2, result);
+	GetVectorAngles(result, angles);
 } 

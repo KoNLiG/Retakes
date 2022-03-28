@@ -7,6 +7,7 @@
 
 #define COMPILING_FROM_MAIN
 #include "retakes/spawnmgr.sp"
+#include "retakes/configuration.sp"
 #undef COMPILING_FROM_MAIN
 
 public Plugin myinfo = 
@@ -20,17 +21,37 @@ public Plugin myinfo =
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
+	// Lock the use of this plugin for CS:GO only.
 	if (GetEngineVersion() != Engine_CSGO)
 	{
 		strcopy(error, err_max, "This plugin was made for use with CS:GO only.");
 		return APLRes_Failure;
 	}
 	
+	// Initialzie API stuff.
+	// InitializeAPI();
+	
 	return APLRes_Success;
 }
 
 public void OnPluginStart()
 {
-	// Hook 
-	HookSpawnMgr();
+	// Perform necessary hooks for the spawn manager.
+	HookSpawnEvents();
+	
+	// Register all convars.
+	RegisterConVars();
+	
+	// Register all commands.
+	RegisterCommands();
+	
+	// Parse the retakes config once.
+	// The config can be reparsed by running the server command 'retakes_reloadcfg'
+	ParseRetakesConfig();
+}
+
+public void OnMapStart()
+{
+	// Initializes the current map sites (A, B) center origin vectors.
+	InitializeMapSites();
 } 
