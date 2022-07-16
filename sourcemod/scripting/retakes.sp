@@ -37,7 +37,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
 	// Perform necessary hooks for the spawn manager.
-	HookSpawnEvents();
+	InitializeSpawnManager();
 	
 	// Register all convars.
 	RegisterConVars();
@@ -53,5 +53,5 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	// Initializes the current map sites (A, B) center origin vectors.
-	InitializeMapSites();
+	InitializeBombsites();
 } 

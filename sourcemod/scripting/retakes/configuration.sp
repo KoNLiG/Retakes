@@ -157,8 +157,8 @@ void ParseRetakesConfig()
 		{
 			SpawnZone new_spawn_zone;
 			
-			new_spawn_zone.restricted_bombsite = kv.GetNum("restricted_bombsite");
-			new_spawn_zone.restricted_role = kv.GetNum("restricted_role");
+			new_spawn_zone.bombsite = kv.GetNum("restricted_bombsite");
+			new_spawn_zone.role_flags = kv.GetNum("restricted_role");
 			
 			kv.GetVector("mins", new_spawn_zone.mins);
 			kv.GetVector("maxs", new_spawn_zone.maxs);
