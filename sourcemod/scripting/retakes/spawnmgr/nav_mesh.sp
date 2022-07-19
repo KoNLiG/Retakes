@@ -72,13 +72,13 @@ methodmap NavArea < BaseGameDataAddressObject
         {
             // Vector GetRandomPoint( void ) const;
             StartPrepSDKCall(SDKCall_Raw);
-            PrepSDKCall_SetFromConf(this.gamedata, SDKConf_Signature, "NavArea::GetRandomPoint");
+            PrepSDKCall_SetFromConf(this.gamedata, SDKConf_Signature, "CNavArea::GetRandomPoint");
             // Vector
             PrepSDKCall_SetReturnInfo(SDKType_Vector, SDKPass_ByValue);
             
             if (!(NavArea_GetRandomPointFunction = EndPrepSDKCall()))
             {
-                SetFailState("Missing signature 'NavArea::GetRandomPoint'");
+                SetFailState("Missing signature 'CNavArea::GetRandomPoint'");
             }
         }
 
@@ -94,7 +94,7 @@ methodmap NavArea < BaseGameDataAddressObject
         static int m_placeOffset;
         if (!m_placeOffset)
         {
-            m_placeOffset = this.GetGameDataOffset("NavArea::m_place");
+            m_placeOffset = this.GetGameDataOffset("CNavArea::m_place");
         }
 
         return LoadFromAddress(view_as<Address>(this) + view_as<Address>(m_placeOffset), NumberType_Int32);

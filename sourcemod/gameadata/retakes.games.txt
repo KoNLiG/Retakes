@@ -48,7 +48,7 @@
 			// STR: "Area #%d %s %s\n"
 			// In the if above the string "Bot.EditSwitchOn".
 			// if ( *(v48 + {{THIS}}) != v49 ) 
-			"NavArea::m_place"
+			"CNavArea::m_place"
 			{
 				"linux" 	"-1" // TODO:
 				"windows" 	"136"
