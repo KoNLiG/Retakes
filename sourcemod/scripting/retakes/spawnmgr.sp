@@ -4,100 +4,18 @@
 
 #assert defined COMPILING_FROM_MAIN
 
+#include "spawnmgr/nav_mesh.sp"
+
 #define max(%1,%2) (((%1) > (%2)) ? (%1) : (%2))
 
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
 
-// The operation system of the server, this is needed because `CNavMesh::PlaceToName` takes |this| ptr only for Linux.
-int g_OS;
-enum
-{
-    OS_LINUX, 
-    OS_WINDOWS
-}
-
-// Address of `TheNavMesh`, 
-Address TheNavMesh;
-
-// Number of places in the nav mesh.
-int m_placeCount
-
-// Translates a place index to a place name.
-Handle CNavMesh_PlaceToNameFunc;
-
 BombSite g_BombSites[Bombsite_Max];
 
 void InitializeSpawnManager()
 {
-    GameData gamedata = new GameData("retakes.games");
-
-    // Load `TheNavMesh` from the gamedata file.
-    if ((TheNavMesh = gamedata.GetAddress("TheNavMesh")) == Address_Null)
-    {
-        SetFailState("Failed to load TheNavMesh from gamedata.");
-    }
-
-    // Print TheNavMesh address.
-    PrintToServer("TheNavMesh address: 0x%x\n", TheNavMesh);
-
-    // Load `m_placeCount` offset from the gamedata file.
-    int m_placeCountOffset;
-    if ((m_placeCountOffset = gamedata.GetOffset("CNavMesh::m_placeCount")) == 0)
-    {
-        SetFailState("Failed to load m_placeCount from gamedata.");
-    }
-
-    // Get m_placeCount.
-    m_placeCount = LoadFromAddress(TheNavMesh + view_as<Address>(m_placeCountOffset), NumberType_Int32);
-
-    // Print m_placeCount.
-    PrintToServer("m_placeCount (offset: %d): %d\n", m_placeCountOffset, m_placeCount);
-
-    // Load `m_placeCount` address from the gamedata file.
-    Address m_placeCountAddress;
-    if ((m_placeCountAddress = gamedata.GetAddress("TheNavMesh::m_placeCount")) == Address_Null)
-    {
-        SetFailState("Failed to load TheNavMesh from gamedata.");
-    }
-
-    // load `m_placeCount` from the address.
-    m_placeCount = LoadFromAddress(m_placeCountAddress, NumberType_Int32);
-
-    // Load os from the gamedata file.
-    if ((g_OS = gamedata.GetOffset("OS")) == -1)
-    {
-        SetFailState("Failed to load os from gamedata.");
-    }
-
-    // Setup `CNavMesh_PlaceToName` SDKCall.
-    // const char *CNavMesh::PlaceToName( Place place ) const
-    
-    // Linux takes |this| ptr, Windows doesn't.
-    StartPrepSDKCall(g_OS == OS_LINUX ? SDKCall_Raw : SDKCall_Static);
-    PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CNavMesh::PlaceToName");
-    // Place place (Place == unsigned int)
-    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain);
-    // const char*
-    PrepSDKCall_SetReturnInfo(SDKType_String, SDKPass_Pointer);
-    
-    if (!(CNavMesh_PlaceToNameFunc = EndPrepSDKCall()))
-    {
-        SetFailState("Missing signature 'CNavMesh::PlaceToName'");
-    }
-    /*
-    StartPrepSDKCall(SDKCall_Raw);
-    PrepSDKCall_SetFromConf(gamedata, SDKConf_Signature, "CNavMesh::LoadPlaceDatabase");
-
-    Handle CNavMesh_LoadPlaceDatabase;
-    if (!(CNavMesh_LoadPlaceDatabase = EndPrepSDKCall()))
-    {
-        SetFailState("Missing signature 'CNavMesh::LoadPlaceDatabase'");
-    }
-
-    SDKCall(CNavMesh_LoadPlaceDatabase, TheNavMesh);
-    */
-
+    InitializeNavMesh();
     // Hook events.
     HookEvent("player_spawn", Event_PlayerSpawn);
 
@@ -150,43 +68,17 @@ void InitializeBombsites()
     }
 
     // Print the number of places in the nav mesh.
-    PrintToServer("Nav mesh has %d places.\n", m_placeCount);
+    PrintToServer("Nav mesh has %d places.", g_TheNavAreas.Count());
 
     // Print all places.
+    NavArea nav_area;
     char place_name[64];
-    for (int i = 1; i <= 10; i++)
+    for (int i; i <= g_TheNavAreas.Count(); i++)
     {
-        CNavMesh_PlaceToName(i, place_name, sizeof(place_name));
+        nav_area = g_TheNavAreas.GetArea(i);
+        g_TheNavMesh.PlaceToName(nav_area.GetPlace(), place_name, sizeof(place_name));
         PrintToServer("Place %d: %s\n", i, place_name);
     }
-}
-
-int CNavMesh_PlaceToName(int place_index, char[] buffer, int buf_size)
-{
-    // Call CNavMesh::PlaceToName.
-    // For Linux, we need to pass |this| ptr.
-    if (g_OS == OS_LINUX)
-    {
-        SDKCall(
-            CNavMesh_PlaceToNameFunc,
-            TheNavMesh,
-            buffer,
-            buf_size,
-            place_index
-        );
-    }
-    else // Otherwise, we are on Windows. 
-    {
-        // Windows doesn't need |this| ptr.
-        SDKCall(
-            CNavMesh_PlaceToNameFunc,
-            buffer,
-            buf_size,
-            place_index
-        );
-    }
-    
-    return strlen(buffer);
 }
 
 Action Command_ShowBombSites(int client, int argc)
