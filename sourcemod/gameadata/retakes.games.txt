@@ -16,18 +16,17 @@
 					"read"		"159"
 				}
 			}
-			"TheNavMesh::m_placeCount"
+
+			"TheNavAreas"
 			{
-				"signature"    "CServerGameDLL::DLLShutdown"
+				"signature"	"nav_update_lighting"
 				"windows"
 				{
-					"read"		"367"
-					"offset"	"1088"
+					"read"		"130"
 				}
 				"linux"
 				{
-					"read"		"159"
-					"offset"	"1088"
+					"read"		"18"
 				}
 			}
 		}
@@ -36,14 +35,23 @@
 		{
 			"OS"
 			{
-				"linux" "0"
-				"windows" "1"
+				"linux" 	"0"
+				"windows" 	"1"
 			}
-			
-			"CNavMesh::m_placeCount"
+
+			"CUtlVector::Count"
 			{
-				"linux" 	"1088"
-				"windows"	"1088"
+				"linux" 	"12"
+				"windows" 	"12"
+			}
+
+			// STR: "Area #%d %s %s\n"
+			// In the if above the string "Bot.EditSwitchOn".
+			// if ( *(v48 + {{THIS}}) != v49 ) 
+			"NavArea::m_place"
+			{
+				"linux" 	"-1" // TODO:
+				"windows" 	"136"
 			}
 		}
 		
@@ -56,12 +64,13 @@
 				"linux"		"\x55\x31\xC0\x89\xE5\x8B\x55\x0C\x8B\x4D\x08\x85\xD2\x74\x2A"
 			}
 			
-			"CNavMesh::LoadPlaceDatabase"
+			"nav_update_lighting"
 			{
 				"library"	"server"
-				"windows"	"\x55\x8B\xEC\x83\xE4\xF8\x81\xEC\xCC\x00\x00\x00\x83\x64\x24\x34\xFC"
+				"windows"	"\x55\x8B\xEC\x8B\x45\x08\x57\x33\xFF"
+				"linux"		"\x55\x89\xE5\x56\x53\x83\xEC\x10\x8B\x45\x08\x83\x38\x02"
 			}
-			
+
 			"CServerGameDLL::DLLShutdown"
 			{
 				"library"	"server"
