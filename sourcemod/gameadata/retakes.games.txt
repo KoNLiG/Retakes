@@ -50,7 +50,7 @@
 			// if ( *(v48 + {{THIS}}) != v49 ) 
 			"CNavArea::m_place"
 			{
-				"linux" 	"-1" // TODO:
+				"linux" 	"136"
 				"windows" 	"136"
 			}
 		}
