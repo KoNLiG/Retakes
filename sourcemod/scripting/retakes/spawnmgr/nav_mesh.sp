@@ -87,10 +87,6 @@ methodmap NavArea < BaseGameDataAddressObject
             this,                           // this
             pos, sizeof(pos)                // return vector
         );
-
-        // TODO:
-        // This function seem to be inline in IDA,
-        // probably needs to be implemented instead.
     }
 
     public int GetPlace()
