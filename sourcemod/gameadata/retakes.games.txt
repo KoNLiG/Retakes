@@ -22,14 +22,12 @@
 				"windows"
 				{
 					"read"		"367"
-					"offset"	"272"
-					"read"		"0"
+					"offset"	"1088"
 				}
 				"linux"
 				{
 					"read"		"159"
-					"offset"	"272"
-					"read"		"0"
+					"offset"	"1088"
 				}
 			}
 		}
@@ -44,8 +42,8 @@
 			
 			"CNavMesh::m_placeCount"
 			{
-				"linux" 	"272"
-				"windows"	"272"
+				"linux" 	"1088"
+				"windows"	"1088"
 			}
 		}
 		
@@ -56,6 +54,12 @@
 				"library"	"server"
 				"windows"	"\x55\x8B\xEC\x51\x8B\x4D\x08\xA1\x2A\x2A\x2A\x2A"
 				"linux"		"\x55\x31\xC0\x89\xE5\x8B\x55\x0C\x8B\x4D\x08\x85\xD2\x74\x2A"
+			}
+			
+			"CNavMesh::LoadPlaceDatabase"
+			{
+				"library"	"server"
+				"windows"	"\x55\x8B\xEC\x83\xE4\xF8\x81\xEC\xCC\x00\x00\x00\x83\x64\x24\x34\xFC"
 			}
 			
 			"CServerGameDLL::DLLShutdown"

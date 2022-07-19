@@ -3,31 +3,48 @@
 #endif
 #define _retakes_included
 
+#define RETAKES_MAX_NAME_LENGTH 32
+#define RETAKES_PREFIX_MENU "Retakes"
+#define RETAKES_PREFIX "\x04[" ... RETAKES_PREFIX_MENU ... "]\x01" 
+
 // Bombsite declarations.
 enum
 {
-	Bombsite_None,
+	Bombsite_None = -1,
 	Bombsite_A,
 	Bombsite_B,
 	Bombsite_Max
-};
+}
+
+enum struct BombSite
+{
+    // Bombsite A = 0, Bombsite B = 1
+    int bombsite_index;
+
+    // Bombsite mins, maxs and center.
+    float mins[3];
+    float maxs[3];
+    float center[3];
+}
 
 // SpawnRole declarations.
 // Used to determine a player's spawn area.
 enum
 {
-	SpawnRole_None,
-	SpawnRole_Planter,
-	SpawnRole_Terrorist,
-	SpawnRole_CounterTerrorist,
-	SpawnRole_Max
-};
+	SpawnRole_None = 0,
+	SpawnRole_Planter = (1 << 0),
+	SpawnRole_Defender = (1 << 1),
+	SpawnRole_Attacker = (1 << 2)
+}
 
 // Represents a zone in the map area where players with specified roles are able to spawn in.
 enum struct SpawnZone
 {
-	// SpawnRole this zone is restricted to. See the enum above.
-	int restricted_role;
+	// Which roles are allowed to spawn in this zone.
+	int role_flags;
+
+	// Which bombsite this zone is associated with.
+	int bombsite;
 	
 	// Zone boundaries.
 	float mins[3];
