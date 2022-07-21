@@ -58,26 +58,6 @@ void InitializeBombsites()
 
         // Save bombsite.
         g_BombSites[new_site.bombsite_index] = new_site;
-
-        PrintToServer(
-            "Found bomb site %s at {%.2f %.2f %.2f} to {%.2f %.2f %.2f}.\n",
-            new_site.bombsite_index == Bombsite_A ? "A" : "B",
-            new_site.mins[0], new_site.mins[1], new_site.mins[2],
-            new_site.maxs[0], new_site.maxs[1], new_site.maxs[2]
-        );
-    }
-
-    // Print the number of places in the nav mesh.
-    PrintToServer("Nav mesh has %d places.", g_TheNavAreas.Count());
-
-    // Print all places.
-    NavArea nav_area;
-    char place_name[64];
-    for (int i; i <= g_TheNavAreas.Count(); i++)
-    {
-        nav_area = g_TheNavAreas.GetArea(i);
-        g_TheNavMesh.PlaceToName(nav_area.GetPlace(), place_name, sizeof(place_name));
-        PrintToServer("Place %d: %s\n", i, place_name);
     }
 }
 
@@ -93,17 +73,6 @@ Action Command_ShowBombSites(int client, int argc)
     for (int current_bombsite; current_bombsite < sizeof(g_BombSites); current_bombsite++)
     {
         LaserBOX(g_BombSites[current_bombsite].mins, g_BombSites[current_bombsite].maxs);
-
-        PrintToChatAll(
-            "In Bombsite %s: %d\n",
-            g_BombSites[current_bombsite].bombsite_index == Bombsite_A ? "A" : "B",
-            IsVecBetween(
-                client_pos,
-                g_BombSites[current_bombsite].mins,
-                g_BombSites[current_bombsite].maxs,
-                SPAWN_PLANT_ERROR
-            )
-        );
     }
 
     return Plugin_Handled;
@@ -111,7 +80,26 @@ Action Command_ShowBombSites(int client, int argc)
 
 Action Command_PrintPlaces(int client, int argc)
 {
+    ArrayList place_indexes = new ArrayList();
+    NavArea nav_area;
+    char place_name[64];
 
+    for (int i, place; i < g_TheNavAreas.Count(); i++)
+    {
+        if (!(nav_area = g_TheNavAreas.GetArea(i)) || !(place = nav_area.GetPlace()) || place_indexes.FindValue(place) != -1)
+        {
+            continue;
+        }
+        
+        place_indexes.Push(place);
+        
+        g_TheNavMesh.PlaceToName(place, place_name, sizeof(place_name));
+        PrintToServer("Place %d: (%s)", i, place_name);
+    }
+
+    PrintToServer("Found %d places", place_indexes.Length);
+
+    delete place_indexes;
     return Plugin_Handled;
 }
 
