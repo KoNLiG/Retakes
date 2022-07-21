@@ -10,10 +10,12 @@
 				"windows"
 				{
 					"read"		"367"
+					"read"		"0"
 				}
 				"linux"
 				{
-					"read"		"159"
+					"read"		"327"
+					"read"		"0"
 				}
 			}
 
@@ -22,11 +24,11 @@
 				"signature"	"nav_update_lighting"
 				"windows"
 				{
-					"read"		"130"
+					"read"		"99"
 				}
 				"linux"
 				{
-					"read"		"18"
+					"read"		"33"
 				}
 			}
 		}
