@@ -21,6 +21,9 @@ void InitializeSpawnManager()
 
     RegConsoleCmd("sm_show_bombsites", Command_ShowBombSites);
     RegConsoleCmd("sm_print_places", Command_PrintPlaces);
+    RegConsoleCmd("sm_show_area", Command_ShowArea);
+    RegConsoleCmd("sm_show_place", Command_ShowPlace);
+    RegConsoleCmd("sm_show_all_places", Command_ShowAllPlaces);
 }
 
 void InitializeBombsites()
@@ -103,6 +106,137 @@ Action Command_PrintPlaces(int client, int argc)
     return Plugin_Handled;
 }
 
+Action Command_ShowArea(int client, int argc)
+{
+    if (argc < 1)
+    {
+        ReplyToCommand(client, "Usage: sm_show_area <area_index>");
+        return Plugin_Handled;
+    }
+
+    int area_index = GetCmdArgInt(1);
+
+    if (!(0 <= area_index < g_TheNavAreas.Count()))
+    {
+        ReplyToCommand(client, "Invalid area index.");
+        return Plugin_Handled;
+    }
+
+    NavArea nav_area = g_TheNavAreas.GetArea(area_index);
+
+    if (!nav_area)
+    {
+        ReplyToCommand(client, "Failed to get area.");
+        return Plugin_Handled;
+    }
+    
+    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
+
+    nav_area.GetNWCorner(nw_corner);
+    nav_area.GetSECorner(se_corner);
+    nav_area.GetNECorner(ne_corner);
+    nav_area.GetSWCorner(sw_corner);
+
+    // Print corners.
+    PrintToServer("NW: %.2f %.2f %.2f", nw_corner[0], nw_corner[1], nw_corner[2]);
+    PrintToServer("SE: %.2f %.2f %.2f", se_corner[0], se_corner[1], se_corner[2]);
+    PrintToServer("NE: %.2f %.2f %.2f", ne_corner[0], ne_corner[1], ne_corner[2]);
+    PrintToServer("SW: %.2f %.2f %.2f", sw_corner[0], sw_corner[1], sw_corner[2]);
+    
+    LaserP(nw_corner, ne_corner);
+    LaserP(ne_corner, se_corner);
+    LaserP(se_corner, sw_corner);
+    LaserP(sw_corner, nw_corner);
+
+    TeleportEntity(client, nw_corner);
+
+    return Plugin_Handled;
+}
+
+Action Command_ShowPlace(int client, int argc)
+{
+    if (argc < 1)
+    {
+        ReplyToCommand(client, "Usage: sm_show_place <place_name>");
+        return Plugin_Handled;
+    }
+
+    char place_name[64];
+    GetCmdArg(1, place_name, sizeof(place_name));
+
+    int place_index = g_TheNavMesh.NameToPlace(place_name);
+
+    if (place_index == -1)
+    {
+        ReplyToCommand(client, "Failed to get place.");
+        return Plugin_Handled;
+    }
+
+    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
+    NavArea nav_area;
+    for (int i; i < g_TheNavAreas.Count(); i++)
+    {
+        if (!(nav_area = g_TheNavAreas.GetArea(i)) || nav_area.GetPlace() != place_index)
+        {
+            continue;
+        }
+
+        nav_area.GetNWCorner(nw_corner);
+        nw_corner[2] += 5.0;
+        nav_area.GetSECorner(se_corner);
+        se_corner[2] += 5.0;
+        nav_area.GetNECorner(ne_corner);
+        ne_corner[2] += 5.0;
+        nav_area.GetSWCorner(sw_corner);
+        sw_corner[2] += 5.0;
+
+        LaserP(nw_corner, ne_corner);
+        LaserP(ne_corner, se_corner);
+        LaserP(se_corner, sw_corner);
+        LaserP(sw_corner, nw_corner);
+    }
+
+    return Plugin_Handled;
+}
+
+Action Command_ShowAllPlaces(int client, int argc)
+{
+    Frame_ShowPlace(0);
+    return Plugin_Handled;
+}
+
+void Frame_ShowPlace(int next_place)
+{
+    if (next_place == g_TheNavAreas.Count())
+    {
+        return;
+    }
+
+    NavArea nav_area = g_TheNavAreas.GetArea(next_place);
+
+    if (!nav_area)
+    {
+        return;
+    }
+
+    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
+    nav_area.GetNWCorner(nw_corner);
+    nw_corner[2] += 5.0;
+    nav_area.GetSECorner(se_corner);
+    se_corner[2] += 5.0;
+    nav_area.GetNECorner(ne_corner);
+    ne_corner[2] += 5.0;
+    nav_area.GetSWCorner(sw_corner);
+    sw_corner[2] += 5.0;
+
+    LaserP(nw_corner, ne_corner);
+    LaserP(ne_corner, se_corner);
+    LaserP(se_corner, sw_corner);
+    LaserP(sw_corner, nw_corner);
+
+    RequestFrame(Frame_ShowPlace, next_place + 1);
+}
+
 void LaserBOX(float mins[3], float maxs[3])
 {
     float posMin[4][3], posMax[4][3];
@@ -168,10 +302,15 @@ void LaserBOX(float mins[3], float maxs[3])
     
 }
 
-void LaserP(const float start[3], const float end[3], int color[4])
+void LaserP(const float start[3], const float end[3], int color[4] = { 255, 255, 255, 255 })
 {
+    // Randomize color
+    color[0] = GetRandomInt(0, 255);
+    color[1] = GetRandomInt(0, 255);
+    color[2] = GetRandomInt(0, 255);
+
     TE_SetupBeamPoints(start, end, PrecacheModel("materials/sprites/laser.vmt"), 0, 0, 0, 15.0, 3.0, 3.0, 7, 0.0, color, 0);
-    TE_SendToAll();
+    TE_SendToAllInRange(start, RangeType_Visibility);
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
