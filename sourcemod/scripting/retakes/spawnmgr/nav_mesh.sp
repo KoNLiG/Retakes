@@ -47,6 +47,17 @@ methodmap BaseGameDataAddressObject
 
         return offset;
     }
+
+    public void GetVectorFromOffset(int offset, float vector[3])
+    {
+        for (int i; i < sizeof(vector); i++)
+        {
+            vector[i] = LoadFromAddress(
+                view_as<Address>(this) + view_as<Address>(offset + (i * 4)),
+                NumberType_Int32
+            );
+        }
+    }
 }
 
 methodmap CUtlVector < BaseGameDataAddressObject
@@ -63,7 +74,83 @@ methodmap CUtlVector < BaseGameDataAddressObject
     }
 }
 
-methodmap NavArea < BaseGameDataAddressObject
+methodmap NavAreaCriticalData < BaseGameDataAddressObject
+{
+    public void GetNWCorner(float corner[3])
+    {
+        static int m_nwCornerOffset;
+        if (!m_nwCornerOffset)
+        {
+            m_nwCornerOffset = this.GetGameDataOffset("CNavAreaCriticalData::m_nwCorner");
+        }
+        
+        this.GetVectorFromOffset(m_nwCornerOffset, corner);
+    }
+    
+    public void GetSECorner(float corner[3])
+    {
+        static int m_seCornerOffset;
+        if (!m_seCornerOffset)
+        {
+            m_seCornerOffset = this.GetGameDataOffset("CNavAreaCriticalData::m_seCorner");
+        }
+        
+        this.GetVectorFromOffset(m_seCornerOffset, corner);
+    }
+
+    // Get Z values of the the other two corners of the area
+    property float neZ
+    {
+        public get()
+        {
+            static int m_neZOffset;
+            if (!m_neZOffset)
+            {
+                m_neZOffset = this.GetGameDataOffset("CNavAreaCriticalData::m_neZ");
+            }
+            
+            return LoadFromAddress(view_as<Address>(this) + view_as<Address>(m_neZOffset), NumberType_Int32);
+        }
+    }
+
+    property float swZ
+    {
+        public get()
+        {
+            static int m_swZOffset;
+            if (!m_swZOffset)
+            {
+                m_swZOffset = this.GetGameDataOffset("CNavAreaCriticalData::m_swZ");
+            }
+            
+            return LoadFromAddress(view_as<Address>(this) + view_as<Address>(m_swZOffset), NumberType_Int32);
+        }
+    }
+    
+    public void GetNECorner(float corner[3])
+    {
+        float NWCorner[3], SECorner[3];
+        this.GetNWCorner(NWCorner);
+        this.GetSECorner(SECorner);
+
+        corner[0] = SECorner[0];
+        corner[1] = NWCorner[1];
+        corner[2] = this.neZ;
+    }
+
+    public void GetSWCorner(float corner[3])
+    {
+        float NWCorner[3], SECorner[3];
+        this.GetNWCorner(NWCorner);
+        this.GetSECorner(SECorner);
+
+        corner[0] = NWCorner[0];
+        corner[1] = SECorner[1];
+        corner[2] = this.swZ;
+    }
+}
+
+methodmap NavArea < NavAreaCriticalData
 {
     public void GetRandomPoint(float pos[3])
     {
@@ -162,6 +249,37 @@ methodmap TheNavMesh < BaseGameDataAddressObject
         }
         
         return strlen(buffer);
+    }
+
+    // CNavMesh::m_placeCount
+    property int PlaceCount
+    {
+        public get()
+        {
+            static int m_placeCountOffset;
+            if (!m_placeCountOffset)
+            {
+                m_placeCountOffset = this.GetGameDataOffset("CNavMesh::m_placeCount");
+            }
+            
+            return LoadFromAddress(view_as<Address>(this) + view_as<Address>(m_placeCountOffset), NumberType_Int32);
+        }
+    }
+
+    // NameToPlace
+    public int NameToPlace(char[] name, bool caseSensitive = true)
+    {
+        char area_name[256];
+        for (int i = 0; i < this.PlaceCount; i++)
+        {
+            this.PlaceToName(i, area_name, sizeof(area_name));
+            if (StrEqual(area_name, name, caseSensitive))
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }
 
