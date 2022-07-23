@@ -1,6 +1,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <retakes>
+#include <nav_mesh>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -52,6 +53,7 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
-	// Initializes the current map sites (A, B) center origin vectors.
 	InitializeBombsites();
+	
+	InitializeMapPlaces();
 } 
