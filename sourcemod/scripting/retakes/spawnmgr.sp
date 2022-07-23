@@ -4,26 +4,28 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#include "spawnmgr/nav_mesh.sp"
-
 #define max(%1,%2) (((%1) > (%2)) ? (%1) : (%2))
 
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
 
-BombSite g_BombSites[Bombsite_Max];
+enum struct SpawnArea
+{    
+    int nav_area_index;
+
+    int spawn_roles[Bombsite_Max];
+}
+
+Bombsite g_Bombsites[Bombsite_Max];
+
+StringMap g_MapPlaces;
 
 void InitializeSpawnManager()
 {
-    InitializeNavMesh();
+    g_MapPlaces = new StringMap();
+
     // Hook events.
     HookEvent("player_spawn", Event_PlayerSpawn);
-
-    RegConsoleCmd("sm_show_bombsites", Command_ShowBombSites);
-    RegConsoleCmd("sm_print_places", Command_PrintPlaces);
-    RegConsoleCmd("sm_show_area", Command_ShowArea);
-    RegConsoleCmd("sm_show_place", Command_ShowPlace);
-    RegConsoleCmd("sm_show_all_places", Command_ShowAllPlaces);
 }
 
 void InitializeBombsites()
@@ -40,7 +42,7 @@ void InitializeBombsites()
     GetEntPropVector(player_resource, Prop_Send, "m_bombsiteCenterB", bombsite_centers[Bombsite_B]);
 
     // Find all bomb sites on the map.
-    BombSite new_site;
+    Bombsite new_site;
     int ent_index = -1;
 
     while ((ent_index = FindEntityByClassname(ent_index, "func_bomb_target")) != -1)
@@ -60,257 +62,65 @@ void InitializeBombsites()
         new_site.center = bombsite_centers[new_site.bombsite_index];
 
         // Save bombsite.
-        g_BombSites[new_site.bombsite_index] = new_site;
+        g_Bombsites[new_site.bombsite_index] = new_site;
     }
 }
 
-Action Command_ShowBombSites(int client, int argc)
+void InitializeMapPlaces()
 {
-    float client_pos[3];
-    GetClientAbsOrigin(client, client_pos);
-
-    float client_mins[3], client_maxs[3];
-    GetClientMins(client, client_mins);
-    GetClientMaxs(client, client_maxs);
-
-    for (int current_bombsite; current_bombsite < sizeof(g_BombSites); current_bombsite++)
-    {
-        LaserBOX(g_BombSites[current_bombsite].mins, g_BombSites[current_bombsite].maxs);
-    }
-
-    return Plugin_Handled;
-}
-
-Action Command_PrintPlaces(int client, int argc)
-{
-    ArrayList place_indexes = new ArrayList();
+    // Purge the old data.
+    g_MapPlaces.Clear();
+    
+    int invalid_places_count;
+    ArrayList spawn_areas;
+    SpawnArea spawn_area;
+    char place_name[256];
     NavArea nav_area;
-    char place_name[64];
-
-    for (int i, place; i < g_TheNavAreas.Count(); i++)
+	
+    for (int current_nav_area = TheNavAreas().size - 1, place; current_nav_area >= 0; current_nav_area--)
     {
-        if (!(nav_area = g_TheNavAreas.GetArea(i)) || !(place = nav_area.GetPlace()) || place_indexes.FindValue(place) != -1)
+        if (!(nav_area = TheNavAreas().Get(current_nav_area)))
         {
             continue;
         }
-        
-        place_indexes.Push(place);
-        
-        g_TheNavMesh.PlaceToName(place, place_name, sizeof(place_name));
-        PrintToServer("Place %d: (%s)", i, place_name);
-    }
-
-    PrintToServer("Found %d places", place_indexes.Length);
-
-    delete place_indexes;
-    return Plugin_Handled;
-}
-
-Action Command_ShowArea(int client, int argc)
-{
-    if (argc < 1)
-    {
-        ReplyToCommand(client, "Usage: sm_show_area <area_index>");
-        return Plugin_Handled;
-    }
-
-    int area_index = GetCmdArgInt(1);
-
-    if (!(0 <= area_index < g_TheNavAreas.Count()))
-    {
-        ReplyToCommand(client, "Invalid area index.");
-        return Plugin_Handled;
-    }
-
-    NavArea nav_area = g_TheNavAreas.GetArea(area_index);
-
-    if (!nav_area)
-    {
-        ReplyToCommand(client, "Failed to get area.");
-        return Plugin_Handled;
-    }
-    
-    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
-
-    nav_area.GetNWCorner(nw_corner);
-    nav_area.GetSECorner(se_corner);
-    nav_area.GetNECorner(ne_corner);
-    nav_area.GetSWCorner(sw_corner);
-
-    // Print corners.
-    PrintToServer("NW: %.2f %.2f %.2f", nw_corner[0], nw_corner[1], nw_corner[2]);
-    PrintToServer("SE: %.2f %.2f %.2f", se_corner[0], se_corner[1], se_corner[2]);
-    PrintToServer("NE: %.2f %.2f %.2f", ne_corner[0], ne_corner[1], ne_corner[2]);
-    PrintToServer("SW: %.2f %.2f %.2f", sw_corner[0], sw_corner[1], sw_corner[2]);
-    
-    LaserP(nw_corner, ne_corner);
-    LaserP(ne_corner, se_corner);
-    LaserP(se_corner, sw_corner);
-    LaserP(sw_corner, nw_corner);
-
-    TeleportEntity(client, nw_corner);
-
-    return Plugin_Handled;
-}
-
-Action Command_ShowPlace(int client, int argc)
-{
-    if (argc < 1)
-    {
-        ReplyToCommand(client, "Usage: sm_show_place <place_name>");
-        return Plugin_Handled;
-    }
-
-    char place_name[64];
-    GetCmdArg(1, place_name, sizeof(place_name));
-
-    int place_index = g_TheNavMesh.NameToPlace(place_name);
-
-    if (place_index == -1)
-    {
-        ReplyToCommand(client, "Failed to get place.");
-        return Plugin_Handled;
-    }
-
-    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
-    NavArea nav_area;
-    for (int i; i < g_TheNavAreas.Count(); i++)
-    {
-        if (!(nav_area = g_TheNavAreas.GetArea(i)) || nav_area.GetPlace() != place_index)
+		
+        if ((place = nav_area.GetPlace()) <= 0)
         {
+            invalid_places_count++;
             continue;
         }
+        
+        TheNavMesh.PlaceToName(place, place_name, sizeof(place_name));
 
-        nav_area.GetNWCorner(nw_corner);
-        nw_corner[2] += 5.0;
-        nav_area.GetSECorner(se_corner);
-        se_corner[2] += 5.0;
-        nav_area.GetNECorner(ne_corner);
-        ne_corner[2] += 5.0;
-        nav_area.GetSWCorner(sw_corner);
-        sw_corner[2] += 5.0;
-
-        LaserP(nw_corner, ne_corner);
-        LaserP(ne_corner, se_corner);
-        LaserP(se_corner, sw_corner);
-        LaserP(sw_corner, nw_corner);
+        if (!g_MapPlaces.GetValue(place_name, spawn_areas))
+        {
+            g_MapPlaces.SetValue(place_name, (spawn_areas = new ArrayList(sizeof(SpawnArea))))
+        }
+        
+        spawn_area.nav_area_index = current_nav_area;
+        spawn_areas.PushArray(spawn_area);
     }
 
-    return Plugin_Handled;
-}
-
-Action Command_ShowAllPlaces(int client, int argc)
-{
-    Frame_ShowPlace(0);
-    return Plugin_Handled;
-}
-
-void Frame_ShowPlace(int next_place)
-{
-    if (next_place == g_TheNavAreas.Count())
+    //=======================[ Debug ]=======================//
+    StringMapSnapshot snapshot = g_MapPlaces.Snapshot();
+    
+    int count;
+    for (int i, size; i < snapshot.Length; i++)
     {
-        return;
+        size = snapshot.KeyBufferSize(i);
+        char[] key = new char[size];
+
+        snapshot.GetKey(i, key, size);
+
+        if (g_MapPlaces.GetValue(key, spawn_areas))
+        {
+            count += spawn_areas.Length;
+
+            PrintToServer("%s with %d places", key, spawn_areas.Length);
+        }
     }
-
-    NavArea nav_area = g_TheNavAreas.GetArea(next_place);
-
-    if (!nav_area)
-    {
-        return;
-    }
-
-    float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
-    nav_area.GetNWCorner(nw_corner);
-    nw_corner[2] += 5.0;
-    nav_area.GetSECorner(se_corner);
-    se_corner[2] += 5.0;
-    nav_area.GetNECorner(ne_corner);
-    ne_corner[2] += 5.0;
-    nav_area.GetSWCorner(sw_corner);
-    sw_corner[2] += 5.0;
-
-    LaserP(nw_corner, ne_corner);
-    LaserP(ne_corner, se_corner);
-    LaserP(se_corner, sw_corner);
-    LaserP(sw_corner, nw_corner);
-
-    RequestFrame(Frame_ShowPlace, next_place + 1);
-}
-
-void LaserBOX(float mins[3], float maxs[3])
-{
-    float posMin[4][3], posMax[4][3];
     
-    posMin[0] = mins;
-    posMax[0] = maxs;
-    posMin[1][0] = posMax[0][0];
-    posMin[1][1] = posMin[0][1];
-    posMin[1][2] = posMin[0][2];
-    posMax[1][0] = posMin[0][0];
-    posMax[1][1] = posMax[0][1];
-    posMax[1][2] = posMax[0][2];
-    posMin[2][0] = posMin[0][0];
-    posMin[2][1] = posMax[0][1];
-    posMin[2][2] = posMin[0][2];
-    posMax[2][0] = posMax[0][0];
-    posMax[2][1] = posMin[0][1];
-    posMax[2][2] = posMax[0][2];
-    posMin[3][0] = posMax[0][0];
-    posMin[3][1] = posMax[0][1];
-    posMin[3][2] = posMin[0][2];
-    posMax[3][0] = posMin[0][0];
-    posMax[3][1] = posMin[0][1];
-    posMax[3][2] = posMax[0][2];
-    
-    //BORDER
-    LaserP(posMin[0], posMax[3], { 255, 255, 255, 255 } );
-    LaserP(posMin[1], posMax[2], { 255, 255, 255, 255 } );
-    LaserP(posMin[3], posMax[0], { 255, 255, 255, 255 } );
-    LaserP(posMin[2], posMax[1], { 255, 255, 255, 255 } );
-    //CROSS
-    LaserP(posMin[3], posMax[2], { 255, 255, 255, 255 } );
-    LaserP(posMin[1], posMax[0], { 255, 255, 255, 255 } );
-    LaserP(posMin[2], posMax[3], { 255, 255, 255, 255 } );
-    LaserP(posMin[3], posMax[1], { 255, 255, 255, 255 } );
-    LaserP(posMin[2], posMax[0], { 255, 255, 255, 255 } );
-    LaserP(posMin[0], posMax[1], { 255, 255, 255, 255 } );
-    LaserP(posMin[0], posMax[2], { 255, 255, 255, 255 } );
-    LaserP(posMin[1], posMax[3], { 255, 255, 255, 255 } );
-    
-    
-    //TOP
-    
-    //BORDER
-    LaserP(posMax[0], posMax[1], { 255, 255, 255, 255 } );
-    LaserP(posMax[1], posMax[3], { 255, 255, 255, 255 } );
-    LaserP(posMax[3], posMax[2], { 255, 255, 255, 255 } );
-    LaserP(posMax[2], posMax[0], { 255, 255, 255, 255 } );
-    //CROSS
-    LaserP(posMax[0], posMax[3], { 255, 255, 255, 255 } );
-    LaserP(posMax[2], posMax[1], { 255, 255, 255, 255 } );
-    
-    //BOTTOM
-    
-    //BORDER
-    LaserP(posMin[0], posMin[1], { 255, 255, 255, 255 } );
-    LaserP(posMin[1], posMin[3], { 255, 255, 255, 255 } );
-    LaserP(posMin[3], posMin[2], { 255, 255, 255, 255 } );
-    LaserP(posMin[2], posMin[0], { 255, 255, 255, 255 } );
-    //CROSS
-    LaserP(posMin[0], posMin[3], { 255, 255, 255, 255 } );
-    LaserP(posMin[2], posMin[1], { 255, 255, 255, 255 } );
-    
-}
-
-void LaserP(const float start[3], const float end[3], int color[4] = { 255, 255, 255, 255 })
-{
-    // Randomize color
-    color[0] = GetRandomInt(0, 255);
-    color[1] = GetRandomInt(0, 255);
-    color[2] = GetRandomInt(0, 255);
-
-    TE_SetupBeamPoints(start, end, PrecacheModel("materials/sprites/laser.vmt"), 0, 0, 0, 15.0, 3.0, 3.0, 7, 0.0, color, 0);
-    TE_SendToAllInRange(start, RangeType_Visibility);
+    PrintToServer("Verification: %d ?= %d", count, TheNavAreas().size - invalid_places_count);
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
