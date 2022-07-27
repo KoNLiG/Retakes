@@ -118,12 +118,12 @@ void ParseRetakesConfig()
 {
 	if (!g_SpawnZones)
 	{
-		g_SpawnZones = new ArrayList(sizeof(SpawnZone));
+		//g_SpawnZones = new ArrayList(sizeof(SpawnZone));
 	}
 	else
 	{
 		// Clear old data.
-		g_SpawnZones.Clear();
+		//g_SpawnZones.Clear();
 	}
 	
 	// Find the Config.
@@ -155,7 +155,7 @@ void ParseRetakesConfig()
 		// Iterate through...
 		do
 		{
-			SpawnZone new_spawn_zone;
+			/*SpawnZone new_spawn_zone;
 			
 			new_spawn_zone.bombsite = kv.GetNum("restricted_bombsite");
 			new_spawn_zone.role_flags = kv.GetNum("restricted_role");
@@ -163,7 +163,7 @@ void ParseRetakesConfig()
 			kv.GetVector("mins", new_spawn_zone.mins);
 			kv.GetVector("maxs", new_spawn_zone.maxs);
 			
-			g_SpawnZones.PushArray(new_spawn_zone);
+			g_SpawnZones.PushArray(new_spawn_zone);*/
 			// Go to the next spawn zone
 		} while (kv.GotoNextKey());
 	}

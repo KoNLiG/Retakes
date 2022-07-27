@@ -7,7 +7,7 @@
 #pragma semicolon 1
 
 #define COMPILING_FROM_MAIN
-#include "retakes/spawnmgr.sp"
+#include "retakes/spawn_manager.sp"
 #include "retakes/configuration.sp"
 #undef COMPILING_FROM_MAIN
 
@@ -55,5 +55,5 @@ public void OnMapStart()
 {
 	InitializeBombsites();
 	
-	InitializeMapPlaces();
+	LoadMapPlaces();
 } 

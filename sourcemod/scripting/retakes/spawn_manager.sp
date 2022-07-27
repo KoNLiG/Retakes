@@ -8,7 +8,7 @@
 
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
-
+ 
 enum struct SpawnArea
 {    
     int nav_area_index;
@@ -66,61 +66,34 @@ void InitializeBombsites()
     }
 }
 
-void InitializeMapPlaces()
+void LoadMapPlaces()
 {
     // Purge the old data.
     g_MapPlaces.Clear();
     
-    int invalid_places_count;
     ArrayList spawn_areas;
     SpawnArea spawn_area;
     char place_name[256];
     NavArea nav_area;
 	
-    for (int current_nav_area = TheNavAreas().size - 1, place; current_nav_area >= 0; current_nav_area--)
+	// Iterate and load all the existing map nav areas into a trie map.
+    for (int i, place, nav_areas_count = TheNavAreas().size; i < nav_areas_count; i++)
     {
-        if (!(nav_area = TheNavAreas().Get(current_nav_area)))
+        if (!(nav_area = TheNavAreas().Get(i)) || (place = nav_area.GetPlace()) <= 0)
         {
             continue;
         }
 		
-        if ((place = nav_area.GetPlace()) <= 0)
-        {
-            invalid_places_count++;
-            continue;
-        }
-        
         TheNavMesh.PlaceToName(place, place_name, sizeof(place_name));
-
+		
         if (!g_MapPlaces.GetValue(place_name, spawn_areas))
         {
             g_MapPlaces.SetValue(place_name, (spawn_areas = new ArrayList(sizeof(SpawnArea))))
         }
         
-        spawn_area.nav_area_index = current_nav_area;
+        spawn_area.nav_area_index = i;
         spawn_areas.PushArray(spawn_area);
     }
-
-    //=======================[ Debug ]=======================//
-    StringMapSnapshot snapshot = g_MapPlaces.Snapshot();
-    
-    int count;
-    for (int i, size; i < snapshot.Length; i++)
-    {
-        size = snapshot.KeyBufferSize(i);
-        char[] key = new char[size];
-
-        snapshot.GetKey(i, key, size);
-
-        if (g_MapPlaces.GetValue(key, spawn_areas))
-        {
-            count += spawn_areas.Length;
-
-            PrintToServer("%s with %d places", key, spawn_areas.Length);
-        }
-    }
-    
-    PrintToServer("Verification: %d ?= %d", count, TheNavAreas().size - invalid_places_count);
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -136,44 +109,28 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
-void GenerateSpawnLocation(int entity, float mins[3], float maxs[3], float result[3])
+void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float result[3])
 {
-    // Initialize the entity's mins and maxs vectors
-    float ent_mins[3], ent_maxs[3];
-    
-    GetEntPropVector(entity, Prop_Send, "m_vecMins", ent_mins);
-    GetEntPropVector(entity, Prop_Send, "m_vecMaxs", ent_maxs);
-    
+    float cl_mins[3], cl_maxs[3];
+   	GetClientMins(client, cl_mins);
+   	GetClientMaxs(client, cl_maxs);
+   	
     // Generate random spawn vectors, and don't stop until a valid one has found
     do
     {
         result[0] = GetRandomFloat(mins[0], maxs[0]);
         result[1] = GetRandomFloat(mins[1], maxs[1]);
-        result[2] = max(mins[2], maxs[2]);
-    } while (!IsValidSpawn(result, ent_mins, ent_maxs));
+        result[2] = GetRandomFloat(mins[2], maxs[2]);
+    } while (!IsValidSpawn(result, cl_mins, cl_maxs));
 }
 
 bool IsValidSpawn(float pos[3], float ent_mins[3], float ent_maxs[3])
 {
-    // Create a global trace ray to verify the floor the entity is spawning on
-    TR_TraceRayFilter(pos, { 90.0, 0.0, 0.0 }, MASK_PLAYERSOLID, RayType_Infinite, Filter_ExcludePlayers);
-    
-    // Initialize the end position of the floor position
-    TR_GetEndPosition(pos);
-    
-    // Spawn higher up from the ground to not get stuck.
-    pos[2] += 10.0;
-    
-    // Create a global trace hull that will ensure the entity will not stuck inside the world/another entity
+    // Create a global trace hull that will ensure the entity will not stuck inside the world/other entity
     TR_TraceHull(pos, pos, ent_mins, ent_maxs, MASK_ALL);
     
     // If the trace hull did hit something, the position is invalid.
     return !TR_DidHit();
-}
-
-bool Filter_ExcludePlayers(int entity, int contentsMask)
-{
-    return !(1 <= entity <= MaxClients);
 }
 
 // Builds an angles vector towards pt2 from pt1.
