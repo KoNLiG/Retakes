@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <sdktools>
+#include <cstrike>
 #include <retakes>
 #include <nav_mesh>
 
@@ -7,6 +8,7 @@
 #pragma semicolon 1
 
 #define COMPILING_FROM_MAIN
+#include "retakes/player_manager.sp"
 #include "retakes/spawn_manager.sp"
 #include "retakes/configuration.sp"
 #undef COMPILING_FROM_MAIN
@@ -37,8 +39,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
-	// Perform necessary hooks for the spawn manager.
+	// Perform necessary hooks for the spawn & player manager.
 	InitializeSpawnManager();
+	InitializePlayerManager();
 	
 	// Register all convars.
 	RegisterConVars();
@@ -54,6 +57,4 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	InitializeBombsites();
-	
-	LoadMapPlaces();
 } 

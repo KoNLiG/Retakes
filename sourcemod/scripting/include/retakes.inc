@@ -32,23 +32,16 @@ enum struct BombSite
 enum
 {
 	SpawnRole_None = 0,
-	SpawnRole_Planter = (1 << 0),
-	SpawnRole_Defender = (1 << 1),
-	SpawnRole_Attacker = (1 << 2)
+	SpawnRole_Planter,
+	SpawnRole_Defender,
+	SpawnRole_Attacker
 }
 
-// Represents a zone in the map area where players with specified roles are able to spawn in.
-enum struct SpawnZone
+enum
 {
-	// Which roles are allowed to spawn in this zone.
-	int role_flags;
-
-	// Which bombsite this zone is associated with.
-	int bombsite;
-	
-	// Zone boundaries.
-	float mins[3];
-	float maxs[3];
+	NavMeshArea_Defender,
+	NavMeshArea_Attacker,
+	NavMeshArea_Max
 }
 
 #if !defined REQUIRE_PLUGIN
