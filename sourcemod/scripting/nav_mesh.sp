@@ -12,18 +12,34 @@ enum
 	OS_WINDOWS
 }
 
-int g_OS;
-
-int m_nwCornerOffset, 
+// Offsets
+int m_placeCountOffset,
+    m_nwCornerOffset,
+    m_seCornerOffset,
 	m_seCornerOffset, 
+    m_seCornerOffset,
+    m_placeOffset,
+    m_neZOffset,
 	m_neZOffset, 
+    m_neZOffset,
+    m_swZOffset,
 	m_swZOffset, 
-	m_placeOffset, 
-	m_placeCountOffset;
+    m_swZOffset,
+// Other
+    g_serverOS;
 
-Handle NavArea_GetRandomPointFunc, 
+// SDK Functions
+Handle
+    NavArea_GetRandomPointFunc,
+    NavMesh_PlaceToNameFunc,
 	   NavMesh_PlaceToNameFunc, 
-	   NavMesh_GetNavAreaFunc;
+    NavMesh_PlaceToNameFunc,
+    NavMesh_GetNavAreaFunc;
+
+// Forward Declarations
+GlobalForward
+    NavMesh_OnPlayerEnter,
+    NavMesh_OnPlayerExit;
 
 TheNavMesh g_TheNavMesh;
 TheNavAreas g_TheNavAreas;
@@ -234,7 +250,7 @@ any Native_PlaceToName(Handle plugin, int numParams)
 	
 	// Call `CNavMesh::PlaceToName`
 	// For Linux, we need to pass |this| ptr.
-	if (g_OS == OS_LINUX)
+    if (g_serverOS == OS_LINUX)
 	{
 		SDKCall(
 			NavMesh_PlaceToNameFunc, 
@@ -287,14 +303,14 @@ any Native_TheNavAreas(Handle plugin, int numParams)
 // Forwards.
 void CreateForwards()
 {
-	g_NavMesh_OnPlayerEnter = new GlobalForward(
+    NavMesh_OnPlayerEnter = new GlobalForward(
 		"NavMesh_OnPlayerEnter",
 		ET_Ignore,
 		Param_Cell, // int client
 		Param_Cell	// NavArea nav_area
 	);
 	
-	g_NavMesh_OnPlayerExit = new GlobalForward(
+    NavMesh_OnPlayerExit = new GlobalForward(
 		"NavMesh_OnPlayerExit",
 		ET_Ignore,  
 		Param_Cell, // int 
@@ -304,7 +320,7 @@ void CreateForwards()
 
 void Call_OnPlayerEnter(int client, NavArea nav_area)
 {
-	Call_StartForward(g_NavMesh_OnPlayerEnter);
+    Call_StartForward(NavMesh_OnPlayerEnter);
 	Call_PushCell(client);
 	Call_PushCell(nav_area);
 	Call_Finish();
@@ -312,7 +328,7 @@ void Call_OnPlayerEnter(int client, NavArea nav_area)
 
 void Call_OnPlayerExit(int client, NavArea nav_area)
 {
-	Call_StartForward(g_NavMesh_OnPlayerExit);
+    Call_StartForward(NavMesh_OnPlayerExit);
 	Call_PushCell(client);
 	Call_PushCell(nav_area);
 	Call_Finish();
@@ -335,7 +351,7 @@ void InitializeSDK()
 
 void InitializeSDKGlobals()
 {
-	g_OS = LoadGameDataOffset("OS");
+    g_serverOS = LoadGameDataOffset("OS");
 	g_TheNavMesh = view_as<TheNavMesh>(LoadGameDataAddress("TheNavMesh"));
 	g_TheNavAreas = view_as<TheNavAreas>(LoadGameDataAddress("TheNavAreas"));
 }
@@ -366,7 +382,7 @@ void InitializeSDKFunctions()
 	// Setup `CNavMesh_PlaceToName` SDKCall.
 	// const char *CNavMesh::PlaceToName( Place place ) const
 	// Linux takes |this| ptr, Windows doesn't.
-	StartPrepSDKCall(g_OS == OS_LINUX ? SDKCall_Raw : SDKCall_Static);
+    StartPrepSDKCall(g_serverOS == OS_LINUX ? SDKCall_Raw : SDKCall_Static);
 	PrepSDKCall_SetFromConf(g_GameData, SDKConf_Signature, "CNavMesh::PlaceToName");
 	
 	PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // Place place (Place == unsigned int)
