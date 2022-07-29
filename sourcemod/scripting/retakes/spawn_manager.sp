@@ -87,33 +87,32 @@ bool GetRandomSpawnLocation(int client, float origin[3])
     if (g_SpawnRole[client] == SpawnRole_Planter)
     {
         GenerateSpawnLocation(client, g_Bombsites[Bombsite_A].mins, g_Bombsites[Bombsite_A].maxs, origin);
+        return true;
     }
-    else
+    
+    int nav_area_index = GetSuitableNavArea(client);
+    if (nav_area_index == -1)
     {
-        int nav_area_index = GetSuitableNavArea(client);
-        
         // Apparently there are no nav areas configurated.
-        if (nav_area_index == -1)
-        {
-            return false;
-        }
-        
-        NavArea nav_area = TheNavAreas().Get(nav_area_index);
-        if (!nav_area)
-        {
-            return false;
-        }
-        
-        float cl_mins[3], cl_maxs[3];
-        GetClientMins(client, cl_mins);
-        GetClientMaxs(client, cl_maxs);
-           
-         // Generate random spawn vectors, and don't stop until a valid one has found
-        do
-        {
-            nav_area.GetRandomPoint(origin);
-        } while (!IsValidSpawn(origin, cl_mins, cl_maxs));
+        return false;
     }
+    
+    NavArea nav_area = TheNavAreas().Get(nav_area_index);
+    if (!nav_area)
+    {
+        // Invalid nav area.
+        return false;
+    }
+    
+    float cl_mins[3], cl_maxs[3];
+    GetClientMins(client, cl_mins);
+    GetClientMaxs(client, cl_maxs);
+    
+    // Generate random spawn vectors, and don't stop until a valid one has found
+    do
+    {
+        nav_area.GetRandomPoint(origin);
+    } while (!IsValidSpawn(origin, cl_mins, cl_maxs));
     
     return true;
 }
@@ -134,14 +133,14 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
 {
     float cl_mins[3], cl_maxs[3];
     GetClientMins(client, cl_mins);
-       GetClientMaxs(client, cl_maxs);
+    GetClientMaxs(client, cl_maxs);
        
     // Generate random spawn vectors, and don't stop until a valid one has found
     do
     {
         result[0] = GetRandomFloat(mins[0], maxs[0]);
         result[1] = GetRandomFloat(mins[1], maxs[1]);
-        result[2] = GetRandomFloat(mins[2], maxs[2]);
+        result[2] = max(mins[2], maxs[2]);
     } while (!IsValidSpawn(result, cl_mins, cl_maxs, mins, maxs));
 }
 
