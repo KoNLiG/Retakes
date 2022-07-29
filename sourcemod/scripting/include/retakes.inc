@@ -16,7 +16,7 @@ enum
     Bombsite_Max
 }
 
-enum struct BombSite
+enum struct Bombsite
 {
     // Bombsite A = 0, Bombsite B = 1
     int bombsite_index;
