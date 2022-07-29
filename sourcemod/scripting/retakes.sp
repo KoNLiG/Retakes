@@ -8,7 +8,6 @@
 #pragma semicolon 1
 
 #define COMPILING_FROM_MAIN
-#include "retakes/player_manager.sp"
 #include "retakes/spawn_manager.sp"
 #include "retakes/configuration.sp"
 #undef COMPILING_FROM_MAIN
