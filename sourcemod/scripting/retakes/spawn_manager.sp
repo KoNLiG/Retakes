@@ -174,7 +174,7 @@ void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float angles[3
     float result[3];
     MakeVectorFromPoints(pt1, pt2, result);
     GetVectorAngles(result, angles);
-} 
+}
 
 bool IsVecBetween(float vecVector[3], float vecMin[3], float vecMax[3], float err = 0.0) {
     return (
