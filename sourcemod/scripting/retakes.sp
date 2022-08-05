@@ -7,6 +7,40 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+enum struct Bombsite
+{
+    // Bombsite A = 0, Bombsite B = 1
+    int bombsite_index;
+
+    // Bombsite mins, maxs and center.
+    float mins[3];
+    float maxs[3];
+    float center[3];
+}
+
+enum struct Player
+{
+    // Bombsite index used in edit mode.
+    int edit_mode_bombsite;
+
+    bool in_edit_mode;
+
+	int spawn_role;
+	
+    //============================================//
+
+    void Close()
+    {
+        this.edit_mode_bombsite = 0;
+        this.in_edit_mode = false;
+        this.spawn_role = SpawnRole_None;
+    }
+}
+
+Player g_Players[MAXPLAYERS + 1];
+
+int g_LaserIndex;
+
 #define COMPILING_FROM_MAIN
 #include "retakes/spawn_manager.sp"
 #include "retakes/configuration.sp"
@@ -40,7 +74,7 @@ public void OnPluginStart()
 {
     // Perform necessary hooks for the spawn & player manager.
     InitializeSpawnManager();
-    InitializePlayerManager();
+    // InitializePlayerManager();
     
     // Register all convars.
     RegisterConVars();
@@ -56,4 +90,26 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     InitializeBombsites();
+
+    g_LaserIndex = PrecacheModel("materials/sprites/laser.vmt");
+}
+
+public void OnClientDisconnect(int client)
+{
+    g_Players[client].Close();
+}
+
+void GetClientAimPosition(int client, float position[3])
+{	
+	float cl_origin[3], cl_angles[3];
+	GetClientEyePosition(client, cl_origin);
+	GetClientEyeAngles(client, cl_angles);
+	
+	TR_TraceRayFilter(cl_origin, cl_angles, MASK_ALL, RayType_Infinite, Filter_ExcludeMyself, client);
+	TR_GetEndPosition(position);
+}
+
+bool Filter_ExcludeMyself(int entity, int mask, int data)
+{
+	return entity != data;
 }

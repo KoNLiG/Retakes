@@ -159,8 +159,6 @@ any Native_GetNWCorner(Handle plugin, int numParams)
         buffer
     );
     
-    PrintToChatAll("[Native_GetNWCorner] %f %f %f", buffer[0], buffer[1], buffer[2]);
-    
     SetNativeArray(1, buffer, sizeof(buffer));
     
     return 0;
@@ -174,8 +172,6 @@ any Native_GetSECorner(Handle plugin, int numParams)
         buffer
     );
     
-    PrintToChatAll("[Native_GetSECorner] %f %f %f", buffer[0], buffer[1], buffer[2]);
-
     SetNativeArray(1, buffer, sizeof(buffer));
     
     return 0;

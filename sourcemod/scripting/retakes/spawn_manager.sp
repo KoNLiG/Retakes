@@ -9,6 +9,13 @@
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
 
+enum
+{
+	NavMeshArea_Defender,
+	NavMeshArea_Attacker,
+	NavMeshArea_Max
+}
+
 Bombsite g_Bombsites[Bombsite_Max];
 
 ArrayList g_BombsiteSpawns[Bombsite_Max][NavMeshArea_Max];
@@ -69,7 +76,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
     
-    PrintToChatAll("%N: %d", client, g_SpawnRole[client]);
+    PrintToChatAll("%N: %d", client, g_Players[client].spawn_role);
     
     float origin[3];
     if (!GetRandomSpawnLocation(client, origin))
@@ -84,7 +91,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
 bool GetRandomSpawnLocation(int client, float origin[3])
 {
-    if (g_SpawnRole[client] == SpawnRole_Planter)
+    if (g_Players[client].spawn_role == SpawnRole_Planter)
     {
         GenerateSpawnLocation(client, g_Bombsites[Bombsite_A].mins, g_Bombsites[Bombsite_A].maxs, origin);
         return true;
@@ -119,7 +126,7 @@ bool GetRandomSpawnLocation(int client, float origin[3])
 
 int GetSuitableNavArea(int client)
 {
-    ArrayList suitable_areas = g_BombsiteSpawns[Bombsite_A][g_SpawnRole[client]];
+    ArrayList suitable_areas = g_BombsiteSpawns[Bombsite_A][g_Players[client].spawn_role];
     if (!suitable_areas.Length)
     {
         return -1;
