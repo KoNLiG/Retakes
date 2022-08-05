@@ -30,8 +30,8 @@ Handle
 
 // Forward Declarations
 GlobalForward
-    NavMesh_OnPlayerEnter,
-    NavMesh_OnPlayerExit;
+    NavMesh_OnPlayerEnterFwd,
+    NavMesh_OnPlayerExitFwd;
 
 TheNavMesh g_TheNavMesh;
 TheNavAreas g_TheNavAreas;
@@ -159,6 +159,8 @@ any Native_GetNWCorner(Handle plugin, int numParams)
         buffer
     );
     
+    PrintToChatAll("[Native_GetNWCorner] %f %f %f", buffer[0], buffer[1], buffer[2]);
+    
     SetNativeArray(1, buffer, sizeof(buffer));
     
     return 0;
@@ -172,6 +174,8 @@ any Native_GetSECorner(Handle plugin, int numParams)
         buffer
     );
     
+    PrintToChatAll("[Native_GetSECorner] %f %f %f", buffer[0], buffer[1], buffer[2]);
+
     SetNativeArray(1, buffer, sizeof(buffer));
     
     return 0;
@@ -292,14 +296,14 @@ any Native_TheNavAreas(Handle plugin, int numParams)
 // Forwards.
 void CreateForwards()
 {
-    NavMesh_OnPlayerEnter = new GlobalForward(
+    NavMesh_OnPlayerEnterFwd = new GlobalForward(
         "NavMesh_OnPlayerEnter",
         ET_Ignore,
         Param_Cell, // int client
         Param_Cell	// NavArea nav_area
     );
     
-    NavMesh_OnPlayerExit = new GlobalForward(
+    NavMesh_OnPlayerExitFwd = new GlobalForward(
         "NavMesh_OnPlayerExit",
         ET_Ignore,  
         Param_Cell, // int
@@ -309,7 +313,7 @@ void CreateForwards()
 
 void Call_OnPlayerEnter(int client, NavArea nav_area)
 {
-    Call_StartForward(NavMesh_OnPlayerEnter);
+    Call_StartForward(NavMesh_OnPlayerEnterFwd);
     Call_PushCell(client);
     Call_PushCell(nav_area);
     Call_Finish();
@@ -317,7 +321,7 @@ void Call_OnPlayerEnter(int client, NavArea nav_area)
 
 void Call_OnPlayerExit(int client, NavArea nav_area)
 {
-    Call_StartForward(NavMesh_OnPlayerExit);
+    Call_StartForward(NavMesh_OnPlayerExitFwd);
     Call_PushCell(client);
     Call_PushCell(nav_area);
     Call_Finish();
