@@ -46,7 +46,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	nav_area.GetSWCorner(sw_corner);
 	sw_corner[2] += 5.0;
 	
-	PrintToChatAll("%f %f %f (%d)", nw_corner[0], nw_corner[1], nw_corner[2], nav_area.GetPlace());
+	// BUG: always prints 0.0 0.0 0.0
+	PrintToChatAll("%f %f %f", nw_corner[0], nw_corner[1], nw_corner[2]);
 	PrintToChatAll("%f %f %f", se_corner[0], se_corner[1], se_corner[2]);
 	PrintToChatAll("%f %f %f", ne_corner[0], ne_corner[1], ne_corner[2]);
 	PrintToChatAll("%f %f %f", sw_corner[0], sw_corner[1], sw_corner[2]);
