@@ -5,10 +5,6 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-// Arraylist which will store SpawnZone's.
-// See retakes.inc for the enum struct contents.
-ArrayList g_SpawnZones;
-
 void RegisterConVars()
 {
     
@@ -20,88 +16,58 @@ void RegisterConVars()
 // Register all plugin commands.
 void RegisterCommands()
 {
-    // Reloads the retakes configuration file.
-    RegServerCmd("retakes_reloadcfg", Command_ReloadCfg, "Reloads the retakes configuration file. (Spawn Zones)");
-    
-    // Manage the retakes spawn zones.
-    RegAdminCmd("sm_retakes", Command_Retakes, ADMFLAG_ROOT, "Manage the retakes spawn zones.");
+    RegConsoleCmd("sm_retakes", Command_Retakes, "Retake settings.");
 }
 
 //================================[ Commands Callbacks ]================================//
-
-Action Command_ReloadCfg(int argc)
-{
-    ParseRetakesConfig();
-    return Plugin_Handled;
-}
 
 Action Command_Retakes(int client, int argc)
 {
     if (!client)
     {
-        PrintToConsole(client, "You cannot use this command from the server console.");
+        ReplyToCommand(client, "You cannot use this command from the server console.");
         return Plugin_Handled;
     }
     
-    DisplayConfigurationMenu(client);
+    DisplayRetakesMenu(client);
     
     return Plugin_Handled;
 }
 
 //================================[ Menus ]================================//
-
-void DisplayConfigurationMenu(int client)
+enum 
 {
-    Menu menu = new Menu(Handler_Configuration);
-    menu.SetTitle("%s Configuration menu:\n ", RETAKES_PREFIX_MENU);
+    MainMenu_DummyItem, 
+    MainMenu_ManageSpawnAreas
+}
+
+void DisplayRetakesMenu(int client)
+{
+    Menu menu = new Menu(Handler_Retakes);
+    menu.SetTitle("%s Settings:\n ", RETAKES_PREFIX_MENU);
     
-    int num_spawn_zones = g_SpawnZones.Length;
-    
-    char item_str[128];
-    Format(item_str, sizeof(item_str), "New spawn zone\n \n◾ List of existing spawn zones:\n \n%s", !num_spawn_zones ? "No spawn zones found." : "");
-    menu.AddItem("", item_str);
-    
-    if (num_spawn_zones)
-    {
-        // Loop through all the spawn zones and insert each into the menu.
-        char display_str[RETAKES_MAX_NAME_LENGTH * 2], spawn_zone_name[RETAKES_MAX_NAME_LENGTH];
-        for (int current_spawn_zone; current_spawn_zone < num_spawn_zones; current_spawn_zone++)
-        {
-            g_SpawnZones.GetString(current_spawn_zone, spawn_zone_name, sizeof(spawn_zone_name));
-            
-            FormatEx(display_str, sizeof(display_str), "• %s [#%d]", spawn_zone_name, current_spawn_zone + 1);
-            
-            menu.AddItem(spawn_zone_name, display_str);
-        }
-    }
+    menu.AddItem("", "Dummy Item");
+    menu.AddItem("", "Manage Spawn Areas", CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
     
     menu.Display(client, MENU_TIME_FOREVER);
 }
 
-int Handler_Configuration(Menu menu, MenuAction action, int param1, int param2)
+int Handler_Retakes(Menu menu, MenuAction action, int param1, int param2)
 {
     if (action == MenuAction_Select)
     {
         int client = param1, selected_item = param2;
         
-        // Redirect client to new spawn zone creation menu.
-        if (!selected_item)
+        switch (selected_item)
         {
-            // DisplayNewSpawnZoneMenu(client);
-        }
-        else
-        {
-            char spawn_zone_name[RETAKES_MAX_NAME_LENGTH];
-            menu.GetItem(selected_item, spawn_zone_name, sizeof(spawn_zone_name));
-            
-            int spawn_zone_index = g_SpawnZones.FindString(spawn_zone_name);
-            if (spawn_zone_index == -1)
+            case MainMenu_DummyItem:
             {
-                PrintToChat(client, "%s The selected spawn zone is no longer available.", RETAKES_PREFIX);
-                return 0;
+                // nothing...
             }
-            
-            
+            case MainMenu_ManageSpawnAreas:
+            {
+                DisplaySpawnAreasMenu(client);
+            }
         }
     }
     else if (action == MenuAction_End)
@@ -110,6 +76,18 @@ int Handler_Configuration(Menu menu, MenuAction action, int param1, int param2)
     }
     
     return 0;
+}
+
+void DisplaySpawnAreasMenu(int client)
+{
+    Menu menu = new Menu(Handler_SpawnAreas);
+    menu.SetTitle("%s ", RETAKES_PREFIX_MENU);
+
+    
+
+    // g_BombsiteSpawns
+
+    menu.Display(client, MENU_TIME_FOREVER);
 }
 
 //================================[ Key Values Configuration ]================================//
