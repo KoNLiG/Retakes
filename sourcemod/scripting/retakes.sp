@@ -47,23 +47,19 @@ enum struct EditMode
     {
         this.bombsite_index = ++this.bombsite_index % Bombsite_Max;
     }
-
+    
     // Returns the selected nav area if not null, otherwise returns the nav area from the aiming position.
     NavArea GetNavArea(int client)
     {
-        NavArea nav_area;
-        if ((nav_area = this.nav_area) == NULL_NAV_AREA)
+        if (this.nav_area != NULL_NAV_AREA)
         {
-            float aim_position[3];
-            GetClientAimPosition(client, aim_position);
-            
-            if ((nav_area = TheNavMesh.GetNavArea(aim_position)) == NULL_NAV_AREA)
-            {
-                return NULL_NAV_AREA;
-            }
+            return this.nav_area;
         }
 
-        return nav_area;
+        float aim_position[3];
+        GetClientAimPosition(client, aim_position);
+        
+        return TheNavMesh.GetNavArea(aim_position);
     }
 }
 
