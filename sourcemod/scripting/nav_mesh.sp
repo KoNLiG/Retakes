@@ -153,42 +153,66 @@ void CreateNatives()
 
 any Native_GetNWCorner(Handle plugin, int numParams)
 {
+    NavArea nav_area = view_as<NavArea>(GetNativeCell(1));
+    if (!nav_area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid NavArea pointer.");
+    }
+    
     float buffer[3];
     LoadVectorFromOffset(
-        view_as<Address>(g_TheNavMesh) + view_as<Address>(m_nwCornerOffset),
+        view_as<Address>(nav_area) + view_as<Address>(m_nwCornerOffset),
         buffer
     );
     
-    SetNativeArray(1, buffer, sizeof(buffer));
+    SetNativeArray(2, buffer, sizeof(buffer));
     
     return 0;
 }
 
 any Native_GetSECorner(Handle plugin, int numParams)
 {
+    NavArea nav_area = view_as<NavArea>(GetNativeCell(1));
+    if (!nav_area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid NavArea pointer.");
+    }
+    
     float buffer[3];
     LoadVectorFromOffset(
-        view_as<Address>(g_TheNavMesh) + view_as<Address>(m_seCornerOffset),
+        view_as<Address>(nav_area) + view_as<Address>(m_seCornerOffset),
         buffer
     );
     
-    SetNativeArray(1, buffer, sizeof(buffer));
+    SetNativeArray(2, buffer, sizeof(buffer));
     
     return 0;
 }
 
 any Native_GetneZ(Handle plugin, int numParams)
 {
+    NavArea nav_area = view_as<NavArea>(GetNativeCell(1));
+    if (!nav_area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid NavArea pointer.");
+    }
+
     return LoadFromAddress(
-        view_as<Address>(g_TheNavMesh) + view_as<Address>(m_neZOffset),
+        view_as<Address>(nav_area) + view_as<Address>(m_neZOffset),
         NumberType_Int32
     );
 }
 
 any Native_GetswZ(Handle plugin, int numParams)
 {
+    NavArea nav_area = view_as<NavArea>(GetNativeCell(1));
+    if (!nav_area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid NavArea pointer.");
+    }
+
     return LoadFromAddress(
-        view_as<Address>(g_TheNavMesh) + view_as<Address>(m_swZOffset),
+        view_as<Address>(nav_area) + view_as<Address>(m_swZOffset),
         NumberType_Int32
     );
 }
