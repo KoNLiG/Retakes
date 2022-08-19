@@ -11,9 +11,9 @@
 
 enum
 {
-	NavMeshArea_Defender,
-	NavMeshArea_Attacker,
-	NavMeshArea_Max
+    NavMeshArea_Defender,
+    NavMeshArea_Attacker,
+    NavMeshArea_Max
 }
 
 Bombsite g_Bombsites[Bombsite_Max];
@@ -76,6 +76,8 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
     
+    g_Players[client].spawn_role = SpawnRole_Defender;
+    
     PrintToChatAll("%N: %d", client, g_Players[client].spawn_role);
     
     float origin[3];
@@ -93,21 +95,14 @@ bool GetRandomSpawnLocation(int client, float origin[3])
 {
     if (g_Players[client].spawn_role == SpawnRole_Planter)
     {
-        GenerateSpawnLocation(client, g_Bombsites[Bombsite_A].mins, g_Bombsites[Bombsite_A].maxs, origin);
+        GenerateSpawnLocation(client, g_Bombsites[Bombsite_B].mins, g_Bombsites[Bombsite_B].maxs, origin);
         return true;
     }
     
-    int nav_area_index = GetSuitableNavArea(client);
-    if (nav_area_index == -1)
+    NavArea nav_area = GetSuitableNavArea(client);
+    if (nav_area == NULL_NAV_AREA)
     {
         // Apparently there are no nav areas configurated.
-        return false;
-    }
-    
-    NavArea nav_area = TheNavAreas().Get(nav_area_index);
-    if (!nav_area)
-    {
-        // Invalid nav area.
         return false;
     }
     
@@ -124,15 +119,15 @@ bool GetRandomSpawnLocation(int client, float origin[3])
     return true;
 }
 
-int GetSuitableNavArea(int client)
+NavArea GetSuitableNavArea(int client)
 {
-    ArrayList suitable_areas = g_BombsiteSpawns[Bombsite_A][g_Players[client].spawn_role];
+    ArrayList suitable_areas = g_BombsiteSpawns[Bombsite_A][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)];
     if (!suitable_areas.Length)
     {
-        return -1;
+        return NULL_NAV_AREA;
     }
     
-    return suitable_areas.Get(GetRandomInt(0, suitable_areas.Length));
+    return suitable_areas.Get(GetRandomInt(0, suitable_areas.Length - 1));
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
@@ -153,33 +148,31 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
 
 bool IsValidSpawn(float pos[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR)
 {
-    if (!IsNullVector(mins) && !IsNullVector(maxs))
+    // Floor validation.
+    TR_TraceRay(pos, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite);
+
+    if (!TR_DidHit() || TR_GetSurfaceFlags() & (SURF_SKY|SURF_NODRAW))
     {
-        // Floor validation.
-        TR_TraceRay(pos, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite);
-        TR_GetEndPosition(pos);
-        
-        pos[2] += 10.0;
-        
+        return false;
+    }
+
+    TR_GetEndPosition(pos);
+    
+    pos[2] += 10.0;
+
+    if (!IsNullVector(mins) && !IsNullVector(maxs))
+    {        
         if (!IsVecBetween(pos, mins, maxs))
         {
             return false;
         }
     }
-    
+
     // Create a global trace hull that will ensure the entity will not stuck inside the world/other entity
     TR_TraceHull(pos, pos, ent_mins, ent_maxs, MASK_ALL);
     
     // If the trace hull did hit something, the position is invalid.
     return !TR_DidHit();
-}
-
-// Builds an angles vector towards pt2 from pt1.
-void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float angles[3])
-{
-    float result[3];
-    MakeVectorFromPoints(pt1, pt2, result);
-    GetVectorAngles(result, angles);
 }
 
 bool IsVecBetween(float vecVector[3], float vecMin[3], float vecMax[3], float err = 0.0) {
