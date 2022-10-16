@@ -25,8 +25,9 @@ int m_placeCountOffset,
 // SDK Functions
 Handle
     NavArea_GetRandomPointFunc,
+    NavArea_IsConnectedFunc,
     NavMesh_PlaceToNameFunc,
-    NavMesh_GetNavAreaFunc;
+    NavMesh_GetNearestNavAreaFunc;
 
 // Forward Declarations
 GlobalForward
@@ -86,7 +87,7 @@ void Hook_OnPreThink(int client)
     float origin[3];
     GetClientAbsOrigin(client, origin);
     
-    NavArea nav_area = TheNavMesh.GetNavArea(origin);
+    NavArea nav_area = TheNavMesh.GetNearestNavArea(origin);
     if (!nav_area)
     {
         return;
@@ -138,11 +139,14 @@ void CreateNatives()
     // int GetPlace()
     CreateNative("NavArea.GetPlace", Native_GetPlace);
     
+    // bool IsConnected(NavArea area, NavDirType dir = NUM_DIRECTIONS)
+    CreateNative("NavArea.IsConnected", Native_IsConnected);
+    
     // int PlaceToName(int place_index, char[] buffer, int maxlength)
     CreateNative("TheNavMesh.PlaceToName", Native_PlaceToName);
     
-    // NavArea GetNavArea(const float pos[3], float beneathLimit = 120.0, bool checkLOS = false)
-    CreateNative("TheNavMesh.GetNavArea", Native_GetNavArea);
+    // NavArea GetNearestNavArea(const float pos[3], bool anyZ = false, float maxDist = 10000.0, bool checkLOS = false, bool checkGround = true)
+    CreateNative("TheNavMesh.GetNearestNavArea", Native_GetNearestNavArea);
     
     // int GetPlaceCount()
     CreateNative("TheNavMesh.PlaceCount.get", Native_GetPlaceCount);
@@ -251,6 +255,30 @@ any Native_GetPlace(Handle plugin, int numParams)
     );
 }
 
+any Native_IsConnected(Handle plugin, int numParams)
+{
+    NavArea nav_area = view_as<NavArea>(GetNativeCell(1));
+    if (!nav_area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid NavArea pointer.");
+    }
+    
+    NavArea area = GetNativeCell(2);
+    if (!area)
+    {
+        ThrowNativeError(SP_ERROR_NATIVE, "Invalid area pointer.");
+    }
+    
+    NavDirType dir = GetNativeCell(3);
+    
+    return SDKCall(
+        NavArea_IsConnectedFunc, 	
+        nav_area,
+        area,
+        dir
+    );
+}
+
 any Native_PlaceToName(Handle plugin, int numParams)
 {
     int place_index = GetNativeCell(1);
@@ -289,15 +317,17 @@ any Native_PlaceToName(Handle plugin, int numParams)
     return strlen(buffer);
 }
 
-any Native_GetNavArea(Handle plugin, int numParams)
+any Native_GetNearestNavArea(Handle plugin, int numParams)
 {
     float pos[3];
     GetNativeArray(1, pos, sizeof(pos));
     
-    float beneathLimit = GetNativeCell(2);
-    bool checkLOS = GetNativeCell(3);
+    bool anyZ = GetNativeCell(2);
+    float maxDist = GetNativeCell(3);
+    bool checkLOS = GetNativeCell(4);
+    bool checkGround = GetNativeCell(5);
     
-    return view_as<NavArea>(SDKCall(NavMesh_GetNavAreaFunc, g_TheNavMesh, pos, beneathLimit, checkLOS));
+    return view_as<NavArea>(SDKCall(NavMesh_GetNearestNavAreaFunc, g_TheNavMesh, pos, anyZ, maxDist, checkLOS, checkGround));
 }
 
 any Native_GetPlaceCount(Handle plugin, int numParams)
@@ -392,6 +422,20 @@ void InitializeSDKFunctions()
         SetFailState("Missing signature 'CNavArea::GetRandomPoint'");
     }
     
+    // bool IsConnected( const CNavArea *area, NavDirType dir ) const;
+    StartPrepSDKCall(SDKCall_Raw);
+    PrepSDKCall_SetFromConf(g_GameData, SDKConf_Signature, "CNavArea::IsConnected");
+    
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // const CNavArea *area
+    PrepSDKCall_AddParameter(SDKType_PlainOldData, SDKPass_Plain); // NavDirType dir
+    
+    PrepSDKCall_SetReturnInfo(SDKType_Bool, SDKPass_Plain);
+    
+    if (!(NavArea_IsConnectedFunc = EndPrepSDKCall()))
+    {
+        SetFailState("Missing signature 'CNavArea::IsConnected'");
+    }
+    
     // Setup `CNavMesh_PlaceToName` SDKCall.
     // const char *CNavMesh::PlaceToName( Place place ) const
     // Linux takes |this| ptr, Windows doesn't.
@@ -407,20 +451,22 @@ void InitializeSDKFunctions()
         SetFailState("Missing signature 'CNavMesh::PlaceToName'");
     }
     
-    // Setup `GetNavArea` SDKCall.
-    // CNavArea *GetNavArea( const Vector &pos, float beneathLimt = 120.0f, bool checkLOS = false ) const;
+    // Setup `GetNearestNavArea` SDKCall.
+    // CNavArea *GetNearestNavArea( const Vector &pos, bool anyZ = false, float maxDist = 10000.0f, bool checkLOS = false, bool checkGround = true ) const;
     StartPrepSDKCall(SDKCall_Raw);
-    PrepSDKCall_SetFromConf(g_GameData, SDKConf_Signature, "CNavMesh::GetNavArea");
+    PrepSDKCall_SetFromConf(g_GameData, SDKConf_Signature, "CNavMesh::GetNearestNavArea");
     
     PrepSDKCall_AddParameter(SDKType_Vector, SDKPass_ByRef); // const Vector &pos
-    PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain); // float beneathLimt
-    PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain); // bool checkLOS
+    PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain); 	 // bool anyZ = false
+    PrepSDKCall_AddParameter(SDKType_Float, SDKPass_Plain);  // float maxDist = 10000.0f
+    PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);   // bool checkLOS = false
+    PrepSDKCall_AddParameter(SDKType_Bool, SDKPass_Plain);   // bool checkGround = true
     
     PrepSDKCall_SetReturnInfo(SDKType_PlainOldData, SDKPass_Plain); // CNavArea*
     
-    if (!(NavMesh_GetNavAreaFunc = EndPrepSDKCall()))
+    if (!(NavMesh_GetNearestNavAreaFunc = EndPrepSDKCall()))
     {
-        SetFailState("Missing signature 'CNavMesh::GetNavArea'");
+        SetFailState("Missing signature 'CNavMesh::GetNearestNavArea'");
     }
 }
 

@@ -5,6 +5,17 @@
 
 #include <CUtlVector>
 
+// https://github.com/perilouswithadollarsign/cstrike15_src/blob/master/game/server/nav.h#L112-L120
+enum NavDirType
+{
+	NORTH = 0,
+	EAST = 1,
+	SOUTH = 2,
+	WEST = 3,
+
+	NUM_DIRECTIONS
+};
+
 enum NavArea
 {
     NULL_NAV_AREA = 0
@@ -29,49 +40,105 @@ methodmap NavAreaCriticalData
     
     public void GetNECorner(float corner[3])
     {
-        float NWCorner[3], SECorner[3];
-        this.GetNWCorner(NWCorner);
-        this.GetSECorner(SECorner);
+        float nw_corner[3], se_corner[3];
+        this.GetNWCorner(nw_corner);
+        this.GetSECorner(se_corner);
         
-        corner[0] = SECorner[0];
-        corner[1] = NWCorner[1];
+        corner[0] = se_corner[0];
+        corner[1] = nw_corner[1];
         corner[2] = this.neZ;
     }
     
     public void GetSWCorner(float corner[3])
     {
-        float NWCorner[3], SECorner[3];
-        this.GetNWCorner(NWCorner);
-        this.GetSECorner(SECorner);
+        float nw_corner[3], se_corner[3];
+        this.GetNWCorner(nw_corner);
+        this.GetSECorner(se_corner);
         
-        corner[0] = NWCorner[0];
-        corner[1] = SECorner[1];
+        corner[0] = nw_corner[0];
+        corner[1] = se_corner[1];
         corner[2] = this.swZ;
     }
+    
+    public void GetCenter(float center[3])	
+	{ 
+		float nw_corner[3], se_corner[3];
+		this.GetNWCorner(nw_corner);
+		this.GetSECorner(se_corner);
+		
+		center[0] = (nw_corner[0] + se_corner[0]) / 2.0;
+		center[1] = (nw_corner[1] + se_corner[1]) / 2.0;
+		center[2] = (nw_corner[2] + se_corner[2]) / 2.0;
+	}
 }
 
 methodmap NavArea < NavAreaCriticalData
 {
+	// Generates a random position within the navigation bounds. [mins, maxs] 
+    //
+    // Note that you should verify the returned position
+    // with the entity interacted with.
+    //
+    // @param pos    Position, treat as a buffer.
+    //
+    // @error 		 Null NavArea instance.
     public native void GetRandomPoint(float pos[3]);
     
+    // Retrieves the navigation area place index.
+    //
+    // Note: A single navigation area only has only one place index, 
+    // 		 while a place index can have many navigation area(s).
+    //
+    // Note: A valid place index is [1 <= X <= TheNavMesh.GetPlaceCount]
+    //
+    // @return 		 Place index.
+    // @error 		 Null NavArea instance.
     public native int GetPlace();
+    
+    // Retrieves whether this navigation area is connected to another.
+    //
+    // @param area   A navigation area instance to compute against.
+    // @param dir    Navigation direction. Searches against all directions if equal to 'NUM_DIRECTIONS'.
+    //
+    // @return 		 True if both navigation areas are connected to each other, false otherwise.
+    // @error 		 Null NavArea instance.
+    public native bool IsConnected(NavArea area, NavDirType dir = NUM_DIRECTIONS);
 }
 
 methodmap TheNavMesh
 {
+	// Retrieves a place name by the given place index.
+    //
+    // @param place_index   Place index in the range of [1 <= X <= TheNavMesh.GetPlaceCount].
+    // @param buffer        Destination string buffer.
+ 	// @param maxlength     Maximum length of output string buffer.
+    //
+    // @return 		 		Number of bytes written.
+    // @error 		 		Invalid place index.
     public static native int PlaceToName(int place_index, char[] buffer, int maxlength);
     
-    // Retrieves a CNavArea address by the given origin, or NULL_NAV_AREA on fail.
-    public static native NavArea GetNavArea(const float pos[3], float beneathLimit = 120.0, bool checkLOS = false);
+    // Retrieves a NavArea instance based on the given position.
+    //
+    // @param pos			Position along the map.
+    // @param anyZ			Apparently it's completly unused by the source code.
+    // @param maxDist		Max distance to consider as "near".
+    // @param checkLOS		Whether or not to check LOS to the area. (Line of sight)
+    // @param checkGround	If true and the given position height is invalid, false will be returned.
+    //
+    // @return 		 		NavArea instance, or NULL_NAV_AREA on failure.
+    public static native NavArea GetNearestNavArea(const float pos[3], bool anyZ = false, float maxDist = 10000.0, bool checkLOS = false, bool checkGround = true);
     
+    // Retrieves the amount of existing places.
+    //
+    // @return 		 		Self explanatory.
     public static native int GetPlaceCount();
     
-    // Retrieves a place index by the given name, or -1 on fail.
+    // Retrieves a place index by the given name, or -1 on failure.
     public static int NameToPlace(char[] name, bool caseSensitive = true)
     {
         char area_name[256];
         
-        for (int current_place; current_place < TheNavMesh.GetPlaceCount(); current_place++)
+        for (int current_place = 1; current_place < TheNavMesh.GetPlaceCount(); current_place++)
         {
             TheNavMesh.PlaceToName(current_place, area_name, sizeof(area_name));
             if (StrEqual(area_name, name, caseSensitive))
@@ -114,8 +181,9 @@ public void __pl_nav_mesh_SetNTVOptional()
     MarkNativeAsOptional("NavAreaCriticalData.swZ.get");
     MarkNativeAsOptional("NavArea.GetRandomPoint");
     MarkNativeAsOptional("NavArea.GetPlace");
+    MarkNativeAsOptional("NavArea.IsConnected");
     MarkNativeAsOptional("TheNavMesh.PlaceToName");
-    MarkNativeAsOptional("TheNavMesh.GetNavArea");
+    MarkNativeAsOptional("TheNavMesh.GetNearestNavArea");
     MarkNativeAsOptional("TheNavMesh.PlaceCount.get");
     MarkNativeAsOptional("TheNavAreas.TheNavAreas");
 }
