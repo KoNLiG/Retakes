@@ -31,7 +31,7 @@ methodmap CUtlVector
         return LoadFromAddress(this.elements + view_as<Address>(index * size), NumberType_Int32);
     }
     
-    public int Find(int value)
+    public int Find(any value)
     {
         int max = this.size;
         
