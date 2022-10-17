@@ -88,13 +88,7 @@ void Hook_OnPreThink(int client)
     GetClientAbsOrigin(client, origin);
     
     NavArea nav_area = TheNavMesh.GetNearestNavArea(origin);
-    if (!nav_area)
-    {
-        return;
-    }
-    
-    int place_index = nav_area.GetPlace();
-    if (place_index <= 0)
+    if (!nav_area || nav_area.GetPlace() <= 0)
     {
         return;
     }
