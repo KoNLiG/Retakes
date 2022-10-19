@@ -117,7 +117,7 @@ bool GetRandomSpawnLocation(int client, float origin[3])
     do
     {
         nav_area.GetRandomPoint(origin);
-    } while (!ValidateSpawn(origin, mins, maxs));
+    } while (!ValidateSpawn(client, origin, mins, maxs));
     
     return true;
 }
@@ -146,14 +146,14 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
         result[0] = GetRandomFloat(mins[0], maxs[0]);
         result[1] = GetRandomFloat(mins[1], maxs[1]);
         result[2] = max(mins[2], maxs[2]);
-    } while (!ValidateSpawn(result, cl_mins, cl_maxs, mins, maxs));
+    } while (!ValidateSpawn(client, result, cl_mins, cl_maxs, mins, maxs));
 }
 
-bool ValidateSpawn(float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR)
+bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR)
 {
     origin[2] += 64.0; // 64.0 units as for the player model height.
     
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_WorldOnly);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself);
     
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -176,14 +176,9 @@ bool ValidateSpawn(float origin[3], float ent_mins[3], float ent_maxs[3], float 
     float hull_origin[3]; hull_origin = origin;
     hull_origin[2] += normal[2] * -3;
     
-    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_WorldOnly);
+    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ExcludeMyself, client);
     
     return !TR_DidHit();
-}
-
-bool Filter_WorldOnly(int entity, int contentsMask)
-{
-    return !entity;
 }
 
 bool IsVecBetween(float vec[3], float mins[3], float maxs[3], float err = 0.0)
