@@ -35,7 +35,7 @@ void SetupDHooks(GameData gamedata)
 }
 
 // Completely skip the function and override the return value to 'false'.
-// Result is the most of the in-game retake mod features will be automatically disbaled, 
+// Result is the most of the in-game retake mod features will be automatically disabled, 
 // with some extra stuff that we want to preserve such as: 
 // 1. "Retake/Defend Site A/B!" where the player money is displayed.
 // 2. An arrow that directs you towards the current site to retake, only as an attacker.
