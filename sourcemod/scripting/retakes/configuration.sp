@@ -175,7 +175,7 @@ void SQL_OnDeleteSpawnArea(Database db, DBResultSet results, const char[] error,
 
 public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float vel[3], const float angles[3], int weapon, int subtype, int cmdnum, int tickcount, int seed, const int mouse[2])
 {
-	if ((tickcount % 8) || !g_Players[client].InEditMode())
+	if ((tickcount % RoundToFloor(g_ServerTickrate / 16.0)) || !g_Players[client].InEditMode())
 	{
 		return;
 	}
@@ -216,7 +216,8 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 	if (IsNavAreaConfigurated(nav_area, bombsite_index, nav_mesh_area_team, array_idx))
 	{
 		// Delete the existing spawn area.
-		if (!(tickcount % 128) && (buttons & IN_ATTACK) && (buttons & IN_ATTACK2))
+		// Must hold MOUSE1 + MOUSE2 for exactly a second.
+		if (!(tickcount % RoundToFloor(g_ServerTickrate)) && (buttons & IN_ATTACK) && (buttons & IN_ATTACK2))
 		{
 			int nav_area_index = g_TheNavAreas.Find(nav_area);
 			if (nav_area_index == -1)
@@ -248,7 +249,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
 
 void GetNavMeshTeamColor(int team, int color[4])
 {
-	color = team == NavMeshArea_Defender ? { 255, 186, 124, 155 }  : { 93, 121, 255, 155 };
+	color = team == NavMeshArea_Defender ? { 228, 98, 30, 155 }  : { 20, 21, 255, 155 };
 }
 
 void HighlightSpawnArea(int client, NavArea nav_area, int color[4])
@@ -272,7 +273,7 @@ void HighlightSpawnArea(int client, NavArea nav_area, int color[4])
 
 void Laser(int client, const float start[3], const float end[3], int color[4] = { 255, 255, 255, 255 }, float time = 0.2)
 {
-	TE_SetupBeamPoints(start, end, g_LaserIndex, 0, 0, 0, time, 3.0, 3.0, 7, 0.0, color, 0);
+	TE_SetupBeamPoints(start, end, g_LaserIndex, 0, 0, 0, time, 1.5, 1.5, 0, 0.0, color, 0);
 	TE_SendToClient(client);
 }
 
@@ -280,7 +281,7 @@ void ValidateLaserOrigin(float origin[3])
 {
 	origin[2] += 64.0;
 	
-	TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_WorldOnly);
+	TR_TraceRay(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite);
 	
 	float normal[3];
 	TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -332,7 +333,8 @@ void DisplayRetakesMenu(int client)
 	menu.SetTitle(RETAKES_PREFIX_MENU..." Settings:\n ");
 	
 	menu.AddItem("", "Dummy Item");
-	menu.AddItem("", "Manage Spawn Areas", CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
+	//menu.AddItem("", "Manage Spawn Areas", CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
+	menu.AddItem("", "Manage Spawn Areas");
 	
 	menu.Display(client, MENU_TIME_FOREVER);
 }
