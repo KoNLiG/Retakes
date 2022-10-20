@@ -24,11 +24,15 @@ void PlayerManager_RoundPreStart()
 	}
 }
 
-// Handle players who joining in the middle of a round.
+// Handle players who joined in the middle of a round.
 void PlayerManager_OnPlayerSpawn(int client)
 {
 	if (g_Players[client].spawn_role == SpawnRole_None)
 	{
 		g_Players[client].spawn_role = GetClientTeam(client);
+		
+		#if defined DEBUG
+		LogMessage("Auto assigned spawn role %d for client %d", g_Players[client].spawn_role, client);
+		#endif
 	}
 } 
