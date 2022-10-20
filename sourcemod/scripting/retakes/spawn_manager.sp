@@ -125,8 +125,8 @@ bool GetRandomSpawnLocation(int client, float origin[3])
         // 		 is necessary. 
         if (player_collision)
         {
-            NavArea new_nav_area = GetSuitableNavArea(client);
-            if (new_nav_area == nav_area)
+            NavArea new_nav_area = GetSuitableNavArea(client, nav_area);
+            if (new_nav_area == NULL_NAV_AREA)
             {
                 return false;
             }
@@ -140,20 +140,32 @@ bool GetRandomSpawnLocation(int client, float origin[3])
     return true;
 }
 
-NavArea GetSuitableNavArea(int client)
+NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 {
+    #if defined DEBUG
     if (g_Players[client].spawn_role == SpawnRole_None)
     {
         LogError("Spawn role is NONE for client %d, should be %d/%d, aborting", client, GetEntProp(client, Prop_Send, "m_iTeamNum"), GetEntProp(client, Prop_Data, "m_iTeamNum"));
         return NULL_NAV_AREA;
     }
-    
+    #endif
+
     ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)];
     if (!suitable_areas.Length)
     {
         return NULL_NAV_AREA;
     }
     
+    // Atempt to erase the filtered nav area.
+    if (filter != NULL_NAV_AREA)
+    {
+        int idx = suitable_areas.FindValue(filter);
+        if (idx != -1)
+        {
+            suitable_areas.Erase(idx);
+        }
+    }
+
     return suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
 }
 
