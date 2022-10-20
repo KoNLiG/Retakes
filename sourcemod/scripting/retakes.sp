@@ -8,6 +8,8 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+#define DEBUG
+
 enum
 {
 	NavMeshArea_Defender, 
@@ -101,14 +103,15 @@ float g_ServerTickrate;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
+#include "retakes/events.sp"
 #include "retakes/gameplay.sp"
 #include "retakes/database.sp"
 #include "retakes/spawn_manager.sp"
 #include "retakes/player_manager.sp"
 #include "retakes/configuration.sp"
 #include "retakes/sdk.sp"
-#include "retakes/events.sp"
 #include "retakes/plant_logic.sp"
+#include "retakes/defuse_logic.sp"
 #undef COMPILING_FROM_MAIN
 
 public Plugin myinfo = 
@@ -161,9 +164,9 @@ public void OnMapStart()
 
 public void OnClientDisconnect(int client)
 {
-	g_Players[client].Reset();
-	
 	PlantLogic_OnClientDisconnect(client);
+	
+	g_Players[client].Reset();
 }
 
 void GetClientAimPosition(int client, float result[3])
