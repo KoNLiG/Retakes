@@ -281,7 +281,7 @@ void ValidateLaserOrigin(float origin[3])
 {
 	origin[2] += 64.0;
 	
-	TR_TraceRay(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite);
+	TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludePlayers);
 	
 	float normal[3];
 	TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -295,6 +295,11 @@ void ValidateLaserOrigin(float origin[3])
 		origin[1] += normal[1] * -3;
 		origin[2] += normal[2] * -3;
 	}
+}
+
+bool Filter_ExcludePlayers(int entity, int contentsMask)
+{
+	return !(1 <= entity <= MaxClients)
 }
 
 //================================[ Commands Callbacks ]================================//
