@@ -44,17 +44,13 @@ void PlantLogic_RoundFreezeEnd()
 
 void PlantLogic_OnBombPlanted(int planter, int bombsite_index, int planted_c4)
 {
-	SetEntPropFloat(planted_c4, Prop_Send, "m_flModelScale", 3.0);
+	#pragma unused planter, bombsite_index, planted_c4
 	
 	SetFreezePeriod(false);
-	
-	#pragma unused planter, bombsite_index
 }
 
 void PlantLogic_OnClientDisconnect(int client)
 {
-	PrintToChatAll("%d ?= %d, %d", GetPlanter(), client, GetFreezePeriod());
-	
 	if (GetPlanter() != client || !GetFreezePeriod())
 	{
 		return;
@@ -159,23 +155,28 @@ void CreateNaturalPlantedC4()
 	int planter = GetPlanter();
 	if (planter == -1)
 	{
+		PlantLogic_OnBombPlanted(0, g_TargetSite, planted_c4);
+		
 		return;
 	}
 	
 	// Teleport the planter to the original to avoid exploits.
-	TeleportEntity(planter, g_PlantOrigin);
+	float mins[3], maxs[3];
+	GetClientMins(planter, mins);
+	GetClientMaxs(planter, maxs);
+	
+	if (ValidateSpawn(planter, g_PlantOrigin, mins, maxs))
+	{
+		TeleportEntity(planter, g_PlantOrigin);
+	}
 	
 	// Remove the old c4 if exists.
 	int weapon_c4 = GetPlayerWeaponSlot(planter, CS_SLOT_C4);
 	if (weapon_c4 != -1)
 	{
-		PrintToChatAll("Asddd");
-		
 		RemovePlayerItem(planter, weapon_c4);
 		RemoveEntity(weapon_c4);
 	}
-	
-	PrintToChatAll("")
 	
 	NotifyBombPlanted(planter, g_TargetSite);
 }
