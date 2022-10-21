@@ -8,6 +8,9 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+// Enable debug mode.
+#define DEBUG
+
 enum
 {
     NavMeshArea_Defender, 
@@ -24,6 +27,19 @@ enum struct Bombsite
     float mins[3];
     float maxs[3];
     float center[3];
+    
+    //=============================================//
+    bool IsValid()
+    {
+        return !IsVectorZero(this.mins) && !IsVectorZero(this.maxs) && !IsVectorZero(this.center);
+    }
+    
+    void Reset()
+    {
+        this.mins = { 0.0, 0.0, 0.0 };
+        this.maxs = { 0.0, 0.0, 0.0 };
+        this.center = { 0.0, 0.0, 0.0 };
+    }
 }
 
 enum struct EditMode
@@ -78,7 +94,6 @@ enum struct Player
     int spawn_role;
     
     //============================================//
-    
     void Reset()
     {
         this.edit_mode.Reset();
@@ -96,15 +111,20 @@ Player g_Players[MAXPLAYERS + 1];
 
 int g_LaserIndex;
 
+// Server tickrate. (64.0|128.0|...)
+float g_ServerTickrate;
+
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
+#include "retakes/events.sp"
 #include "retakes/gameplay.sp"
 #include "retakes/database.sp"
 #include "retakes/spawn_manager.sp"
 #include "retakes/player_manager.sp"
 #include "retakes/configuration.sp"
 #include "retakes/sdk.sp"
-#include "retakes/events.sp"
+#include "retakes/plant_logic.sp"
+#include "retakes/defuse_logic.sp"
 #undef COMPILING_FROM_MAIN
 
 public Plugin myinfo = 
@@ -113,7 +133,7 @@ public Plugin myinfo =
     author = "Natanel 'LuqS', Omer 'KoNLiG'", 
     description = "The new generation of Retakes gameplay!", 
     version = "1.0.0", 
-    url = "https://github.com/Natanel-Shitrit/Retakes"
+    url = "https://github.com/KoNLiG/Retakes"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -133,6 +153,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+    LoadTranslations("retakes.phrases");
     LoadTranslations("localization.phrases");
     
     Gameplay_OnPluginStart();
@@ -142,18 +163,26 @@ public void OnPluginStart()
     Configuration_OnPluginStart();
     SDK_OnPluginStart();
     Events_OnPluginStart();
+    PlantLogic_OnPluginStart();
+    DefuseLogic_OnPluginStart();
+    
+    // Get the server tickrate once.
+    g_ServerTickrate = 1.0 / GetTickInterval();
 }
 
 public void OnMapStart()
 {
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
+    PlayerManager_OnMapStart();
     
-    g_LaserIndex = PrecacheModel("materials/sprites/laser.vmt");
+    g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }
 
 public void OnClientDisconnect(int client)
 {
+    PlantLogic_OnClientDisconnect(client);
+    
     g_Players[client].Reset();
 }
 
@@ -178,4 +207,28 @@ void StringToLower(char[] str)
     {
         str[current_char] = CharToLower(str[current_char]);
     }
+}
+
+void DisarmClient(int client)
+{
+    int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+    
+    for (int current_weapon, ent; current_weapon < max_weapons; current_weapon++)
+    {
+        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_weapon)) != -1)
+        {
+            RemovePlayerItem(client, ent);
+            RemoveEntity(ent);
+        }
+    }
+}
+
+bool IsVectorZero(float vec[3])
+{
+    return !FloatCompare(vec[0], 0.0) && !FloatCompare(vec[1], 0.0) && !FloatCompare(vec[2], 0.0);
+}
+
+int GetPlantedC4()
+{
+    return FindEntityByClassname(-1, "planted_c4");
 } 

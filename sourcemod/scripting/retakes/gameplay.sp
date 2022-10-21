@@ -8,7 +8,6 @@ int g_TargetSite;
 
 void Gameplay_OnPluginStart()
 {
-    
 }
 
 void Gameplay_RoundPreStart()

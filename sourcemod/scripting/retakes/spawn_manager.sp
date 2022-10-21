@@ -13,6 +13,7 @@ Bombsite g_Bombsites[Bombsite_Max];
 
 ArrayList g_BombsiteSpawns[Bombsite_Max][NavMeshArea_Max];
 
+// Initialize global vars.
 void SpawnManager_OnPluginStart()
 {
     for (int i; i < sizeof(g_BombsiteSpawns); i++)
@@ -26,6 +27,11 @@ void SpawnManager_OnPluginStart()
 
 void SpawnManager_OnMapStart()
 {
+    for (int i; i < sizeof(g_Bombsites); i++)
+    {
+        g_Bombsites[i].Reset();
+    }
+    
     // InitializeBombsites();
 }
 
@@ -98,6 +104,11 @@ bool GetRandomSpawnLocation(int client, float origin[3])
 {
     if (g_Players[client].spawn_role == SpawnRole_Planter)
     {
+        if (!g_Bombsites[g_TargetSite].IsValid())
+        {
+            return false;
+        }
+        
         GenerateSpawnLocation(client, g_Bombsites[g_TargetSite].mins, g_Bombsites[g_TargetSite].maxs, origin);
         return true;
     }
@@ -113,24 +124,66 @@ bool GetRandomSpawnLocation(int client, float origin[3])
     GetClientMins(client, mins);
     GetClientMaxs(client, maxs);
     
-    // Generate random spawn vectors, and don't stop until a valid one has found
+    // Generate a valid randomized spawn origin.
+    bool player_collision;
+    
     do
     {
+        // Note: If 'nav_area' bounds is only enough to fit a single player entity.
+        // 		 an infinite loop will occurre.
+        // 		 
+        // 		 By checking if there's any player collision, we know if a new navigation area
+        // 		 is necessary. 
+        if (player_collision)
+        {
+            NavArea new_nav_area = GetSuitableNavArea(client, nav_area);
+            if (new_nav_area == NULL_NAV_AREA)
+            {
+                return false;
+            }
+            
+            nav_area = new_nav_area;
+            
+            player_collision = false;
+        }
+        
         nav_area.GetRandomPoint(origin);
-    } while (!ValidateSpawn(origin, mins, maxs));
+    } while (!ValidateSpawn(client, origin, mins, maxs, .player_collision = player_collision));
     
     return true;
 }
 
-NavArea GetSuitableNavArea(int client)
+NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 {
-    ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)];
+    #if defined DEBUG
+    if (g_Players[client].spawn_role == SpawnRole_None)
+    {
+        LogError("Spawn role is NONE for client %d, should be %d, aborting", client, GetClientTeam(client));
+        return NULL_NAV_AREA;
+    }
+    #endif
+    
+    ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
     if (!suitable_areas.Length)
     {
         return NULL_NAV_AREA;
     }
     
-    return suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+    // Atempt to erase the filtered nav area.
+    if (filter != NULL_NAV_AREA)
+    {
+        int idx = suitable_areas.FindValue(filter);
+        if (idx != -1)
+        {
+            suitable_areas.Erase(idx);
+        }
+    }
+    
+    NavArea result = suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+    
+    delete suitable_areas;
+    
+    return result;
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
@@ -146,14 +199,14 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
         result[0] = GetRandomFloat(mins[0], maxs[0]);
         result[1] = GetRandomFloat(mins[1], maxs[1]);
         result[2] = max(mins[2], maxs[2]);
-    } while (!ValidateSpawn(result, cl_mins, cl_maxs, mins, maxs));
+    } while (!ValidateSpawn(client, result, cl_mins, cl_maxs, mins, maxs));
 }
 
-bool ValidateSpawn(float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR)
+bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR, bool &player_collision = false)
 {
     origin[2] += 64.0; // 64.0 units as for the player model height.
     
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_WorldOnly);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself, client);
     
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -176,14 +229,11 @@ bool ValidateSpawn(float origin[3], float ent_mins[3], float ent_maxs[3], float 
     float hull_origin[3]; hull_origin = origin;
     hull_origin[2] += normal[2] * -3;
     
-    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_WorldOnly);
+    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ExcludeMyself, client);
+    
+    player_collision = (1 <= TR_GetEntityIndex() <= MaxClients);
     
     return !TR_DidHit();
-}
-
-bool Filter_WorldOnly(int entity, int contentsMask)
-{
-    return !entity;
 }
 
 bool IsVecBetween(float vec[3], float mins[3], float maxs[3], float err = 0.0)

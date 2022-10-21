@@ -11,15 +11,15 @@ Database g_Database;
 
 void Database_OnPluginStart()
 {
-	Database.Connect(SQL_OnDatabaseConnected, DATABASE_ENTRY);
+    Database.Connect(SQL_OnDatabaseConnected, DATABASE_ENTRY);
 }
 
 void SQL_OnDatabaseConnected(Database db, const char[] error, any data)
 {
-	if (!(g_Database = db))
-	{
-		SetFailState("Unable to maintain connection to MySQL server (%s)", error);
-	}
-	
-	Configuration_OnDatabaseConnection();
+    if (!(g_Database = db))
+    {
+        SetFailState("Unable to maintain connection to MySQL server (%s)", error);
+    }
+    
+    Configuration_OnDatabaseConnection();
 } 

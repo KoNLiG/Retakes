@@ -6,13 +6,12 @@
 
 void PlayerManager_OnPluginStart()
 {
-    
+    // Disable any manual team menu interaction for players. 
+    GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
 void PlayerManager_RoundPreStart()
 {
-    PrintToChatAll("[PlayerManager_RoundPreStart]");
-    
     // TODO: Switch players team.
     
     for (int current_client = 1; current_client <= MaxClients; current_client++)
@@ -23,40 +22,17 @@ void PlayerManager_RoundPreStart()
             g_Players[current_client].spawn_role = GetClientTeam(current_client);
         }
     }
-    
-    // Generate a random planter from the defender team.
-    int planter = SelectPlanter();
-    if (planter != -1)
-    {
-        g_Players[planter].spawn_role = SpawnRole_Planter;
-    }
 }
 
-stock int GetPlanter()
+// Handle players who joined in the middle of a round.
+void PlayerManager_OnPlayerSpawn(int client)
 {
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    if (g_Players[client].spawn_role == SpawnRole_None)
     {
-        if (IsClientInGame(current_client) && g_Players[current_client].spawn_role == SpawnRole_Planter)
-        {
-            return current_client;
-        }
+        g_Players[client].spawn_role = GetClientTeam(client);
+        
+        #if defined DEBUG
+        LogMessage("Auto assigned spawn role %d for client %d", g_Players[client].spawn_role, client);
+        #endif
     }
-    
-    return -1;
-}
-
-int SelectPlanter()
-{
-    int clients_count;
-    int[] clients = new int[MaxClients];
-    
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client) && g_Players[current_client].spawn_role == SpawnRole_Defender)
-        {
-            clients[clients_count++] = current_client;
-        }
-    }
-    
-    return clients_count ? clients[GetRandomInt(0, clients_count - 1)] : -1;
 } 
