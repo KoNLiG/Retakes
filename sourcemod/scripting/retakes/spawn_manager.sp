@@ -13,6 +13,7 @@ Bombsite g_Bombsites[Bombsite_Max];
 
 ArrayList g_BombsiteSpawns[Bombsite_Max][NavMeshArea_Max];
 
+// Initialize global vars.
 void SpawnManager_OnPluginStart()
 {
     for (int i; i < sizeof(g_BombsiteSpawns); i++)
@@ -26,6 +27,11 @@ void SpawnManager_OnPluginStart()
 
 void SpawnManager_OnMapStart()
 {
+    for (int i; i < sizeof(g_Bombsites); i++)
+    {
+        g_Bombsites[i].Reset();
+    }
+    
     // InitializeBombsites();
 }
 
@@ -98,6 +104,11 @@ bool GetRandomSpawnLocation(int client, float origin[3])
 {
     if (g_Players[client].spawn_role == SpawnRole_Planter)
     {
+        if (!g_Bombsites[g_TargetSite].IsValid())
+        {
+            return false;
+        }
+        
         GenerateSpawnLocation(client, g_Bombsites[g_TargetSite].mins, g_Bombsites[g_TargetSite].maxs, origin);
         return true;
     }
@@ -132,6 +143,8 @@ bool GetRandomSpawnLocation(int client, float origin[3])
             }
             
             nav_area = new_nav_area;
+            
+            player_collision = false;
         }
         
         nav_area.GetRandomPoint(origin);
@@ -145,12 +158,12 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
     #if defined DEBUG
     if (g_Players[client].spawn_role == SpawnRole_None)
     {
-        LogError("Spawn role is NONE for client %d, should be %d/%d, aborting", client, GetEntProp(client, Prop_Send, "m_iTeamNum"), GetEntProp(client, Prop_Data, "m_iTeamNum"));
+        LogError("Spawn role is NONE for client %d, should be %d, aborting", client, GetClientTeam(client));
         return NULL_NAV_AREA;
     }
     #endif
-
-    ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)];
+    
+    ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
     if (!suitable_areas.Length)
     {
         return NULL_NAV_AREA;
@@ -165,8 +178,12 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
             suitable_areas.Erase(idx);
         }
     }
-
-    return suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+    
+    NavArea result = suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+    
+    delete suitable_areas;
+    
+    return result;
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
@@ -189,7 +206,7 @@ bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_max
 {
     origin[2] += 64.0; // 64.0 units as for the player model height.
     
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself, client);
     
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);

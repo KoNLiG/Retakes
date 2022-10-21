@@ -8,6 +8,7 @@
 #pragma newdecls required
 #pragma semicolon 1
 
+// Enable debug mode.
 #define DEBUG
 
 enum
@@ -26,6 +27,19 @@ enum struct Bombsite
     float mins[3];
     float maxs[3];
     float center[3];
+    
+    //=============================================//
+    bool IsValid()
+    {
+        return !IsVectorZero(this.mins) && !IsVectorZero(this.maxs) && !IsVectorZero(this.center);
+    }
+    
+    void Reset()
+    {
+        this.mins = { 0.0, 0.0, 0.0 };
+        this.maxs = { 0.0, 0.0, 0.0 };
+        this.center = { 0.0, 0.0, 0.0 };
+    }
 }
 
 enum struct EditMode
@@ -80,7 +94,6 @@ enum struct Player
     int spawn_role;
     
     //============================================//
-    
     void Reset()
     {
         this.edit_mode.Reset();
@@ -120,7 +133,7 @@ public Plugin myinfo =
     author = "Natanel 'LuqS', Omer 'KoNLiG'", 
     description = "The new generation of Retakes gameplay!", 
     version = "1.0.0", 
-    url = "https://github.com/Natanel-Shitrit/Retakes"
+    url = "https://github.com/KoNLiG/Retakes"
 };
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -140,6 +153,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 
 public void OnPluginStart()
 {
+    LoadTranslations("retakes.phrases");
     LoadTranslations("localization.phrases");
     
     Gameplay_OnPluginStart();
@@ -149,6 +163,8 @@ public void OnPluginStart()
     Configuration_OnPluginStart();
     SDK_OnPluginStart();
     Events_OnPluginStart();
+    PlantLogic_OnPluginStart();
+    DefuseLogic_OnPluginStart();
     
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
@@ -158,6 +174,7 @@ public void OnMapStart()
 {
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
+    PlayerManager_OnMapStart();
     
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }
@@ -204,4 +221,14 @@ void DisarmClient(int client)
             RemoveEntity(ent);
         }
     }
+}
+
+bool IsVectorZero(float vec[3])
+{
+    return !FloatCompare(vec[0], 0.0) && !FloatCompare(vec[1], 0.0) && !FloatCompare(vec[2], 0.0);
+}
+
+int GetPlantedC4()
+{
+    return FindEntityByClassname(-1, "planted_c4");
 } 

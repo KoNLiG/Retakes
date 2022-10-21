@@ -222,7 +222,7 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
             int nav_area_index = g_TheNavAreas.Find(nav_area);
             if (nav_area_index == -1)
             {
-                PrintToChat(client, RETAKES_PREFIX..." \x07An error occured while deleting the existing spawn area.\x01");
+                PrintToChat(client, "%T%T", "MessagesPrefix", client, "Spawn Area Delete Error", client);
                 return;
             }
             
@@ -233,7 +233,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
             // Base value is defender, added the nav mesh area team will give the selected spawn role team.
             int spawn_role_team = SpawnRole_Defender + nav_mesh_area_team;
             
-            PrintToChat(client, RETAKES_PREFIX..." Successfully deleted a spawn area in bombsite \x07%s\x01 for \x02%s\x01.", 
+            PrintToChat(client, "%T%T", 
+                "MessagesPrefix", 
+                client,
+                "Deleted Spawn Area",
+                client,
                 g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], 
                 g_SpawnRoleNames[spawn_role_team]
                 );
@@ -308,7 +312,7 @@ Action Command_Retakes(int client, int argc)
 {
     if (!client)
     {
-        ReplyToCommand(client, "You cannot use this command from the server console.");
+        ReplyToCommand(client, "%T", "No Command Access", client);
         return Plugin_Handled;
     }
     
@@ -335,11 +339,11 @@ enum
 void DisplayRetakesMenu(int client)
 {
     Menu menu = new Menu(Handler_Retakes);
-    menu.SetTitle(RETAKES_PREFIX_MENU..." Settings:\n ");
+    menu.SetTitle("%T%T:\n ", "MenuPrefix", client, "Settings", client);
     
-    menu.AddItem("", "Dummy Item");
-    //menu.AddItem("", "Manage Spawn Areas", CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
-    menu.AddItem("", "Manage Spawn Areas");
+    char item_display[16];
+    Format(item_display, sizeof(item_display), "%T", "Manage Spawn Areas", client);
+    menu.AddItem("", item_display, CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
     
     menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -396,17 +400,18 @@ void DisplaySpawnAreasMenu(int client)
     char configurated_spawn_area[128] = " \n";
     if (IsNavAreaConfigurated(nav_area, g_Players[client].edit_mode.bombsite_index))
     {
-        Format(configurated_spawn_area, sizeof(configurated_spawn_area), " \n\n• ╭This spawn area is already configurated!\n   ╰┄Hold MOUSE1 + MOUSE2 to delete it.\n ");
+        Format(configurated_spawn_area, sizeof(configurated_spawn_area), " \n\n• ╭%T!\n   ╰┄%T.\n ", "Configurated Spawn Area", client, "Hold To Delete", client);
     }
     
     Menu menu = new Menu(Handler_SpawnAreas);
-    menu.SetTitle(RETAKES_PREFIX_MENU..." Manage Spawn Areas:\n◾ Aiming at: %s\n%s", place_name, configurated_spawn_area);
+    menu.SetTitle("%T%T:\n◾ %T: %s\n%s", place_name, configurated_spawn_area, "MenuPrefix", client, "Manage Spawn Areas", client, "Aiming at", client);
     
     char item_display[32];
-    Format(item_display, sizeof(item_display), "Bombsite: %s", g_BombsiteNames[g_Players[client].edit_mode.bombsite_index]);
+    Format(item_display, sizeof(item_display), "%T: %s", g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], "Bombsite", client);
     menu.AddItem("", item_display);
     
-    menu.AddItem("", "Add Area", nav_area != NULL_NAV_AREA ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
+    Format(item_display, sizeof(item_display), "%T", "Add Area", client);
+    menu.AddItem("", item_display, nav_area != NULL_NAV_AREA ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
     
     menu.ExitBackButton = true;
     
@@ -483,12 +488,18 @@ enum
 void DisplayAddAreaMenu(int client)
 {
     Menu menu = new Menu(Handler_AddArea);
-    menu.SetTitle(RETAKES_PREFIX_MENU..." Add Area:\n \n• Select a team to assign the area to\n ");
+    menu.SetTitle("%T%T:\n \n• %T\n ", "MenuPrefix", client, "Add Area", client, "Select Team", client);
     
-    menu.AddItem("", "Defender");
-    menu.AddItem("", "Attacker\n ");
+    char item_display[16];
     
-    menu.AddItem("", "Dismiss");
+    Format(item_display, sizeof(item_display), "%T", "Defender", client);
+    menu.AddItem("", item_display);
+    
+    Format(item_display, sizeof(item_display), "%T\n ", "Attacker", client);
+    menu.AddItem("", item_display);
+    
+    Format(item_display, sizeof(item_display), "%T", "Dismiss", client);
+    menu.AddItem("", item_display);
     
     menu.ExitButton = false;
     
@@ -515,7 +526,7 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
             NavArea nav_area = g_Players[client].edit_mode.GetNavArea(client);
             if (nav_area == NULL_NAV_AREA)
             {
-                PrintToChat(client, RETAKES_PREFIX..." Unable to find a valid navigation area.");
+                PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Invalid Nav Area", client);
                 return 0;
             }
             
@@ -530,14 +541,14 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
             
             if (IsNavAreaConfigurated(nav_area, g_Players[client].edit_mode.bombsite_index, nav_mesh_area_team))
             {
-                PrintToChat(client, RETAKES_PREFIX..." \x07This spawn area is already configurated!\x01");
+                PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Configurated Spawn Area", client);
                 return 0;
             }
             
             int nav_area_index = g_TheNavAreas.Find(nav_area);
             if (nav_area_index == -1)
             {
-                PrintToChat(client, RETAKES_PREFIX..." \x07An error occured while adding the new spawn area.\x01");
+                PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Spawn Area Add Error", client);
                 return 0;
             }
             
@@ -545,7 +556,11 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
             
             g_BombsiteSpawns[g_Players[client].edit_mode.bombsite_index][nav_mesh_area_team].Push(nav_area);
             
-            PrintToChat(client, RETAKES_PREFIX..." Successfully added a spawn area in bombsite \x06%s\x01 for \x04%s\x01.", 
+            PrintToChat(client, "%T%T", 
+                "MessagesPrefix",
+                client,
+                "Added Spawn Area", 
+                client,
                 g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], 
                 g_SpawnRoleNames[spawn_role_team]
                 );
