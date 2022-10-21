@@ -1,0 +1,34 @@
+"Phrases"
+{
+    "Close Inferno"
+    {
+        "en"	    "Close inferno to C4, be careful defusing!"
+        "he"	    "!קרובות לפצצה, זהרו להבות אש"
+    }
+    
+    "Fail Defuse"
+    {
+        "#format"	"{1:.2f}"
+        "en"		"Attackers did not defuse in time! {1}s remaining."
+        "he"		"שניות נשארו {1} !לא ניטרלו את הפצצה בזמן! התוקפים"
+    }
+    
+    "Success Defuse"
+    {
+        "en"		"Attackers defused the bomb in time!"
+    }
+}
+
+// - White
+// - Red
+// - Team color (may cause player's color dot before symbol)
+// - Green
+// - Light green
+// - Green(money awards)
+// - Light red
+// - CT color
+//	 - T color
+// - Light blue
+// - Blue
+// - Violet
+// - Light red 2
