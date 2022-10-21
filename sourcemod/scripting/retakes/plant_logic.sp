@@ -9,7 +9,10 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-float g_PlantOrigin[3];
+void PlantLogic_OnPluginStart()
+{
+    
+}
 
 void PlantLogic_RoundPreStart()
 {
@@ -33,7 +36,7 @@ void PlantLogic_RoundPreStart()
 
 void PlantLogic_RoundFreezeEnd()
 {
-    int planted_c4 = FindEntityByClassname(-1, "planted_c4");
+    int planted_c4 = GetPlantedC4();
     if (planted_c4 == -1)
     {
         CreateNaturalPlantedC4();
@@ -44,8 +47,6 @@ void PlantLogic_RoundFreezeEnd()
 
 void PlantLogic_OnBombPlanted(int planter, int bombsite_index, int planted_c4)
 {
-    #pragma unused planter, bombsite_index, planted_c4
-    
     SetFreezePeriod(false);
 }
 
@@ -66,8 +67,6 @@ void SetupPlanter(int userid)
     {
         return;
     }
-    
-    GetClientAbsOrigin(planter, g_PlantOrigin);
     
     DisarmClient(planter);
     
@@ -136,8 +135,22 @@ void LockupBombsite(int bombsite, bool value)
     }
 }
 
-void CreateNaturalPlantedC4()
+bool CreateNaturalPlantedC4()
 {
+    if (!g_Bombsites[g_TargetSite].IsValid())
+    {
+        return false;
+    }
+    
+    int planter = GetPlanter();
+    if (planter == -1)
+    {
+        return false;
+    }
+    
+    float plant_origin[3];
+    GenerateSpawnLocation(planter, g_Bombsites[g_TargetSite].mins, g_Bombsites[g_TargetSite].maxs, plant_origin);
+    
     int planted_c4 = CreateEntityByName("planted_c4");
     if (planted_c4 == -1 || !DispatchSpawn(planted_c4))
     {
@@ -145,29 +158,21 @@ void CreateNaturalPlantedC4()
     }
     
     // Make the to spawn the c4 on the ground.
-    TR_TraceRay(g_PlantOrigin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite);
-    TR_GetEndPosition(g_PlantOrigin);
+    TR_TraceRay(plant_origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite);
+    TR_GetEndPosition(plant_origin);
     
-    TeleportEntity(planted_c4, g_PlantOrigin);
+    TeleportEntity(planted_c4, plant_origin);
     
     SetEntProp(planted_c4, Prop_Send, "m_bBombTicking", true, 1);
-    
-    int planter = GetPlanter();
-    if (planter == -1)
-    {
-        PlantLogic_OnBombPlanted(0, g_TargetSite, planted_c4);
-        
-        return;
-    }
     
     // Teleport the planter to the original to avoid exploits.
     float mins[3], maxs[3];
     GetClientMins(planter, mins);
     GetClientMaxs(planter, maxs);
     
-    if (ValidateSpawn(planter, g_PlantOrigin, mins, maxs))
+    if (ValidateSpawn(planter, plant_origin, mins, maxs))
     {
-        TeleportEntity(planter, g_PlantOrigin);
+        TeleportEntity(planter, plant_origin);
     }
     
     // Remove the old c4 if exists.
