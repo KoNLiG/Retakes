@@ -38,7 +38,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
+
     PlayerManager_OnPlayerSpawn(client);
     SpawnManager_OnPlayerSpawn(client);
 }
@@ -50,7 +50,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
+
     DefuseLogic_PlayerDeath(client);
 }
 
@@ -61,8 +61,8 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
-    PlayerManager_OnPlayerConnectFull(client);
+
+    // PlayerManager_OnPlayerConnectFull(client);
 }
 
 void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
@@ -72,9 +72,9 @@ void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
+
     int bombsite_index = event.GetInt("site");
-    
+
     int planted_c4 = GetPlantedC4();
     if (planted_c4 != -1)
     {
@@ -89,9 +89,9 @@ void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
+
     int bombsite_index = event.GetInt("site");
-    
+
     int planted_c4 = GetPlantedC4();
     if (planted_c4 != -1)
     {
@@ -106,9 +106,9 @@ void Event_BeginDefuse(Event event, const char[] name, bool dontBroadcast)
     {
         return;
     }
-    
+
     bool haskit = event.GetBool("haskit");
-    
+
     int planted_c4 = GetPlantedC4();
     if (planted_c4 != -1)
     {
@@ -119,11 +119,11 @@ void Event_BeginDefuse(Event event, const char[] name, bool dontBroadcast)
 void Event_InfernoExpire(Event event, const char[] name, bool dontBroadcast)
 {
     int entity = event.GetInt("entityid");
-    
+
     float origin[3];
     origin[0] = event.GetFloat("x");
     origin[1] = event.GetFloat("y");
     origin[2] = event.GetFloat("z");
-    
+
     DefuseLogic_InfernoExpire(entity, origin);
-} 
+}

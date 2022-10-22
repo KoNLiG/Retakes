@@ -13,8 +13,8 @@
 
 enum
 {
-    NavMeshArea_Defender, 
-    NavMeshArea_Attacker, 
+    NavMeshArea_Defender,
+    NavMeshArea_Attacker,
     NavMeshArea_Max
 }
 
@@ -22,18 +22,18 @@ enum struct Bombsite
 {
     // Bombsite A = 0, Bombsite B = 1
     int bombsite_index;
-    
+
     // Bombsite mins, maxs and center.
     float mins[3];
     float maxs[3];
     float center[3];
-    
+
     //=============================================//
     bool IsValid()
     {
         return !IsVectorZero(this.mins) && !IsVectorZero(this.maxs) && !IsVectorZero(this.center);
     }
-    
+
     void Reset()
     {
         this.mins = { 0.0, 0.0, 0.0 };
@@ -45,33 +45,33 @@ enum struct Bombsite
 enum struct EditMode
 {
     bool in_edit_mode;
-    
+
     int bombsite_index;
-    
+
     NavArea nav_area;
-    
+
     void Enter()
     {
         this.in_edit_mode = true;
     }
-    
+
     void Exit()
     {
         this.Reset();
     }
-    
+
     void Reset()
     {
         this.in_edit_mode = false;
         this.bombsite_index = 0;
         this.nav_area = NULL_NAV_AREA;
     }
-    
+
     void NextBombsite()
     {
         this.bombsite_index = ++this.bombsite_index % Bombsite_Max;
     }
-    
+
     // Returns the selected nav area if not null, otherwise returns the nav area from the aiming position.
     NavArea GetNavArea(int client)
     {
@@ -79,10 +79,10 @@ enum struct EditMode
         {
             return this.nav_area;
         }
-        
+
         float aim_position[3];
         GetClientAimPosition(client, aim_position);
-        
+
         return TheNavMesh.GetNearestNavArea(aim_position);
     }
 }
@@ -90,17 +90,17 @@ enum struct EditMode
 enum struct Player
 {
     EditMode edit_mode;
-    
+
     int spawn_role;
-    
+
     //============================================//
     void Reset()
     {
         this.edit_mode.Reset();
-        
+
         this.spawn_role = SpawnRole_None;
     }
-    
+
     bool InEditMode()
     {
         return this.edit_mode.in_edit_mode;
@@ -127,12 +127,12 @@ float g_ServerTickrate;
 #include "retakes/defuse_logic.sp"
 #undef COMPILING_FROM_MAIN
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
-    name = "[CS:GO] Retakes", 
-    author = "Natanel 'LuqS', Omer 'KoNLiG'", 
-    description = "The new generation of Retakes gameplay!", 
-    version = "1.0.0", 
+    name = "[CS:GO] Retakes",
+    author = "Natanel 'LuqS', Omer 'KoNLiG'",
+    description = "The new generation of Retakes gameplay!",
+    version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
 };
 
@@ -144,10 +144,10 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
         strcopy(error, err_max, "This plugin was made for use with CS:GO only.");
         return APLRes_Failure;
     }
-    
+
     // Initialzie API stuff.
     // InitializeAPI();
-    
+
     return APLRes_Success;
 }
 
@@ -155,7 +155,7 @@ public void OnPluginStart()
 {
     LoadTranslations("retakes.phrases");
     LoadTranslations("localization.phrases");
-    
+
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
@@ -165,7 +165,7 @@ public void OnPluginStart()
     Events_OnPluginStart();
     PlantLogic_OnPluginStart();
     DefuseLogic_OnPluginStart();
-    
+
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
 }
@@ -174,15 +174,15 @@ public void OnMapStart()
 {
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
-    PlayerManager_OnMapStart();
-    
+    // PlayerManager_OnMapStart();
+
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }
 
 public void OnClientDisconnect(int client)
 {
     PlantLogic_OnClientDisconnect(client);
-    
+
     g_Players[client].Reset();
 }
 
@@ -191,7 +191,7 @@ void GetClientAimPosition(int client, float result[3])
     float origin[3], angles[3];
     GetClientEyePosition(client, origin);
     GetClientEyeAngles(client, angles);
-    
+
     TR_TraceRayFilter(origin, angles, MASK_ALL, RayType_Infinite, Filter_ExcludeMyself, client);
     TR_GetEndPosition(result);
 }
@@ -212,7 +212,7 @@ void StringToLower(char[] str)
 void DisarmClient(int client)
 {
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
-    
+
     for (int current_weapon, ent; current_weapon < max_weapons; current_weapon++)
     {
         if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_weapon)) != -1)
@@ -231,4 +231,4 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
-} 
+}

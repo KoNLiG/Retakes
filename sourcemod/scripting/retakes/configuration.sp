@@ -17,15 +17,15 @@ char g_CurrentMapName[MAX_MAP_NAME_LENGTH];
 void Configuration_OnPluginStart()
 {
     g_TheNavAreas = TheNavAreas();
-    
+
     RegisterConVars();
     RegisterCommands();
 }
 
 void RegisterConVars()
 {
-    
-    
+
+
     // TODO: Create a configuration file.
     // AutoExecConfig();
 }
@@ -34,7 +34,7 @@ void RegisterConVars()
 void RegisterCommands()
 {
     RegConsoleCmd("sm_retakes", Command_Retakes, "Retake settings.");
-    
+
     RegServerCmd("retakes_reloadnav", Command_ReloadNav, "Reloads the navigation spawn areas.");
 }
 
@@ -42,7 +42,7 @@ void Configuration_OnMapStart()
 {
     // Store the new map name!
     GetCurrentMap(g_CurrentMapName, sizeof(g_CurrentMapName));
-    
+
     // The spawns can be reloaded by running the server command 'retakes_reloadnav'
     LoadSpawnAreas();
 }
@@ -54,7 +54,7 @@ void Configuration_OnDatabaseConnection()
     char query[256];
     Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL, UNIQUE(`nav_area_index`, `bombsite_index`, `nav_mesh_area_team`))", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
     g_Database.Query(SQL_OnSpawnTableCreated, query);
-    
+
     // Load all the spawn areas here, if couldn't on 'Configuration_OnMapStart'.
     LoadSpawnAreas();
 }
@@ -74,7 +74,7 @@ void LoadSpawnAreas()
     {
         return;
     }
-    
+
     // Clear the old spawns.
     for (int i; i < sizeof(g_BombsiteSpawns); i++)
     {
@@ -83,7 +83,7 @@ void LoadSpawnAreas()
             g_BombsiteSpawns[i][j].Clear();
         }
     }
-    
+
     char query[256];
     Format(query, sizeof(query), "SELECT `nav_area_index`, `bombsite_index`, `nav_mesh_area_team` FROM `%s` WHERE `map_name` = '%s'", MYSQL_TABLE_NAME, g_CurrentMapName);
     g_Database.Query(SQL_OnLoadSpawnAreas, query);
@@ -96,13 +96,13 @@ void SQL_OnLoadSpawnAreas(Database db, DBResultSet results, const char[] error, 
     {
         ThrowError("Couldn't load navigation spawn areas (%s)", error);
     }
-    
+
     if (!results.FetchRow())
     {
         LogError("Couldn't import any retakes navigation areas. Configuration can be made by running the command 'sm_retakes' in-game");
         return;
     }
-    
+
     // Iterate through all the map spawn areas...
     do
     {
@@ -112,30 +112,30 @@ void SQL_OnLoadSpawnAreas(Database db, DBResultSet results, const char[] error, 
             LogError("Invalid navigation area index. (%d)", nav_area_index);
             continue;
         }
-        
+
         int bombsite_index = results.FetchInt(1);
         if (!(Bombsite_None < bombsite_index < Bombsite_Max))
         {
             LogError("Invalid bombsite index for navigation area #%d.", nav_area_index);
             continue;
         }
-        
+
         int nav_mesh_area_team = results.FetchInt(2);
         if (!(-1 < nav_mesh_area_team < NavMeshArea_Max))
         {
             LogError("Invalid team index for navigation area #%d.", nav_area_index);
             continue;
         }
-        
+
         NavArea nav_area = g_TheNavAreas.Get(nav_area_index);
         if (nav_area == NULL_NAV_AREA)
         {
             LogError("Failed to retrieve a CNavArea address for index #%d.", nav_area_index);
             continue;
         }
-        
+
         g_BombsiteSpawns[bombsite_index][nav_mesh_area_team].Push(nav_area);
-        
+
     } while (results.FetchRow());
 }
 
@@ -179,11 +179,11 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
     {
         return;
     }
-    
+
     int bombsite_index = g_Players[client].edit_mode.bombsite_index;
-    
+
     int color[4];
-    
+
     // Visually display all the configurated spawn areas.
     // Each spawn area will be displayed with a colored defined by
     // its team index.
@@ -196,22 +196,22 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
             {
                 continue;
             }
-            
+
             GetNavMeshTeamColor(i, color);
-            
+
             HighlightSpawnArea(client, nav_area, color);
         }
     }
-    
+
     // Handle the nav area at the client's aim position.
     NavArea nav_area = g_Players[client].edit_mode.GetNavArea(client);
     if (nav_area == NULL_NAV_AREA)
     {
         return;
     }
-    
+
     color = { 255, 255, 255, 155 };
-    
+
     int nav_mesh_area_team = -1, array_idx;
     if (IsNavAreaConfigurated(nav_area, bombsite_index, nav_mesh_area_team, array_idx))
     {
@@ -225,29 +225,29 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
                 PrintToChat(client, "%T%T", "MessagesPrefix", client, "Spawn Area Delete Error", client);
                 return;
             }
-            
+
             DeleteSpawnArea(nav_area_index, bombsite_index, nav_mesh_area_team);
-            
+
             g_BombsiteSpawns[bombsite_index][nav_mesh_area_team].Erase(array_idx);
-            
+
             // Base value is defender, added the nav mesh area team will give the selected spawn role team.
             int spawn_role_team = SpawnRole_Defender + nav_mesh_area_team;
-            
-            PrintToChat(client, "%T%T", 
-                "MessagesPrefix", 
+
+            PrintToChat(client, "%T%T",
+                "MessagesPrefix",
                 client,
                 "Deleted Spawn Area",
                 client,
-                g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], 
+                g_BombsiteNames[g_Players[client].edit_mode.bombsite_index],
                 g_SpawnRoleNames[spawn_role_team]
                 );
-            
+
             return;
         }
-        
+
         GetNavMeshTeamColor(nav_mesh_area_team, color);
     }
-    
+
     HighlightSpawnArea(client, nav_area, color);
 }
 
@@ -259,7 +259,7 @@ void GetNavMeshTeamColor(int team, int color[4])
 void HighlightSpawnArea(int client, NavArea nav_area, int color[4])
 {
     float nw_corner[3], se_corner[3], ne_corner[3], sw_corner[3];
-    
+
     nav_area.GetNWCorner(nw_corner);
     ValidateLaserOrigin(nw_corner);
     nav_area.GetSECorner(se_corner);
@@ -268,7 +268,7 @@ void HighlightSpawnArea(int client, NavArea nav_area, int color[4])
     ValidateLaserOrigin(ne_corner);
     nav_area.GetSWCorner(sw_corner);
     ValidateLaserOrigin(sw_corner);
-    
+
     Laser(client, ne_corner, se_corner, color);
     Laser(client, nw_corner, ne_corner, color);
     Laser(client, se_corner, sw_corner, color);
@@ -284,17 +284,17 @@ void Laser(int client, const float start[3], const float end[3], int color[4] = 
 void ValidateLaserOrigin(float origin[3])
 {
     origin[2] += 64.0;
-    
+
     TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludePlayers);
-    
+
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
     TR_GetEndPosition(origin);
-    
+
     if (!(normal[2] < 0.5 && normal[2] > -0.5))
     {
         NegateVector(normal);
-        
+
         origin[0] += normal[0] * -3;
         origin[1] += normal[1] * -3;
         origin[2] += normal[2] * -3;
@@ -303,7 +303,7 @@ void ValidateLaserOrigin(float origin[3])
 
 bool Filter_ExcludePlayers(int entity, int contentsMask)
 {
-    return !(1 <= entity <= MaxClients)
+    return !(1 <= entity <= MaxClients);
 }
 
 //================================[ Commands Callbacks ]================================//
@@ -315,16 +315,16 @@ Action Command_Retakes(int client, int argc)
         ReplyToCommand(client, "%T", "No Command Access", client);
         return Plugin_Handled;
     }
-    
+
     DisplayRetakesMenu(client);
-    
+
     return Plugin_Handled;
 }
 
 Action Command_ReloadNav(int argc)
 {
     LoadSpawnAreas();
-    
+
     return Plugin_Handled;
 }
 
@@ -332,7 +332,7 @@ Action Command_ReloadNav(int argc)
 
 enum
 {
-    MainMenu_DummyItem, 
+    MainMenu_DummyItem,
     MainMenu_ManageSpawnAreas
 }
 
@@ -340,11 +340,11 @@ void DisplayRetakesMenu(int client)
 {
     Menu menu = new Menu(Handler_Retakes);
     menu.SetTitle("%T%T:\n ", "MenuPrefix", client, "Settings", client);
-    
+
     char item_display[16];
     Format(item_display, sizeof(item_display), "%T", "Manage Spawn Areas", client);
     menu.AddItem("", item_display, CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
-    
+
     menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -353,7 +353,7 @@ int Handler_Retakes(Menu menu, MenuAction action, int param1, int param2)
     if (action == MenuAction_Select)
     {
         int client = param1, selected_item = param2;
-        
+
         switch (selected_item)
         {
             case MainMenu_DummyItem:
@@ -369,22 +369,22 @@ int Handler_Retakes(Menu menu, MenuAction action, int param1, int param2)
     {
         delete menu;
     }
-    
+
     return 0;
 }
 
 enum
 {
-    SpawnAreasMenu_Bombsite, 
+    SpawnAreasMenu_Bombsite,
     SpawnAreasMenu_AddArea
 }
 
 void DisplaySpawnAreasMenu(int client)
 {
     g_Players[client].edit_mode.Enter();
-    
+
     char place_name[64] = "N/A";
-    
+
     NavArea nav_area = g_Players[client].edit_mode.GetNavArea(client);
     if (nav_area != NULL_NAV_AREA)
     {
@@ -392,31 +392,31 @@ void DisplaySpawnAreasMenu(int client)
         if (place_index > 0 && TheNavMesh.PlaceToName(place_index, place_name, sizeof(place_name)))
         {
             StringToLower(place_name);
-            
+
             Format(place_name, sizeof(place_name), "%T", place_name, client);
         }
     }
-    
+
     char configurated_spawn_area[128] = " \n";
     if (IsNavAreaConfigurated(nav_area, g_Players[client].edit_mode.bombsite_index))
     {
         Format(configurated_spawn_area, sizeof(configurated_spawn_area), " \n\n• ╭%T!\n   ╰┄%T.\n ", "Configurated Spawn Area", client, "Hold To Delete", client);
     }
-    
+
     Menu menu = new Menu(Handler_SpawnAreas);
     menu.SetTitle("%T%T:\n◾ %T: %s\n%s", place_name, configurated_spawn_area, "MenuPrefix", client, "Manage Spawn Areas", client, "Aiming at", client);
-    
+
     char item_display[32];
     Format(item_display, sizeof(item_display), "%T: %s", g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], "Bombsite", client);
     menu.AddItem("", item_display);
-    
+
     Format(item_display, sizeof(item_display), "%T", "Add Area", client);
     menu.AddItem("", item_display, nav_area != NULL_NAV_AREA ? ITEMDRAW_DEFAULT : ITEMDRAW_DISABLED);
-    
+
     menu.ExitBackButton = true;
-    
+
     FixMenuGap(menu);
-    
+
     menu.Display(client, 1);
 }
 
@@ -427,13 +427,13 @@ int Handler_SpawnAreas(Menu menu, MenuAction action, int param1, int param2)
         case MenuAction_Select:
         {
             int client = param1, selected_item = param2;
-            
+
             switch (selected_item)
             {
                 case SpawnAreasMenu_Bombsite:
                 {
                     g_Players[client].edit_mode.NextBombsite();
-                    
+
                     DisplaySpawnAreasMenu(client);
                 }
                 case SpawnAreasMenu_AddArea:
@@ -442,7 +442,7 @@ int Handler_SpawnAreas(Menu menu, MenuAction action, int param1, int param2)
                     if (nav_area != NULL_NAV_AREA)
                     {
                         g_Players[client].edit_mode.nav_area = nav_area;
-                        
+
                         DisplayAddAreaMenu(client);
                     }
                     else
@@ -455,18 +455,18 @@ int Handler_SpawnAreas(Menu menu, MenuAction action, int param1, int param2)
         case MenuAction_Cancel:
         {
             int client = param1, cancel_reason = param2;
-            
+
             if (cancel_reason == MenuCancel_Timeout)
             {
                 DisplaySpawnAreasMenu(client);
                 return 0;
             }
-            
+
             if (cancel_reason == MenuCancel_ExitBack)
             {
                 DisplayRetakesMenu(client);
             }
-            
+
             g_Players[client].edit_mode.Exit();
         }
         case MenuAction_End:
@@ -474,14 +474,14 @@ int Handler_SpawnAreas(Menu menu, MenuAction action, int param1, int param2)
             delete menu;
         }
     }
-    
+
     return 0;
 }
 
 enum
 {
-    AddAreaMenu_Defender, 
-    AddAreaMenu_Attacker, 
+    AddAreaMenu_Defender,
+    AddAreaMenu_Attacker,
     AddAreaMenu_Dismiss
 }
 
@@ -489,20 +489,20 @@ void DisplayAddAreaMenu(int client)
 {
     Menu menu = new Menu(Handler_AddArea);
     menu.SetTitle("%T%T:\n \n• %T\n ", "MenuPrefix", client, "Add Area", client, "Select Team", client);
-    
+
     char item_display[16];
-    
+
     Format(item_display, sizeof(item_display), "%T", "Defender", client);
     menu.AddItem("", item_display);
-    
+
     Format(item_display, sizeof(item_display), "%T\n ", "Attacker", client);
     menu.AddItem("", item_display);
-    
+
     Format(item_display, sizeof(item_display), "%T", "Dismiss", client);
     menu.AddItem("", item_display);
-    
+
     menu.ExitButton = false;
-    
+
     menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -513,55 +513,55 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
         case MenuAction_Select:
         {
             int client = param1, selected_item = param2;
-            
+
             if (selected_item == AddAreaMenu_Dismiss)
             {
                 DisplaySpawnAreasMenu(client);
-                
+
                 g_Players[client].edit_mode.nav_area = NULL_NAV_AREA;
-                
+
                 return 0;
             }
-            
+
             NavArea nav_area = g_Players[client].edit_mode.GetNavArea(client);
             if (nav_area == NULL_NAV_AREA)
             {
                 PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Invalid Nav Area", client);
                 return 0;
             }
-            
+
             g_Players[client].edit_mode.nav_area = NULL_NAV_AREA;
-            
+
             DisplaySpawnAreasMenu(client);
-            
+
             // According to the selected item, get the nav mesh area team.
-            int nav_mesh_area_team = selected_item, 
+            int nav_mesh_area_team = selected_item,
             // Base value is defender, added the selected item will give the selected spawn role team.
             spawn_role_team = SpawnRole_Defender + selected_item;
-            
+
             if (IsNavAreaConfigurated(nav_area, g_Players[client].edit_mode.bombsite_index, nav_mesh_area_team))
             {
                 PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Configurated Spawn Area", client);
                 return 0;
             }
-            
+
             int nav_area_index = g_TheNavAreas.Find(nav_area);
             if (nav_area_index == -1)
             {
                 PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Spawn Area Add Error", client);
                 return 0;
             }
-            
+
             InsertSpawnArea(nav_area_index, g_Players[client].edit_mode.bombsite_index, nav_mesh_area_team);
-            
+
             g_BombsiteSpawns[g_Players[client].edit_mode.bombsite_index][nav_mesh_area_team].Push(nav_area);
-            
-            PrintToChat(client, "%T%T", 
+
+            PrintToChat(client, "%T%T",
                 "MessagesPrefix",
                 client,
-                "Added Spawn Area", 
+                "Added Spawn Area",
                 client,
-                g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], 
+                g_BombsiteNames[g_Players[client].edit_mode.bombsite_index],
                 g_SpawnRoleNames[spawn_role_team]
                 );
         }
@@ -575,7 +575,7 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
             delete menu;
         }
     }
-    
+
     return 0;
 }
 
@@ -596,14 +596,14 @@ bool IsNavAreaConfigurated(NavArea nav_area, int &bombsite_index = -1, int &nav_
         {
             continue;
         }
-        
+
         for (int j; j < sizeof(g_BombsiteSpawns[]); j++)
         {
             if (nav_mesh_team != -1 && nav_mesh_team != j)
             {
                 continue;
             }
-            
+
             if ((index = g_BombsiteSpawns[i][j].FindValue(nav_area)) != -1)
             {
                 bombsite_index = i;
@@ -612,6 +612,6 @@ bool IsNavAreaConfigurated(NavArea nav_area, int &bombsite_index = -1, int &nav_
             }
         }
     }
-    
+
     return false;
-} 
+}
