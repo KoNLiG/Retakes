@@ -290,7 +290,7 @@ any Native_GetAdjacentCount(Handle plugin, int numParams)
 
     NavDirType dir = GetNativeCell(2);
 
-    Address m_connect = LoadFromAddress((nav_area + m_connectOffset) + 4 * dir, NumberType_Int32);
+    Address m_connect = LoadFromAddress(view_as<Address>((nav_area + view_as<NavArea>(m_connectOffset))) + view_as<Address>(4 * view_as<int>(dir)), NumberType_Int32);
 
     return LoadFromAddress(m_connect, NumberType_Int32);
 }
@@ -305,7 +305,7 @@ any Native_GetAdjacentArea(Handle plugin, int numParams)
 
     NavDirType dir = GetNativeCell(2);
 
-    Address m_connect = LoadFromAddress((nav_area + m_connectOffset) + 4 * dir, NumberType_Int32);
+    Address m_connect = LoadFromAddress(view_as<Address>((nav_area + view_as<NavArea>(m_connectOffset))) + view_as<Address>(4 * view_as<int>(dir)), NumberType_Int32);
 
     int size = LoadFromAddress(m_connect, NumberType_Int32);
 
@@ -315,7 +315,7 @@ any Native_GetAdjacentArea(Handle plugin, int numParams)
         ThrowNativeError(SP_ERROR_NATIVE, "Invalid area index. (%d)", index);
     }
 
-    return LoadFromAddress(m_connect + 8 * index + 4, NumberType_Int32);
+    return LoadFromAddress(m_connect + view_as<Address>(8) * view_as<Address>(index) + view_as<Address>(8), NumberType_Int32);
 }
 
 any Native_PlaceToName(Handle plugin, int numParams)
