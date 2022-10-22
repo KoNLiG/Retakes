@@ -7,7 +7,7 @@
 void PlayerManager_OnPluginStart()
 {
     // Disable any manual team menu interaction for players. 
-    GameRules_SetProp("m_bIsQueuedMatchmaking", true);
+    GameRules_SetProp("m_bIsQueuedMatchmaking", 1, 4, 0, true);
 }
 
 void PlayerManager_RoundPreStart()
