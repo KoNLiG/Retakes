@@ -174,7 +174,7 @@ public void OnMapStart()
 {
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
-    // PlayerManager_OnMapStart();
+    PlayerManager_OnMapStart();
 
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }

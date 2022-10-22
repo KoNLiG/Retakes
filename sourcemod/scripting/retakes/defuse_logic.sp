@@ -22,8 +22,6 @@ ConVar mp_round_restart_delay;
 
 void DefuseLogic_OnPluginStart()
 {
-    LoadTranslations("defuse_logic.phrases");
-
     inferno_max_range = FindConVar("inferno_max_range");
     mp_round_restart_delay = FindConVar("mp_round_restart_delay");
 }
