@@ -11,6 +11,10 @@
 // Enable debug mode.
 #define DEBUG
 
+#if defined DEBUG
+#include <profiler>
+#endif
+
 enum
 {
     NavMeshArea_Defender,

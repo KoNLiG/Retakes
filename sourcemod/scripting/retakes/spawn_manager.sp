@@ -83,38 +83,40 @@ void InitializeBombsites()
 
 void SpawnManager_OnPlayerSpawn(int client)
 {
+#if defined DEBUG
+    static Profiler profiler;
+    if (!profiler)
+    {
+        profiler = new Profiler();
+    }
+
+    profiler.Start();
+#endif
+
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
     {
+    #if defined DEBUG
+        profiler.Stop();
+        PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
+    #endif
         return;
     }
 
-    float dest[3]; dest = g_Bombsites[g_TargetSite].center;
-
-    float desired_pathway[3], angles[3];
-
-    // Compute the desired path origin against all the navigation area adjacents.
-    for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
+    float angles[3];
+    if (nav_area)
     {
-        for (int current_adjacent_idx; current_adjacent_idx < nav_area.GetAdjacentCount(current_dir); current_adjacent_idx++)
-        {
-            NavArea nav_area = nav_area.GetAdjacentArea(current_dir, current_adjacent_idx);
-
-            float center[3];
-            nav_area.GetCenter(center);
-
-            if (IsVectorZero(desired_pathway) || GetVectorDistance(dest, center) < GetVectorDistance(dest, desired_pathway))
-            {
-                desired_pathway = center;
-            }
-        }
+        ComputeRandomSpawnAngles(origin, nav_area, angles);
     }
 
-    // Build the player angles towards the desired path.
-    MakeAnglesFromPoints(origin, desired_pathway, angles);
-
     TeleportEntity(client, origin, angles);
+
+#if defined DEBUG
+    profiler.Stop();
+
+    PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+#endif
 }
 
 bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
@@ -167,6 +169,33 @@ bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
     } while (!ValidateSpawn(client, origin, mins, maxs, .player_collision = player_collision));
 
     return true;
+}
+
+void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3])
+{
+	float dest[3]; dest = g_Bombsites[g_TargetSite].center;
+	
+    float desired_pathway[3], angles[3];
+
+    // Compute the desired path origin against all the navigation area adjacents.
+    for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
+    {
+        for (int current_adjacent_idx; current_adjacent_idx < nav_area.GetAdjacentCount(current_dir); current_adjacent_idx++)
+        {
+            NavArea adjacent_nav_area = nav_area.GetAdjacentArea(current_dir, current_adjacent_idx);
+
+            float center[3];
+            adjacent_nav_area.GetCenter(center);
+
+            if (IsVectorZero(desired_pathway) || GetVectorDistance(g_Bombsites[g_TargetSite].center, center) < GetVectorDistance(dest, desired_pathway))
+            {
+                desired_pathway = center;
+            }
+        }
+    }
+
+      // Build the player angles towards the desired path.
+    MakeAnglesFromPoints(origin, desired_pathway, angles);
 }
 
 NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
