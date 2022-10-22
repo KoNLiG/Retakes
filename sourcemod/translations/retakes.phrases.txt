@@ -64,12 +64,6 @@
         "he"	"ניהול אזורי ספאון"
     }
     
-    "Configurated Spawn Area"
-    {
-        "en"	"This spawn area is already configurated"
-        "he"	"האזור ספאון הזה כבר קיים"
-    }
-    
     "Hold To Delete"	
     {
         "en"	"Hold MOUSE1 + MOUSE2 to delete it"
