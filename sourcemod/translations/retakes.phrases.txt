@@ -6,110 +6,136 @@
     //	"#format"		"{1:s}"
     //	"en"			"{1}"
     //}
-    
+
     // Chat messages phrases.
     "MessagesPrefix"
     {
         "en"	" Retakes | "
         "he"	" ריטייקים | "
     }
-    
+
     "No Command Access"
     {
         "en"	"You cannot use this command from the server console."
         "he"	"לא ניתן להשתמש בפקודה זו מלוח הבקרה של השרת."
     }
-    
+
     "Invalid Nav Area"
     {
         "en"	"Unable to find a valid navigation area"
         "he"	"לא ניתן למצוא אזור ניווט חוקי"
     }
-    
+
     "Configurated Spawn Area"
     {
-        "en"	"This spawn area is already configurated!"
-        "he"	"האזור ספאון הזה כבר קיים!"
+        "en"	"This spawn area is already configurated"
+        "he"	"האזור ספאון הזה כבר קיים"
     }
-    
+
     "Spawn Area Error"
     {
         "en"	"An error occured while adding the new spawn area."
         "he"	"שגיאה נוצרה בתהליך יצירת האזור ספאון החדש."
     }
-    
+
     "Added Spawn Area"
     {
         "#format"		"{1:s},{2:s}"
         "en"			"Successfully added a spawn area in bombsite {1} for {2}."
         "he"			"אזור ספאון חדש נוצר בהצלחה באתר פצצה {1} לקבוצה {2}."
     }
-    
+
+    "Deleted Spawn Area"
+    {
+        "#format"		"{1:s},{2:s}"
+        "en"			"Successfully deleted a spawn area in bombsite {1} for {2}."
+        "he"			"אזור ספאון נחמק בהצלחה באתר פצצה {1} לקבוצה {2}."
+    }
+
     // Menu text phrases.
     "MenuPrefix"
     {
         "en"	"Retakes | "
         "he"	"ריטייקים | "
     }
-    
+
     "Settings"
     {
         "en"	"Settings"
         "he"	"הגדרות"
     }
-    
+
     "Manage Spawn Areas"
     {
         "en"	"Manage Spawn Areas"
         "he"	"ניהול אזורי ספאון"
     }
-    
-    "Hold To Delete"	
+
+    "Hold To Delete"
     {
         "en"	"Hold MOUSE1 + MOUSE2 to delete it"
         "he"	"החזק את שני כפתורי העכבר על מנת למחוק אותו"
     }
-    
+
     "Aiming at"
     {
         "en"	"Aiming at"
         "he"	"מכוון על"
     }
-    
+
     "Bombsite"
     {
         "en"	"Bombsite"
         "he"	"אתר פצצה"
     }
-    
+
     "Add Area"
     {
         "en"	"Add Area"
         "he"	"הוסף אזור"
     }
-    
+
     "Select Team"
     {
         "en"	"Select a team to assign the area to"
         "he"	"בחר קבוצה להקצות את האזור אליה"
     }
-    
+
     "Defender"
     {
         "en"	"Defender"
         "he"	"מגן"
     }
-    
+
     "Attacker"
     {
         "en"	"Attacker"
         "he"	"תוקף"
     }
-    
+
     "Dismiss"
     {
         "en"	"Dismiss"
         "he"	"לשחרר"
+    }
+
+    "Close Inferno"
+    {
+        "en"	    "Close inferno to C4, be careful defusing!"
+        "he"	    "!קרובות לפצצה, זהרו להבות אש"
+    }
+
+    "Fail Defuse"
+    {
+        "#format"	"{1:.2f}"
+        "en"		"Attackers did not defuse in time! {1}s remaining."
+        "he"		"שניות נשארו {1} !לא ניטרלו את הפצצה בזמן! התוקפים"
+    }
+
+    "Success Defuse"
+    {
+        "en"		"Attackers defused the bomb in time!"
+        "he"		"!ניטרלו את הפצצה בזמן התוקפים"
     }
 }
 

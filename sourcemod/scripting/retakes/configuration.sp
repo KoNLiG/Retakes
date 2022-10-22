@@ -332,7 +332,6 @@ Action Command_ReloadNav(int argc)
 
 enum
 {
-    MainMenu_DummyItem,
     MainMenu_ManageSpawnAreas
 }
 
@@ -341,7 +340,7 @@ void DisplayRetakesMenu(int client)
     Menu menu = new Menu(Handler_Retakes);
     menu.SetTitle("%T%T:\n ", "MenuPrefix", client, "Settings", client);
 
-    char item_display[16];
+    char item_display[32];
     Format(item_display, sizeof(item_display), "%T", "Manage Spawn Areas", client);
     menu.AddItem("", item_display, CheckCommandAccess(client, "retakes_spawns", ADMFLAG_ROOT) ? ITEMDRAW_DEFAULT : ITEMDRAW_IGNORE);
 
@@ -356,9 +355,6 @@ int Handler_Retakes(Menu menu, MenuAction action, int param1, int param2)
 
         switch (selected_item)
         {
-            case MainMenu_DummyItem:
-            {
-            }
             case MainMenu_ManageSpawnAreas:
             {
                 DisplaySpawnAreasMenu(client);
@@ -404,10 +400,10 @@ void DisplaySpawnAreasMenu(int client)
     }
 
     Menu menu = new Menu(Handler_SpawnAreas);
-    menu.SetTitle("%T%T:\n◾ %T: %s\n%s", place_name, configurated_spawn_area, "MenuPrefix", client, "Manage Spawn Areas", client, "Aiming at", client);
+    menu.SetTitle("%T%T:\n◾ %T: %s\n%s", "MenuPrefix", client, "Manage Spawn Areas", client, "Aiming at", client, place_name, configurated_spawn_area);
 
     char item_display[32];
-    Format(item_display, sizeof(item_display), "%T: %s", g_BombsiteNames[g_Players[client].edit_mode.bombsite_index], "Bombsite", client);
+    Format(item_display, sizeof(item_display), "%T: %s", "Bombsite", client, g_BombsiteNames[g_Players[client].edit_mode.bombsite_index]);
     menu.AddItem("", item_display);
 
     Format(item_display, sizeof(item_display), "%T", "Add Area", client);
