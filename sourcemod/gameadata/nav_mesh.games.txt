@@ -111,6 +111,8 @@
                 "linux"     "\x55\x89\xE5\x56\x53\x8D\x45\xE0\x83\xEC\x40"
             }
             
+            // str: "CNavArea::IsContiguous"
+            // Presented in the while statement
             "CNavArea::IsConnected"
             {
                 "library"   "server"
@@ -118,6 +120,7 @@
                 "linux"     "\x55\xB8\x01\x00\x00\x00\x89\xE5\x57\x56\x8B\x55\x0C"
             }
             
+            // str: "stats.txt"
             "CServerGameDLL::DLLShutdown"
             {
                 "library"   "server"
