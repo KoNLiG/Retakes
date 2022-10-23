@@ -11,6 +11,10 @@
 // Enable debug mode.
 #define DEBUG
 
+#if defined DEBUG
+#include <profiler>
+#endif
+
 enum
 {
     NavMeshArea_Defender,
@@ -174,7 +178,7 @@ public void OnMapStart()
 {
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
-    // PlayerManager_OnMapStart();
+    PlayerManager_OnMapStart();
 
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }

@@ -6,14 +6,18 @@
 
 void PlayerManager_OnPluginStart()
 {
-    // Disable any manual team menu interaction for players. 
-    GameRules_SetProp("m_bIsQueuedMatchmaking", 1, 4, 0, true);
+}
+
+void PlayerManager_OnMapStart()
+{
+    // Disable any manual team menu interaction for players.
+    GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
 void PlayerManager_RoundPreStart()
 {
     // TODO: Switch players team.
-    
+
     for (int current_client = 1; current_client <= MaxClients; current_client++)
     {
         if (IsClientInGame(current_client))
@@ -30,9 +34,9 @@ void PlayerManager_OnPlayerSpawn(int client)
     if (g_Players[client].spawn_role == SpawnRole_None)
     {
         g_Players[client].spawn_role = GetClientTeam(client);
-        
+
         #if defined DEBUG
         LogMessage("Auto assigned spawn role %d for client %d", g_Players[client].spawn_role, client);
         #endif
     }
-} 
+}
