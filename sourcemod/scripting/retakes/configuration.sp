@@ -24,10 +24,14 @@ void Configuration_OnPluginStart()
 
 void RegisterConVars()
 {
+    g_MinimumPlayers = CreateConVar("sm_retakes_player_min", "2", "Minimum amount of players before retakes can start.", _, true, 1.0);
+    g_CountBotsAsPlayers = CreateConVar("sm_retakes_bots_are_players", "0", "Server bots will be treated as regular players.", _, true, 0.0, true, 1.0);
+    g_MaxTerrorist = CreateConVar("sm_retakes_max_ct", "5", "Max players allowed in the Counter-Terrorist team.", _, true, 1.0, true, 5.0);
+    g_MaxCounterTerrorist = CreateConVar("sm_retakes_max_t", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
+    g_MaxRoundWinsBeforeScramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
 
-
-    // TODO: Create a configuration file.
-    // AutoExecConfig();
+    AutoExecConfig(true, "retakes");
+    AutoExecConfig_CleanFile();
 }
 
 // Register all plugin commands.

@@ -4,6 +4,7 @@
 #include <cstrike>
 #include <retakes>
 #include <nav_mesh>
+#include <autoexecconfig>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -114,6 +115,12 @@ int g_LaserIndex;
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
 
+ConVar g_MinimumPlayers;
+ConVar g_CountBotsAsPlayers;
+ConVar g_MaxRoundWinsBeforeScramble;
+ConVar g_MaxCounterTerrorist;
+ConVar g_MaxTerrorist;
+
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
 #include "retakes/events.sp"
@@ -130,7 +137,7 @@ float g_ServerTickrate;
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
-    author = "Natanel 'LuqS', Omer 'KoNLiG'",
+    author = "Natanel 'LuqS', Omer 'KoNLiG', DRANIX",
     description = "The new generation of Retakes gameplay!",
     version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
