@@ -38,6 +38,8 @@ void RegisterConVars()
 void RegisterCommands()
 {
     RegConsoleCmd("sm_retakes", Command_Retakes, "Retake settings.");
+    RegConsoleCmd("sm_retakes_swap", Command_Scramble, "Set teams swap.");
+    RegConsoleCmd("sm_retakes_scramble", Command_Scramble, "Set teams scramble.");
 
     RegServerCmd("retakes_reloadnav", Command_ReloadNav, "Reloads the navigation spawn areas.");
 }
@@ -321,6 +323,32 @@ Action Command_Retakes(int client, int argc)
     }
 
     DisplayRetakesMenu(client);
+
+    return Plugin_Handled;
+}
+
+Action Command_Swap(int client, int argc)
+{
+    char buffer[32];
+    GetCmdArg(1, buffer, sizeof(buffer));
+
+    if (!strcmp(buffer, "force"))
+        InitiateTeamSwap();
+    else
+        g_SwapTeamsPerRoundStart = true;
+
+    return Plugin_Handled;
+}
+
+Action Command_Scramble(int client, int argc)
+{
+    char buffer[32];
+    GetCmdArg(1, buffer, sizeof(buffer));
+
+    if (!strcmp(buffer, "force"))
+        InitiateTeamScramble();
+    else
+        g_ScrambleTeamsPreRoundStart = true;
 
     return Plugin_Handled;
 }
