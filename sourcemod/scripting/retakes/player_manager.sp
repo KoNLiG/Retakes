@@ -109,6 +109,31 @@ void InitiateTeamScramble()
 
 void InitiateTeamBalance()
 {
-
     g_BalanceTeamsPreRoundStart = false;
+}
+
+bool IsTeamSlotOpen(int team)
+{
+    int count;
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || !IsClientConnected(i) || GetClientTeam(i) != team)
+            continue;
+
+        count++;
+    }
+
+    return (count < (team == CS_TEAM_CT ? g_MaxCounterTerrorist.IntValue : g_MaxTerrorist.IntValue));
+}
+
+void SwitchClientTeam(int client, int team)
+{
+    g_Players[client].spawn_role = team;
+    CS_SwitchTeam(client, team);
+}
+
+int GetTotalRoundsPlayed()
+{
+    return GameRules_GetProp("m_totalRoundsPlayed");
 }

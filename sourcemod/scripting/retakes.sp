@@ -245,3 +245,26 @@ int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
 }
+
+bool IsWaitingForPlayers()
+{
+    int count;
+
+    if (g_CountBotsAsPlayers.BoolValue)
+        count = GetClientCount(false);
+    else
+    {
+        for (int i = 1; i <= MaxClients; i++)
+        {
+            if (!IsClientInGame(i))
+                continue;
+
+            count++;
+        }
+    }
+
+    if (count >= g_MinimumPlayers.IntValue)
+        return false;
+
+    return true;
+}
