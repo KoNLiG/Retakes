@@ -9,10 +9,12 @@ void Events_OnPluginStart()
 {
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
+    HookEvent("round_end", Event_RoundEnd);
     HookEvent("player_spawn", Event_PlayerSpawn);
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("player_connect_full", Event_PlayerConnectFull);
     HookEvent("bomb_planted", Event_BombPlanted);
+    HookEvent("player_hurt", Event_PlayerHurt);
     HookEvent("bomb_defused", Event_BombDefused);
     HookEvent("bomb_begindefuse", Event_BeginDefuse);
     HookEvent("inferno_expire", Event_InfernoExpire);
@@ -29,6 +31,25 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
     PlantLogic_RoundFreezeEnd();
+}
+
+void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
+{
+    int winner = event.GetInt("winner");
+
+    if (winner == CS_TEAM_CT)
+    {
+        g_WinRowCount++;
+
+        if (g_WinRowCount == g_MaxRoundWinsBeforeScramble.IntValue)
+        {
+            g_ScrambleTeamsPreRoundStart = true;
+            g_WinRowCount = 0;
+        }
+    }
+
+    else if (winner == CS_TEAM_T)
+        g_WinRowCount = 0;
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -52,6 +73,18 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     }
 
     DefuseLogic_PlayerDeath(client);
+    PlayerManager_PlayerDeath(event);
+}
+
+void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!client)
+    {
+        return;
+    }
+
+    PlayerManager_PlayerHurt(event);
 }
 
 void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
