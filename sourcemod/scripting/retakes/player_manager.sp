@@ -53,6 +53,11 @@ void PlayerManager_OnPlayerSpawn(int client)
     }
 }
 
+void PlayerManager_OnPlayerConnectFull(int client)
+{
+    CS_SwitchTeam(client, CS_TEAM_SPECTATOR);
+}
+
 // WIP:
 // Client Queue
 // 1. Check clients in spectator and add them to a queue.

@@ -95,7 +95,7 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    // PlayerManager_OnPlayerConnectFull(client);
+    PlayerManager_OnPlayerConnectFull(client);
 }
 
 void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
