@@ -326,5 +326,5 @@ void NormalizeYaw(float &yaw)
 
 bool IsControllingBot(int client)
 {
-	return GetEntProp(client, Prop_Send, "m_bIsControllingBot"))
+	return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
 }
