@@ -93,6 +93,12 @@ void SpawnManager_OnPlayerSpawn(int client)
     profiler.Start();
 #endif
 
+	// DO NOT change controlled bots position.
+	if (GetEntProp(client, Prop_Send, "m_bIsControllingBot"))
+	{
+		return;
+	}
+
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
