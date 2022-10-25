@@ -9,6 +9,10 @@
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
 
+// 64.0 units as for the player model height.
+// IIRC it's 48.0 units when crouching.
+#define PLAYER_MODEL_HEIGHT 64.0
+
 Bombsite g_Bombsites[Bombsite_Max];
 
 ArrayList g_BombsiteSpawns[Bombsite_Max][NavMeshArea_Max];
@@ -256,7 +260,7 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
 
 bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR, bool &player_collision = false)
 {
-    origin[2] += 64.0; // 64.0 units as for the player model height.
+    origin[2] += PLAYER_MODEL_HEIGHT;
 
     TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself, client);
 
