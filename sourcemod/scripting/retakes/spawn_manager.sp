@@ -262,7 +262,7 @@ bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_max
 {
     origin[2] += PLAYER_MODEL_HEIGHT;
 
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself, client);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_ExcludeMyself, client);
 
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
