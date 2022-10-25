@@ -262,7 +262,7 @@ bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_max
 {
     origin[2] += PLAYER_MODEL_HEIGHT;
 
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_ExcludeMyself, client);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_ValidateSpawnTrace, client);
 
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -285,11 +285,16 @@ bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_max
     float hull_origin[3]; hull_origin = origin;
     hull_origin[2] += normal[2] * -3;
 
-    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ExcludeMyself, client);
+    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ValidateSpawnTrace, client);
 
     player_collision = (1 <= TR_GetEntityIndex() <= MaxClients);
 
     return !TR_DidHit();
+}
+
+bool Filter_ValidateSpawnTrace(int entity, int mask, int data)
+{
+    return entity != data && !IsEntitySiteBarrier(entity);
 }
 
 bool IsVecBetween(float vec[3], float mins[3], float maxs[3], float err = 0.0)
@@ -327,4 +332,23 @@ void NormalizeYaw(float &yaw)
 bool IsControllingBot(int client)
 {
 	return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
+}
+
+bool IsEntitySiteBarrier(int entity)
+{
+	char entity_name[16];
+	GetEntityName(entity, entity_name, sizeof(entity_name));
+
+	return strcmp(entity_name, "retake") == true;
+}
+
+void GetEntityName(int entity, char[] buffer, int maxlength)
+{
+	static int m_iNameOffset;
+	if (!m_iNameOffset)
+	{
+		m_iNameOffset = FindDataMapInfo(entity, "m_iName");
+	}
+
+	GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
 }
