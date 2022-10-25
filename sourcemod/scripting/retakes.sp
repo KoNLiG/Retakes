@@ -106,7 +106,7 @@ enum struct Player
     void Initiate(int client)
     {
         this.userid = GetClientUserId(client);
-        this.points = GetRandomInt(0, 120);
+        this.points = 0;
     }
 
     void Reset()
@@ -193,6 +193,15 @@ public void OnPluginStart()
 
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
+
+    // Late load support.
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            OnClientPutInServer(current_client);
+        }
+    }
 }
 
 public void OnMapStart()
@@ -202,6 +211,11 @@ public void OnMapStart()
     PlayerManager_OnMapStart();
 
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
+}
+
+public void OnClientPutInServer(int client)
+{
+    g_Players[client].Initiate(client);
 }
 
 public void OnClientDisconnect(int client)
