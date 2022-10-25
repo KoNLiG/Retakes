@@ -35,12 +35,11 @@ void PlayerManager_OnMapStart()
 
 void PlayerManager_OnRoundPreStart()
 {
-    int userid;
-    int client;
-
     g_TerroristList.Clear();
     g_CounterTerroristList.Clear();
     g_PlayersList.Clear();
+
+    g_PlayerCount = 0;
 
     for (int i = 1; i <= MaxClients; i++)
     {
@@ -53,12 +52,12 @@ void PlayerManager_OnRoundPreStart()
         g_PlayerScores[i][POINTS] = g_Players[i].points;
         g_PlayerScores[i][CLIENT_USERID] = g_Players[i].userid;
         g_PlayersList.PushArray(g_PlayerScores[i]);
-        
+
         g_PlayerCount++;
     }
-    
+
     SortADTArrayCustom(g_PlayersList, SortScoreAscending);
-    
+
     int iSetCount = 1;
 
     if (g_PlayerCount % 2 == 1)
@@ -107,23 +106,17 @@ void PlayerManager_OnRoundPreStart()
         }
     }
 
-    for (int i; i < g_CounterTerroristList.Length; i++)
+    for (int i, client; i < g_CounterTerroristList.Length; i++)
     {
-        userid = g_CounterTerroristList.Get(i);
-        client = GetClientOfUserId(userid);
-
-        if (!IsClientInGame(client))
+        if (!(client = GetClientOfUserId(g_CounterTerroristList.Get(i))))
             continue;
 
         SwitchClientTeam(client, CS_TEAM_CT);
     }
-    
-    for (int i; i < g_TerroristList.Length; i++)
-    {
-        userid = g_CounterTerroristList.Get(i);
-        client = GetClientOfUserId(userid);
 
-        if (!IsClientInGame(client))
+    for (int i, client; i < g_TerroristList.Length; i++)
+    {
+        if (!(client = GetClientOfUserId(g_TerroristList.Get(i))))
             continue;
 
         SwitchClientTeam(client, CS_TEAM_T);
@@ -150,8 +143,6 @@ void PlayerManager_OnPlayerSpawn(int client)
 
 void PlayerManager_OnPlayerConnectFull(int client)
 {
-    g_Players[client].Initiate(client);
-
     g_Players[client].spawn_role = CS_TEAM_SPECTATOR;
 
     ChangeClientTeam(client, CS_TEAM_SPECTATOR);
