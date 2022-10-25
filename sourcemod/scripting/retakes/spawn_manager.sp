@@ -93,6 +93,12 @@ void SpawnManager_OnPlayerSpawn(int client)
     profiler.Start();
 #endif
 
+	// DO NOT change controlled bots position.
+	if (IsControllingBot(client))
+	{
+		return;
+	}
+
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
@@ -174,7 +180,7 @@ bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
 void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3])
 {
 	float dest[3]; dest = g_Bombsites[g_TargetSite].center;
-	
+
     float desired_pathway[3], angles[3];
 
     // Compute the desired path origin against all the navigation area adjacents.
@@ -311,4 +317,9 @@ void NormalizeYaw(float &yaw)
     {
         yaw += 360.0;
     }
+}
+
+bool IsControllingBot(int client)
+{
+	return GetEntProp(client, Prop_Send, "m_bIsControllingBot"))
 }
