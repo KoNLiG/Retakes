@@ -98,9 +98,17 @@ enum struct Player
 
     int spawn_role;
 
+    int userid;
+
     int points;
 
     //============================================//
+    void Initiate(int client)
+    {
+        this.userid = GetClientUserId(client);
+        this.points = GetRandomInt(0, 120);
+    }
+
     void Reset()
     {
         this.edit_mode.Reset();
@@ -248,6 +256,11 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
+}
+
+bool IsWarmupPeriod()
+{
+    return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
 bool IsWaitingForPlayers()

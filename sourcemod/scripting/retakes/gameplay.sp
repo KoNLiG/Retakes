@@ -10,6 +10,23 @@ void Gameplay_OnPluginStart()
 {
 }
 
+void Gameplay_OnRoundEnd(int winner)
+{
+    if (winner == CS_TEAM_CT)
+    {
+        g_WinRowCount++;
+
+        if (g_WinRowCount == g_MaxRoundWinsBeforeScramble.IntValue)
+        {
+            g_ScrambleTeamsPreRoundStart = true;
+            g_WinRowCount = 0;
+        }
+    }
+
+    else if (winner == CS_TEAM_T)
+        g_WinRowCount = 0;
+}
+
 void Gameplay_RoundPreStart()
 {
     g_TargetSite = GetURandomInt() % Bombsite_Max;

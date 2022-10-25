@@ -10,8 +10,21 @@
 #define RETAKES_DAMAGE_POINTS 5
 #define RETAKES_LOSS_POINTS 1000
 
+#define POINTS 0
+#define CLIENT_USERID 1
+
+ArrayList g_TerroristList;
+ArrayList g_CounterTerroristList;
+ArrayList g_PlayersList;
+
+int g_PlayerCount;
+int g_PlayerScores[MAXPLAYERS][2];
+
 void PlayerManager_OnPluginStart()
 {
+    g_TerroristList = new ArrayList();
+    g_CounterTerroristList = new ArrayList();
+    g_PlayersList = new ArrayList(2);
 }
 
 void PlayerManager_OnMapStart()
@@ -20,24 +33,106 @@ void PlayerManager_OnMapStart()
     GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
-void PlayerManager_RoundPreStart()
+void PlayerManager_OnRoundPreStart()
 {
-    if (g_SwapTeamsPerRoundStart)
-        InitiateTeamSwap();
+    int userid;
+    int client;
 
-    else if (g_ScrambleTeamsPreRoundStart)
-        InitiateTeamScramble();
+    g_TerroristList.Clear();
+    g_CounterTerroristList.Clear();
+    g_PlayersList.Clear();
 
-    InitiateTeamBalance();
-
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    for (int i = 1; i <= MaxClients; i++)
     {
-        if (IsClientInGame(current_client))
+        if (!IsClientInGame(i))
+            continue;
+
+        if (GetClientTeam(i) <= CS_TEAM_SPECTATOR)
+            continue;
+
+        g_PlayerScores[i][POINTS] = g_Players[i].points;
+        g_PlayerScores[i][CLIENT_USERID] = g_Players[i].userid;
+        g_PlayersList.PushArray(g_PlayerScores[i]);
+        
+        g_PlayerCount++;
+    }
+    
+    SortADTArrayCustom(g_PlayersList, SortScoreAscending);
+    
+    int iSetCount = 1;
+
+    if (g_PlayerCount % 2 == 1)
+    {
+        for (int i = 1; i <= g_PlayerCount - 2; i += 2)
         {
-            // GetClientTeam returns equivalent values to the spawn roles enum.
-            g_Players[current_client].spawn_role = GetClientTeam(current_client);
+            if (iSetCount % 2)
+            {
+                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
+                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
+            }
+
+            else
+            {
+                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
+                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
+            }
+
+            iSetCount++;
+        }
+
+        if (GetRandomInt(0, 1) == 0)
+            g_CounterTerroristList.Push(g_PlayerScores[g_PlayerCount][CLIENT_USERID]);
+
+        else
+            g_TerroristList.Push(g_PlayerScores[g_PlayerCount][CLIENT_USERID]);
+    }
+
+    else
+    {
+        for (int i = 1; i <= g_PlayerCount - 1; i += 2)
+        {
+            if (iSetCount % 2)
+            {
+                g_CounterTerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
+                g_TerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
+            }
+
+            else
+            {
+                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
+                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
+            }
+
+            iSetCount++;
         }
     }
+
+    for (int i; i < g_CounterTerroristList.Length; i++)
+    {
+        userid = g_CounterTerroristList.Get(i);
+        client = GetClientOfUserId(userid);
+
+        if (!IsClientInGame(client))
+            continue;
+
+        SwitchClientTeam(client, CS_TEAM_CT);
+    }
+    
+    for (int i; i < g_TerroristList.Length; i++)
+    {
+        userid = g_CounterTerroristList.Get(i);
+        client = GetClientOfUserId(userid);
+
+        if (!IsClientInGame(client))
+            continue;
+
+        SwitchClientTeam(client, CS_TEAM_T);
+    }
+}
+
+void PlayerManager_OnRoundEnd()
+{
+
 }
 
 // Handle players who joined in the middle of a round.
@@ -55,26 +150,14 @@ void PlayerManager_OnPlayerSpawn(int client)
 
 void PlayerManager_OnPlayerConnectFull(int client)
 {
-    CS_SwitchTeam(client, CS_TEAM_SPECTATOR);
+    g_Players[client].Initiate(client);
+
+    g_Players[client].spawn_role = CS_TEAM_SPECTATOR;
+
+    ChangeClientTeam(client, CS_TEAM_SPECTATOR);
 }
 
-// WIP:
-// Client Queue
-// 1. Check clients in spectator and add them to a queue.
-// 2. Check if client has reservation flag and move them to the front of the queue.
-// 3. When the next "round_prestart" event comes around, flush players to available teams (CT, T)
-
-// Scramble Teams
-// 1. Scramble the teams.
-// 2. When scrambling teams they cannot get un-balanced. aKa There should be the same amount of players on each team after scramble.
-// InitiateTeamScramble();
-
-// Balance Teams ( SortADTArrayCustom )
-// 1. Team players should be balanced depending on their points.
-// 2. We should try to even the amount of points per player on each team.
-// InitiateTeamBalance();
-
-void PlayerManager_PlayerDeath(Event event)
+void PlayerManager_OnPlayerDeath(Event event)
 {
     int assister = GetClientOfUserId(event.GetInt("assister"));
     int attacker = GetClientOfUserId(event.GetInt("attacker"));
@@ -93,7 +176,7 @@ void PlayerManager_PlayerDeath(Event event)
     g_Players[attacker].points += points;
 }
 
-void PlayerManager_PlayerHurt(Event event)
+void PlayerManager_OnPlayerHurt(Event event)
 {
     // int assister = GetClientOfUserId(event.GetInt("assister"));
     // int attacker = GetClientOfUserId(event.GetInt("attacker"));
@@ -135,10 +218,25 @@ bool IsTeamSlotOpen(int team)
 void SwitchClientTeam(int client, int team)
 {
     g_Players[client].spawn_role = team;
+
     CS_SwitchTeam(client, team);
 }
 
 int GetTotalRoundsPlayed()
 {
     return GameRules_GetProp("m_totalRoundsPlayed");
+}
+
+int SortScoreAscending(int position, int position_two, Handle array, Handle hndl)
+{
+    int client[2]; GetArrayArray(array, position, client, 2);
+    int client_two[2]; GetArrayArray(array, position_two, client_two, 2);
+
+    int points = client[POINTS];
+    int points_two = client_two[POINTS];
+
+    if (points > points_two)
+        return -1;
+
+    return points < points_two;
 }

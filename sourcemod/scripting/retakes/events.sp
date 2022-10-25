@@ -23,7 +23,7 @@ void Events_OnPluginStart()
 void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
     Gameplay_RoundPreStart();
-    PlayerManager_RoundPreStart();
+    PlayerManager_OnRoundPreStart();
     PlantLogic_RoundPreStart();
     DefuseLogic_RoundPreStart();
 }
@@ -35,21 +35,8 @@ void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 
 void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-    int winner = event.GetInt("winner");
-
-    if (winner == CS_TEAM_CT)
-    {
-        g_WinRowCount++;
-
-        if (g_WinRowCount == g_MaxRoundWinsBeforeScramble.IntValue)
-        {
-            g_ScrambleTeamsPreRoundStart = true;
-            g_WinRowCount = 0;
-        }
-    }
-
-    else if (winner == CS_TEAM_T)
-        g_WinRowCount = 0;
+    Gameplay_OnRoundEnd(event.GetInt("winner"));
+    PlayerManager_OnRoundEnd();
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -73,7 +60,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
     }
 
     DefuseLogic_PlayerDeath(client);
-    PlayerManager_PlayerDeath(event);
+    PlayerManager_OnPlayerDeath(event);
 }
 
 void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -84,7 +71,7 @@ void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    PlayerManager_PlayerHurt(event);
+    PlayerManager_OnPlayerHurt(event);
 }
 
 void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
