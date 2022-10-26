@@ -24,7 +24,7 @@ void Configuration_OnPluginStart()
 
 void RegisterConVars()
 {
-
+    retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5", "Amount of layers for navigation area adjacent trees. Used for angles computation.", .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
 
     // TODO: Create a configuration file.
     // AutoExecConfig();

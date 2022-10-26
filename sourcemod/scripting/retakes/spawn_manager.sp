@@ -87,7 +87,7 @@ void InitializeBombsites()
 
 void SpawnManager_OnPlayerSpawn(int client)
 {
-#if defined DEBUG
+    #if defined DEBUG
     static Profiler profiler;
     if (!profiler)
     {
@@ -95,22 +95,22 @@ void SpawnManager_OnPlayerSpawn(int client)
     }
 
     profiler.Start();
-#endif
+    #endif
 
-	// DO NOT change controlled bots position.
-	if (IsControllingBot(client))
-	{
-		return;
-	}
+    // DO NOT change controlled bots position.
+    if (IsControllingBot(client))
+    {
+        return;
+    }
 
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
     {
-    #if defined DEBUG
+        #if defined DEBUG
         profiler.Stop();
         PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
-    #endif
+        #endif
         return;
     }
 
@@ -122,18 +122,11 @@ void SpawnManager_OnPlayerSpawn(int client)
 
     TeleportEntity(client, origin, angles);
 
-<<<<<<< HEAD
-	#if defined DEBUG
-	profiler.Stop();
-	PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
-	#endif
-=======
 #if defined DEBUG
     profiler.Stop();
 
     PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
 #endif
->>>>>>> parent of 471a6a1 (Resolve issue #9)
 }
 
 bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
@@ -188,42 +181,133 @@ bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
     return true;
 }
 
+// Compute the desired path origin against all the navigation area adjacents.
 void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3])
 {
-	float dest[3]; dest = g_Bombsites[g_TargetSite].center;
+    ArrayList adjacent_nav_areas = new ArrayList();
 
-    float desired_pathway[3], angles[3];
+    GetNavAdjacentTree(adjacent_nav_areas, nav_area, retakes_adjacent_tree_layers.IntValue);
 
-    // Compute the desired path origin against all the navigation area adjacents.
+    DataPack dp = new DataPack();
+    dp.WriteFloatArray(origin, sizeof(origin));
+
+    adjacent_nav_areas.SortCustom(CustomSort_AdjacentNavAreas, dp);
+
+    delete dp;
+
+    float center[3];
+    view_as<NavArea>(adjacent_nav_areas.Get(0)).GetCenter(center);
+
+    delete adjacent_nav_areas;
+
+    // Build the player angles towards the desired path.
+    MakeAnglesFromPoints(origin, center, result);
+}
+
+void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
+{
+    if (layers <= 0)
+    {
+        return;
+    }
+
     for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
     {
-        for (int current_adjacent_idx; current_adjacent_idx < nav_area.GetAdjacentCount(current_dir); current_adjacent_idx++)
+        int size = nav_area.GetAdjacentCount(current_dir);
+
+        for (int current_adjacent_idx; current_adjacent_idx < size; current_adjacent_idx++)
         {
             NavArea adjacent_nav_area = nav_area.GetAdjacentArea(current_dir, current_adjacent_idx);
 
-            float center[3];
-            adjacent_nav_area.GetCenter(center);
-
-            if (IsVectorZero(desired_pathway) || GetVectorDistance(g_Bombsites[g_TargetSite].center, center) < GetVectorDistance(dest, desired_pathway))
+            if (array.FindValue(adjacent_nav_area) == -1)
             {
-                desired_pathway = center;
+                array.Push(adjacent_nav_area);
             }
+
+            GetNavAdjacentTree(array, adjacent_nav_area, layers - 1);
+        }
+    }
+}
+
+/*
+ * @return              -1 if first should go before second
+ *                      0 if first is equal to second
+ *                      1 if first should go after second
+ */
+int CustomSort_AdjacentNavAreas(int index1, int index2, Handle array, DataPack dp)
+{
+    dp.Reset();
+
+    float origin[3];
+    dp.ReadFloatArray(origin, sizeof(origin));
+
+    ArrayList adjacent_nav_areas = view_as<ArrayList>(array);
+
+    NavArea first_nav_area = adjacent_nav_areas.Get(index1),
+    second_nav_area = adjacent_nav_areas.Get(index2);
+
+    bool first_corner = IsNavAreaCornered(first_nav_area);
+    bool second_corner = IsNavAreaCornered(second_nav_area);
+
+    // First preference is removing any corndered navigation areas.
+    if (first_corner != second_corner)
+    {
+        return second_corner ? -1 : 1;
+    }
+
+    float first_center[3], second_center[3];
+    first_nav_area.GetCenter(first_center);
+    second_nav_area.GetCenter(second_center);
+
+    origin[2] += PLAYER_MODEL_HEIGHT;
+
+    TR_TraceRayFilter(first_center, origin, MASK_ALL, RayType_EndPoint, Filter_ExcludePlayers);
+    bool first_hit = TR_DidHit();
+
+    TR_TraceRayFilter(second_center, origin, MASK_ALL, RayType_EndPoint, Filter_ExcludePlayers);
+    bool second_hit = TR_DidHit();
+
+    if (first_hit != second_hit)
+    {
+        return second_hit ? -1 : 1;
+    }
+
+    return FloatCompare(GetVectorDistance(g_Bombsites[g_TargetSite].center, first_center), GetVectorDistance(g_Bombsites[g_TargetSite].center, second_center));
+}
+
+bool Filter_ExcludePlayers(int entity, int contentsMask)
+{
+    return !(1 <= entity <= MaxClients);
+}
+
+bool IsNavAreaCornered(NavArea nav_area)
+{
+    int count;
+
+    for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
+    {
+        if (!nav_area.GetAdjacentCount(current_dir))
+        {
+            count++;
         }
     }
 
-      // Build the player angles towards the desired path.
-    MakeAnglesFromPoints(origin, desired_pathway, angles);
+    return count >= NUM_DIRECTIONS / 2;
+
 }
 
 NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 {
-    #if defined DEBUG
     if (g_Players[client].spawn_role == SpawnRole_None)
     {
-        LogError("Spawn role is NONE for client %d, should be %d, aborting [%d]", client, GetClientTeam(client), IsPlayerAlive(client));
+        #if defined DEBUG
+        LogError("Spawn role is NONE for client %d, should be %d?, aborting.", client, GetClientTeam(client));
+
+        RequestFrame(Frame_VerifySpawnRole, client);
+        #endif
+
         return NULL_NAV_AREA;
     }
-    #endif
 
     ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
 
@@ -237,7 +321,7 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
         }
     }
 
-	NavArea result;
+    NavArea result;
 
     if (suitable_areas.Length)
     {
@@ -247,6 +331,11 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
     delete suitable_areas;
 
     return result;
+}
+
+void Frame_VerifySpawnRole(int client)
+{
+    LogError("[Frame_VerifySpawnRole] Spawn role is NONE for client %d, should be %d?", client, GetClientTeam(client));
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
@@ -319,43 +408,33 @@ stock void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float an
     float result[3];
     MakeVectorFromPoints(pt1, pt2, result);
     GetVectorAngles(result, angles);
-
-    NormalizeYaw(angles[1]);
-}
-
-void NormalizeYaw(float &yaw)
-{
-    while (yaw > 180.0)
-    {
-        yaw -= 360.0;
-    }
-
-    while (yaw < -180.0)
-    {
-        yaw += 360.0;
-    }
 }
 
 bool IsControllingBot(int client)
 {
-	return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
+    return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
 }
 
 bool IsEntitySiteBarrier(int entity)
 {
-	char entity_name[16];
-	GetEntityName(entity, entity_name, sizeof(entity_name));
+    char entity_name[16];
+    GetEntityName(entity, entity_name, sizeof(entity_name));
 
-	return strcmp(entity_name, "retake") == true;
+    return strcmp(entity_name, "retake") == true;
 }
 
-void GetEntityName(int entity, char[] buffer, int maxlength)
+int GetEntityName(int entity, char[] buffer, int maxlength)
 {
-	static int m_iNameOffset;
-	if (!m_iNameOffset)
-	{
-		m_iNameOffset = FindDataMapInfo(entity, "m_iName");
-	}
+    // 'GetEntDataString' doesn't support indexed string!
+    /*
+    static int m_iNameOffset;
+    if (!m_iNameOffset)
+    {
+        m_iNameOffset = FindSendPropInfo("CBaseEntity", "m_iName");
+    }
 
-	GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
+    return GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
+    */
+
+    return GetEntPropString(entity, Prop_Data, "m_iName", buffer, maxlength);
 }

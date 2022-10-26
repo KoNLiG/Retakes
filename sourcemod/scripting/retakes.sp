@@ -118,6 +118,9 @@ int g_LaserIndex;
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
 
+// ConVar definitions. handled in 'configuration.sp'
+ConVar retakes_adjacent_tree_layers;
+
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
 #include "retakes/events.sp"
