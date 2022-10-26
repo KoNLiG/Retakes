@@ -9,6 +9,10 @@
 // This is the the error distance that the player can spawn from the plant area.
 #define SPAWN_PLANT_ERROR 15.0
 
+// 64.0 units as for the player model height.
+// IIRC it's 48.0 units when crouching.
+#define PLAYER_MODEL_HEIGHT 64.0
+
 Bombsite g_Bombsites[Bombsite_Max];
 
 ArrayList g_BombsiteSpawns[Bombsite_Max][NavMeshArea_Max];
@@ -94,7 +98,7 @@ void SpawnManager_OnPlayerSpawn(int client)
 #endif
 
 	// DO NOT change controlled bots position.
-	if (GetEntProp(client, Prop_Send, "m_bIsControllingBot"))
+	if (IsControllingBot(client))
 	{
 		return;
 	}
@@ -180,7 +184,7 @@ bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
 void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3])
 {
 	float dest[3]; dest = g_Bombsites[g_TargetSite].center;
-	
+
     float desired_pathway[3], angles[3];
 
     // Compute the desired path origin against all the navigation area adjacents.
@@ -215,10 +219,6 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
     #endif
 
     ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
-    if (!suitable_areas.Length)
-    {
-        return NULL_NAV_AREA;
-    }
 
     // Atempt to erase the filtered nav area.
     if (filter != NULL_NAV_AREA)
@@ -230,7 +230,12 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
         }
     }
 
-    NavArea result = suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+	NavArea result;
+
+    if (suitable_areas.Length)
+    {
+        result = suitable_areas.Get(GetURandomInt() % suitable_areas.Length);
+    }
 
     delete suitable_areas;
 
@@ -255,9 +260,9 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
 
 bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR, bool &player_collision = false)
 {
-    origin[2] += 64.0; // 64.0 units as for the player model height.
+    origin[2] += PLAYER_MODEL_HEIGHT;
 
-    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_SOLID_BRUSHONLY, RayType_Infinite, Filter_ExcludeMyself, client);
+    TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_ValidateSpawnTrace, client);
 
     float normal[3];
     TR_GetPlaneNormal(INVALID_HANDLE, normal);
@@ -280,11 +285,16 @@ bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_max
     float hull_origin[3]; hull_origin = origin;
     hull_origin[2] += normal[2] * -3;
 
-    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ExcludeMyself, client);
+    TR_TraceHullFilter(hull_origin, hull_origin, ent_mins, ent_maxs, MASK_ALL, Filter_ValidateSpawnTrace, client);
 
     player_collision = (1 <= TR_GetEntityIndex() <= MaxClients);
 
     return !TR_DidHit();
+}
+
+bool Filter_ValidateSpawnTrace(int entity, int mask, int data)
+{
+    return entity != data && !IsEntitySiteBarrier(entity);
 }
 
 bool IsVecBetween(float vec[3], float mins[3], float maxs[3], float err = 0.0)
@@ -317,4 +327,28 @@ void NormalizeYaw(float &yaw)
     {
         yaw += 360.0;
     }
+}
+
+bool IsControllingBot(int client)
+{
+	return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
+}
+
+bool IsEntitySiteBarrier(int entity)
+{
+	char entity_name[16];
+	GetEntityName(entity, entity_name, sizeof(entity_name));
+
+	return strcmp(entity_name, "retake") == true;
+}
+
+void GetEntityName(int entity, char[] buffer, int maxlength)
+{
+	static int m_iNameOffset;
+	if (!m_iNameOffset)
+	{
+		m_iNameOffset = FindDataMapInfo(entity, "m_iName");
+	}
+
+	GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
 }
