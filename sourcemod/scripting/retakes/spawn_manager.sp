@@ -87,8 +87,7 @@ void InitializeBombsites()
 
 void SpawnManager_OnPlayerSpawn(int client)
 {
-<<<<<<< HEAD
-    #if defined DEBUG
+ #if defined DEBUG
     static Profiler profiler;
     if (!profiler)
     {
@@ -96,18 +95,7 @@ void SpawnManager_OnPlayerSpawn(int client)
     }
 
     profiler.Start();
-    #endif
-=======
-	#if defined DEBUG
-	static Profiler profiler;
-	if (!profiler)
-	{
-		profiler = new Profiler();
-	}
-
-	profiler.Start();
-	#endif
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
+#endif
 
     // DO NOT change controlled bots position.
     if (IsControllingBot(client))
@@ -115,29 +103,16 @@ void SpawnManager_OnPlayerSpawn(int client)
         return;
     }
 
-<<<<<<< HEAD
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
     {
-        #if defined DEBUG
+    #if defined DEBUG
         profiler.Stop();
         PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
-        #endif
+    #endif
         return;
     }
-=======
-	float origin[3];
-	NavArea nav_area;
-	if (!GetRandomSpawnLocation(client, origin, nav_area))
-	{
-		#if defined DEBUG
-		profiler.Stop();
-		PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
-		#endif
-		return;
-	}
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 
 	float angles[3];
 	if (nav_area)
@@ -149,7 +124,7 @@ void SpawnManager_OnPlayerSpawn(int client)
 
 	#if defined DEBUG
 	profiler.Stop();
-	//PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+	PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
 	#endif
 }
 
@@ -208,7 +183,6 @@ bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
 // Compute the desired path origin against all the navigation area adjacents.
 void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3])
 {
-<<<<<<< HEAD
     ArrayList adjacent_nav_areas = new ArrayList();
 
     GetNavAdjacentTree(adjacent_nav_areas, nav_area, retakes_adjacent_tree_layers.IntValue);
@@ -231,50 +205,6 @@ void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3]
 
 void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
 {
-    if (layers <= 0)
-    {
-        return;
-    }
-
-    for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
-    {
-        int size = nav_area.GetAdjacentCount(current_dir);
-
-        for (int current_adjacent_idx; current_adjacent_idx < size; current_adjacent_idx++)
-        {
-            NavArea adjacent_nav_area = nav_area.GetAdjacentArea(current_dir, current_adjacent_idx);
-
-            if (array.FindValue(adjacent_nav_area) == -1)
-            {
-                array.Push(adjacent_nav_area);
-            }
-
-            GetNavAdjacentTree(array, adjacent_nav_area, layers - 1);
-        }
-    }
-=======
-	ArrayList adjacent_nav_areas = new ArrayList();
-
-	GetNavAdjacentTree(adjacent_nav_areas, nav_area, 5);
-
-	DataPack dp = new DataPack();
-	dp.WriteFloatArray(origin, sizeof(origin));
-
-	adjacent_nav_areas.SortCustom(CustomSort_AdjacentNavAreas, dp);
-
-	delete dp;
-
-	float center[3];
-	view_as<NavArea>(adjacent_nav_areas.Get(0)).GetCenter(center);
-
-	delete adjacent_nav_areas;
-
-	// Build the player angles towards the desired path.
-	MakeAnglesFromPoints(origin, center, result);
-}
-
-void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
-{
 	if (layers <= 0)
 	{
 		return;
@@ -282,9 +212,7 @@ void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
 
 	for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
 	{
-		int size = nav_area.GetAdjacentCount(current_dir);
-
-		for (int current_adjacent_idx; current_adjacent_idx < size; current_adjacent_idx++)
+		for (int current_adjacent_idx, size = nav_area.GetAdjacentCount(current_dir); current_adjacent_idx < size; current_adjacent_idx++)
 		{
 			NavArea adjacent_nav_area = nav_area.GetAdjacentArea(current_dir, current_adjacent_idx);
 
@@ -296,7 +224,6 @@ void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
 			GetNavAdjacentTree(array, adjacent_nav_area, layers - 1);
 		}
 	}
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
 
 /*
@@ -306,45 +233,6 @@ void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
  */
 int CustomSort_AdjacentNavAreas(int index1, int index2, Handle array, DataPack dp)
 {
-<<<<<<< HEAD
-    dp.Reset();
-
-    float origin[3];
-    dp.ReadFloatArray(origin, sizeof(origin));
-
-    ArrayList adjacent_nav_areas = view_as<ArrayList>(array);
-
-    NavArea first_nav_area = adjacent_nav_areas.Get(index1),
-    second_nav_area = adjacent_nav_areas.Get(index2);
-
-    bool first_corner = IsNavAreaCornered(first_nav_area);
-    bool second_corner = IsNavAreaCornered(second_nav_area);
-
-    // First preference is removing any corndered navigation areas.
-    if (first_corner != second_corner)
-    {
-        return second_corner ? -1 : 1;
-    }
-
-    float first_center[3], second_center[3];
-    first_nav_area.GetCenter(first_center);
-    second_nav_area.GetCenter(second_center);
-
-    origin[2] += PLAYER_MODEL_HEIGHT;
-
-    TR_TraceRayFilter(first_center, origin, MASK_ALL, RayType_EndPoint, Filter_ExcludePlayers);
-    bool first_hit = TR_DidHit();
-
-    TR_TraceRayFilter(second_center, origin, MASK_ALL, RayType_EndPoint, Filter_ExcludePlayers);
-    bool second_hit = TR_DidHit();
-
-    if (first_hit != second_hit)
-    {
-        return second_hit ? -1 : 1;
-    }
-
-    return FloatCompare(GetVectorDistance(g_Bombsites[g_TargetSite].center, first_center), GetVectorDistance(g_Bombsites[g_TargetSite].center, second_center));
-=======
 	dp.Reset();
 
 	float origin[3];
@@ -382,21 +270,15 @@ int CustomSort_AdjacentNavAreas(int index1, int index2, Handle array, DataPack d
 	}
 
 	return FloatCompare(GetVectorDistance(g_Bombsites[g_TargetSite].center, first_center), GetVectorDistance(g_Bombsites[g_TargetSite].center, second_center));
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
 
 bool Filter_ExcludePlayers(int entity, int contentsMask)
 {
-<<<<<<< HEAD
     return !(1 <= entity <= MaxClients);
-=======
-	return !(1 <= entity <= MaxClients);
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
 
 bool IsNavAreaCornered(NavArea nav_area)
 {
-<<<<<<< HEAD
     int count;
 
     for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
@@ -408,26 +290,10 @@ bool IsNavAreaCornered(NavArea nav_area)
     }
 
     return count >= NUM_DIRECTIONS / 2;
-
-=======
-	int count;
-
-	for (NavDirType current_dir; current_dir < NUM_DIRECTIONS; current_dir++)
-	{
-		if (!nav_area.GetAdjacentCount(current_dir))
-		{
-			count++;
-		}
-	}
-
-	return count >= NUM_DIRECTIONS / 2;
-
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
 
 NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 {
-<<<<<<< HEAD
     if (g_Players[client].spawn_role == SpawnRole_None)
     {
         #if defined DEBUG
@@ -438,18 +304,6 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 
         return NULL_NAV_AREA;
     }
-=======
-	if (g_Players[client].spawn_role == SpawnRole_None)
-	{
-		#if defined DEBUG
-		LogError("Spawn role is NONE for client %d, should be %d?, aborting.", client, GetClientTeam(client));
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
-
-		RequestFrame(Frame_VerifySpawnRole, client);
-		#endif
-
-		return NULL_NAV_AREA;
-	}
 
 	ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
 
@@ -478,11 +332,6 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 void Frame_VerifySpawnRole(int client)
 {
 	LogError("[Frame_VerifySpawnRole] Spawn role is NONE for client %d, should be %d?", client, GetClientTeam(client));
-}
-
-void Frame_VerifySpawnRole(int client)
-{
-    LogError("[Frame_VerifySpawnRole] Spawn role is NONE for client %d, should be %d?", client, GetClientTeam(client));
 }
 
 // Generates a randomized origin vector with the given boundaries. (mins[3], maxs[3])
@@ -552,15 +401,9 @@ bool IsVecBetween(float vec[3], float mins[3], float maxs[3], float err = 0.0)
 // Builds an angles vector towards pt2 from pt1.
 stock void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float angles[3])
 {
-<<<<<<< HEAD
     float result[3];
     MakeVectorFromPoints(pt1, pt2, result);
     GetVectorAngles(result, angles);
-=======
-	float result[3];
-	MakeVectorFromPoints(pt1, pt2, result);
-	GetVectorAngles(result, angles);
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
 
 bool IsControllingBot(int client)
@@ -578,7 +421,6 @@ bool IsEntitySiteBarrier(int entity)
 
 int GetEntityName(int entity, char[] buffer, int maxlength)
 {
-<<<<<<< HEAD
     // 'GetEntDataString' doesn't support indexed string!
     /*
     static int m_iNameOffset;
@@ -591,18 +433,4 @@ int GetEntityName(int entity, char[] buffer, int maxlength)
     */
 
     return GetEntPropString(entity, Prop_Data, "m_iName", buffer, maxlength);
-=======
-	// 'GetEntDataString' doesn't support indexed string!
-	/*
-	static int m_iNameOffset;
-	if (!m_iNameOffset)
-	{
-		m_iNameOffset = FindSendPropInfo("CBaseEntity", "m_iName");
-	}
-
-	return GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
-	*/
-
-	return GetEntPropString(entity, Prop_Data, "m_iName", buffer, maxlength);
->>>>>>> 471a6a18a57a0cfc71185857150f917c9d11286b
 }
