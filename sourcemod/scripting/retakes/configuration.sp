@@ -301,11 +301,6 @@ void ValidateLaserOrigin(float origin[3])
     }
 }
 
-bool Filter_ExcludePlayers(int entity, int contentsMask)
-{
-    return !(1 <= entity <= MaxClients);
-}
-
 //================================[ Commands Callbacks ]================================//
 
 Action Command_Retakes(int client, int argc)
