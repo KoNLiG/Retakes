@@ -58,13 +58,13 @@ void PlayerManager_OnRoundPreStart()
 
     SortADTArrayCustom(g_PlayersList, SortScoreAscending);
 
-    int iSetCount = 1;
+    int set_count = 1;
 
     if (g_PlayerCount % 2 == 1)
     {
         for (int i = 1; i <= g_PlayerCount - 2; i += 2)
         {
-            if (iSetCount % 2)
+            if (set_count % 2)
             {
                 g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
                 g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
@@ -76,7 +76,7 @@ void PlayerManager_OnRoundPreStart()
                 g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
             }
 
-            iSetCount++;
+            set_count++;
         }
 
         if (GetRandomInt(0, 1) == 0)
@@ -90,7 +90,7 @@ void PlayerManager_OnRoundPreStart()
     {
         for (int i = 1; i <= g_PlayerCount - 1; i += 2)
         {
-            if (iSetCount % 2)
+            if (set_count % 2)
             {
                 g_CounterTerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
                 g_TerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
@@ -102,7 +102,7 @@ void PlayerManager_OnRoundPreStart()
                 g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
             }
 
-            iSetCount++;
+            set_count++;
         }
     }
 
