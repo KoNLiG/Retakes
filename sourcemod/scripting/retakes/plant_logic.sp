@@ -14,7 +14,7 @@ void PlantLogic_OnPluginStart()
 
 }
 
-void PlantLogic_RoundPreStart()
+void PlantLogic_OnRoundPreStart()
 {
     int planter = SelectPlanter();
 
@@ -43,6 +43,11 @@ void PlantLogic_RoundFreezeEnd()
     }
 
     LockupBombsite(g_TargetSite, false);
+}
+
+void PlantLogic_OnBeginPlant(int client, int bombsite_index, int weapon_c4)
+{
+    ForceC4Plant(weapon_c4);
 }
 
 void PlantLogic_OnBombPlanted(int planter, int bombsite_index, int planted_c4)
@@ -114,11 +119,21 @@ int GetPlanter()
 
 void UnfreezePlanter(int client)
 {
+    if (!retakes_unfreeze_planter.BoolValue)
+    {
+        return;
+    }
+
     SetEntProp(client, Prop_Send, "m_bCanMoveDuringFreezePeriod", true, 1);
 }
 
 void LockupBombsite(int bombsite, bool value)
 {
+    if (!retakes_lockup_bombsite.BoolValue)
+    {
+        return;
+    }
+
     char ent_name[16], lookup_name[16];
     Format(lookup_name, sizeof(lookup_name), "retake.%csite", bombsite == Bombsite_A ? 'a' : 'b');
 
@@ -137,7 +152,7 @@ void LockupBombsite(int bombsite, bool value)
 
 bool CreateNaturalPlantedC4()
 {
-    if (!g_Bombsites[g_TargetSite].IsValid())
+    if (!retakes_auto_plant.BoolValue || !g_Bombsites[g_TargetSite].IsValid())
     {
         return false;
     }
@@ -215,7 +230,7 @@ bool GetFreezePeriod()
 
 void SetFreezePeriod(bool value)
 {
-    if (GetFreezePeriod() == value)
+    if (!retakes_skip_freeze_period.BoolValue || GetFreezePeriod() == value)
     {
         return;
     }
@@ -225,5 +240,14 @@ void SetFreezePeriod(bool value)
     if (!value)
     {
         NotifyRoundFreezeEnd();
+    }
+}
+
+// Note: 'weapon_c4' is not the same as 'planted_c4'
+void ForceC4Plant(int weapon_c4)
+{
+    if (retakes_instant_plant.BoolValue)
+    {
+        SetEntPropFloat(weapon_c4, Prop_Send, "m_fArmedTime", GetGameTime());
     }
 }

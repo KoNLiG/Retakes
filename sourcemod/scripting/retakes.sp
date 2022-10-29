@@ -120,6 +120,14 @@ float g_ServerTickrate;
 
 // ConVar definitions. handled in 'configuration.sp'
 ConVar retakes_adjacent_tree_layers;
+ConVar retakes_auto_plant;
+ConVar retakes_instant_plant;
+ConVar retakes_unfreeze_planter;
+ConVar retakes_lockup_bombsite;
+ConVar retakes_skip_freeze_period;
+ConVar retakes_instant_defuse;
+ConVar retakes_max_consecutive_rounds_same_target_site;
+ConVar retakes_database_entry;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
@@ -182,6 +190,7 @@ public void OnMapStart()
     Configuration_OnMapStart();
     SpawnManager_OnMapStart();
     PlayerManager_OnMapStart();
+    Gameplay_OnMapStart();
 
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }

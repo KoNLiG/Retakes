@@ -14,16 +14,17 @@ void Events_OnPluginStart()
     HookEvent("player_connect_full", Event_PlayerConnectFull);
     HookEvent("bomb_planted", Event_BombPlanted);
     HookEvent("bomb_defused", Event_BombDefused);
+    HookEvent("bomb_beginplant", Event_BeginPlant);
     HookEvent("bomb_begindefuse", Event_BeginDefuse);
     HookEvent("inferno_expire", Event_InfernoExpire);
 }
 
 void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
-    Gameplay_RoundPreStart();
-    PlayerManager_RoundPreStart();
-    PlantLogic_RoundPreStart();
-    DefuseLogic_RoundPreStart();
+    Gameplay_OnRoundPreStart();
+    PlayerManager_OnRoundPreStart();
+    PlantLogic_OnRoundPreStart();
+    DefuseLogic_OnRoundPreStart();
 }
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
@@ -51,7 +52,7 @@ void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    DefuseLogic_PlayerDeath(client);
+    DefuseLogic_OnPlayerDeath(client);
 }
 
 void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
@@ -95,7 +96,24 @@ void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)
     int planted_c4 = GetPlantedC4();
     if (planted_c4 != -1)
     {
-        DefuseLogic_OnBombPlanted(client, bombsite_index, planted_c4);
+        DefuseLogic_OnBombDefused(client, bombsite_index, planted_c4);
+    }
+}
+
+void Event_BeginPlant(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!client)
+    {
+        return;
+    }
+
+    int bombsite_index = event.GetInt("site");
+
+    int weapon_c4 = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+    if (weapon_c4 != -1)
+    {
+        PlantLogic_OnBeginPlant(client, bombsite_index, weapon_c4);
     }
 }
 
@@ -125,5 +143,5 @@ void Event_InfernoExpire(Event event, const char[] name, bool dontBroadcast)
     origin[1] = event.GetFloat("y");
     origin[2] = event.GetFloat("z");
 
-    DefuseLogic_InfernoExpire(entity, origin);
+    DefuseLogic_OnInfernoExpire(entity, origin);
 }

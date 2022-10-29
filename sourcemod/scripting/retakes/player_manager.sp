@@ -14,7 +14,7 @@ void PlayerManager_OnMapStart()
     GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
-void PlayerManager_RoundPreStart()
+void PlayerManager_OnRoundPreStart()
 {
     // TODO: Switch players team.
 
