@@ -52,7 +52,7 @@ void Configuration_OnMapStart()
 void Configuration_OnDatabaseConnection()
 {
     char query[256];
-    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL, UNIQUE(`nav_area_index`, `bombsite_index`, `nav_mesh_area_team`))", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
+    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
     g_Database.Query(SQL_OnSpawnTableCreated, query);
 
     // Load all the spawn areas here, if couldn't on 'Configuration_OnMapStart'.
