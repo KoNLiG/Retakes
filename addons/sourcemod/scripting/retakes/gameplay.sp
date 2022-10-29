@@ -19,10 +19,19 @@ void Gameplay_OnMapStart()
 void Gameplay_OnRoundPreStart()
 {
     SelectBombsite();
+
+    SetRoundInProgress(false);
+}
+
+void Gameplay_OnRoundFreezeEnd()
+{
+    SetRoundInProgress(true);
 }
 
 void SelectBombsite()
 {
+    // 'x ^ 1' is practically the same as '!x' but without a tag mismatch warning.
+
     int target_site = GetURandomInt() % Bombsite_Max;
 
     if (retakes_max_consecutive_rounds_same_target_site.IntValue != -1 && g_ConsecutiveRounds[target_site] >= retakes_max_consecutive_rounds_same_target_site.IntValue)
@@ -31,9 +40,9 @@ void SelectBombsite()
         target_site = target_site ^ 1;
     }
 
-    // TODO: Execute a forward 'Retakes_OnBombsiteSelected'
+    Call_OnBombsiteSelected(target_site);
 
-    // TODO: Execute a forward 'Retakes_OnBombsiteSelectedPost'
+    Call_OnBombsiteSelectedPost(target_site);
 
     g_ConsecutiveRounds[target_site]++;
     g_ConsecutiveRounds[target_site ^ 1] = 0;
@@ -44,8 +53,10 @@ void SelectBombsite()
 
 void SetGameBombsite(int bombsite_index)
 {
-    // Setting 'm_iBombSite' without 'm_bRoundInProgress' being true has no effect.
-    GameRules_SetProp("m_bRoundInProgress", true);
-
     GameRules_SetProp("m_iBombSite", bombsite_index);
+}
+
+void SetRoundInProgress(bool value)
+{
+    GameRules_SetProp("m_bRoundInProgress", value);
 }

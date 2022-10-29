@@ -29,7 +29,9 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
-    PlantLogic_RoundFreezeEnd();
+    PlantLogic_OnRoundFreezeEnd();
+    PlayerManager_OnRoundFreezeEnd();
+    Gameplay_OnRoundFreezeEnd();
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)

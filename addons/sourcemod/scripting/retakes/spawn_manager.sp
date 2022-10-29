@@ -197,10 +197,53 @@ void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3]
     float center[3];
     view_as<NavArea>(adjacent_nav_areas.Get(0)).GetCenter(center);
 
+#if defined DEBUG
+    float cur_center[3];
+    for (int i = 0; i < adjacent_nav_areas.Length; i++)
+    {
+        NavArea cur_nav_area = adjacent_nav_areas.Get(i);
+        cur_nav_area.GetCenter(cur_center);
+
+        for (int current_client = 1; current_client <= MaxClients; current_client++)
+        {
+            if (IsClientInGame(current_client))
+            {
+                int color[4] = { 0, 0, 0, 255 };
+
+                if (!i)
+                {
+                    color[1] = 255;
+                }
+                else
+                {
+                    color[0] = 255;
+                }
+
+                Laser(current_client, origin, cur_center, color, 10.0);
+            }
+        }
+    }
+#endif
+
     delete adjacent_nav_areas;
 
     // Build the player angles towards the desired path.
     MakeAnglesFromPoints(origin, center, result);
+}
+
+int count(ArrayList array, any val)
+{
+    int count;
+
+    for (int i = 0; i < array.Length; i++)
+    {
+        if (array.Get(i) == val)
+        {
+            count++;
+        }
+    }
+
+    return count;
 }
 
 void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)

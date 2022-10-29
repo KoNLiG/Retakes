@@ -140,6 +140,7 @@ ConVar retakes_database_entry;
 #include "retakes/sdk.sp"
 #include "retakes/plant_logic.sp"
 #include "retakes/defuse_logic.sp"
+#include "retakes/api.sp"
 #undef COMPILING_FROM_MAIN
 
 public Plugin myinfo =
@@ -171,11 +172,11 @@ public void OnPluginStart()
     LoadTranslations("retakes.phrases");
     LoadTranslations("localization.phrases");
 
+    Configuration_OnPluginStart();
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
     PlayerManager_OnPluginStart();
-    Configuration_OnPluginStart();
     SDK_OnPluginStart();
     Events_OnPluginStart();
     PlantLogic_OnPluginStart();

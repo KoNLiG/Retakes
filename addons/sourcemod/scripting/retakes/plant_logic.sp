@@ -34,7 +34,7 @@ void PlantLogic_OnRoundPreStart()
     LockupBombsite(g_TargetSite, true);
 }
 
-void PlantLogic_RoundFreezeEnd()
+void PlantLogic_OnRoundFreezeEnd()
 {
     int planted_c4 = GetPlantedC4();
     if (planted_c4 == -1)
