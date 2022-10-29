@@ -5,13 +5,14 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define DATABASE_ENTRY "modern_retakes" // Listed entry in 'databases.cfg'
-
 Database g_Database;
 
 void Database_OnPluginStart()
 {
-    Database.Connect(SQL_OnDatabaseConnected, DATABASE_ENTRY);
+    char database_entry[64];
+    retakes_database_entry.GetString(database_entry, sizeof(database_entry));
+
+    Database.Connect(SQL_OnDatabaseConnected, database_entry);
 }
 
 void SQL_OnDatabaseConnected(Database db, const char[] error, any data)
@@ -20,6 +21,6 @@ void SQL_OnDatabaseConnected(Database db, const char[] error, any data)
     {
         SetFailState("Unable to maintain connection to MySQL server (%s)", error);
     }
-    
+
     Configuration_OnDatabaseConnection();
-} 
+}
