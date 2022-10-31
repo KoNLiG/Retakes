@@ -33,14 +33,31 @@ void PlayerManager_OnMapStart()
     GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
-void PlayerManager_OnRoundPreStart()
+void PlayerManager_OnRoundEnd()
 {
+    g_PlayerCount = 0;
     g_TerroristList.Clear();
     g_CounterTerroristList.Clear();
     g_PlayersList.Clear();
 
-    g_PlayerCount = 0;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i))
+            continue;
 
+        if (GetClientTeam(i) > CS_TEAM_SPECTATOR)
+            continue;
+
+        g_PlayerScores[i][POINTS] = g_Players[i].points;
+        g_PlayerScores[i][CLIENT_USERID] = g_Players[i].userid;
+        g_PlayersList.PushArray(g_PlayerScores[i]);
+
+        g_PlayerCount++;
+    }
+}
+
+void PlayerManager_OnRoundPreStart()
+{
     for (int i = 1; i <= MaxClients; i++)
     {
         if (!IsClientInGame(i))
@@ -121,11 +138,6 @@ void PlayerManager_OnRoundPreStart()
 
         SwitchClientTeam(client, CS_TEAM_T);
     }
-}
-
-void PlayerManager_OnRoundEnd()
-{
-
 }
 
 // Handle players who joined in the middle of a round.
