@@ -54,6 +54,6 @@ void Call_OnBombsiteSelected(int &bombsite_index)
 void Call_OnBombsiteSelectedPost(int bombsite_index)
 {
     Call_StartForward(g_OnBombsiteSelectedPost);
-    Call_PushCellRef(bombsite_index);
+    Call_PushCell(bombsite_index);
     Call_Finish();
 }
