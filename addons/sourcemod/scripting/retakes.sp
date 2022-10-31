@@ -4,6 +4,7 @@
 #include <cstrike>
 #include <retakes>
 #include <nav_mesh>
+#include <autoexecconfig>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -97,7 +98,17 @@ enum struct Player
 
     int spawn_role;
 
+    int userid;
+
+    int points;
+
     //============================================//
+    void Initiate(int client)
+    {
+        this.userid = GetClientUserId(client);
+        this.points = 0;
+    }
+
     void Reset()
     {
         this.edit_mode.Reset();
@@ -114,11 +125,21 @@ enum struct Player
 Player g_Players[MAXPLAYERS + 1];
 
 int g_LaserIndex;
+int g_WinRowCount;
+bool g_ScrambleTeamsPreRoundStart;
+bool g_BalanceTeamsPreRoundStart;
+bool g_SwapTeamsPerRoundStart;
 
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
 
+ConVar g_MinimumPlayers;
+ConVar g_CountBotsAsPlayers;
+ConVar g_MaxRoundWinsBeforeScramble;
+ConVar g_MaxCounterTerrorist;
+ConVar g_MaxTerrorist;
 // ConVar definitions. handled in 'configuration.sp'
+
 ConVar retakes_adjacent_tree_layers;
 ConVar retakes_auto_plant;
 ConVar retakes_instant_plant;
@@ -146,7 +167,7 @@ ConVar retakes_database_entry;
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
-    author = "Natanel 'LuqS', Omer 'KoNLiG'",
+    author = "Natanel 'LuqS', Omer 'KoNLiG', DRANIX",
     description = "The new generation of Retakes gameplay!",
     version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
@@ -162,7 +183,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     }
 
     // Initialzie API stuff.
-    // InitializeAPI();
+    InitializeAPI();
 
     return APLRes_Success;
 }
@@ -184,6 +205,15 @@ public void OnPluginStart()
 
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
+
+    // Late load support.
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            OnClientPutInServer(current_client);
+        }
+    }
 }
 
 public void OnMapStart()
@@ -194,6 +224,11 @@ public void OnMapStart()
     Gameplay_OnMapStart();
 
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
+}
+
+public void OnClientPutInServer(int client)
+{
+    g_Players[client].Initiate(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -248,4 +283,32 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
+}
+
+bool IsWarmupPeriod()
+{
+    return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
+}
+
+bool IsWaitingForPlayers()
+{
+    int count;
+
+    if (g_CountBotsAsPlayers.BoolValue)
+        count = GetClientCount(false);
+    else
+    {
+        for (int i = 1; i <= MaxClients; i++)
+        {
+            if (!IsClientInGame(i))
+                continue;
+
+            count++;
+        }
+    }
+
+    if (count >= g_MinimumPlayers.IntValue)
+        return false;
+
+    return true;
 }

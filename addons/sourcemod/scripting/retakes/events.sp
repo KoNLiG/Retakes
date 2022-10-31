@@ -9,10 +9,12 @@ void Events_OnPluginStart()
 {
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
+    HookEvent("round_end", Event_RoundEnd);
     HookEvent("player_spawn", Event_PlayerSpawn);
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("player_connect_full", Event_PlayerConnectFull);
     HookEvent("bomb_planted", Event_BombPlanted);
+    HookEvent("player_hurt", Event_PlayerHurt);
     HookEvent("bomb_defused", Event_BombDefused);
     HookEvent("bomb_beginplant", Event_BeginPlant);
     HookEvent("bomb_begindefuse", Event_BeginDefuse);
@@ -32,6 +34,11 @@ void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
     PlantLogic_OnRoundFreezeEnd();
     PlayerManager_OnRoundFreezeEnd();
     Gameplay_OnRoundFreezeEnd();
+}
+
+void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
+{
+    PlayerManager_OnRoundEnd();
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -65,7 +72,7 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    // PlayerManager_OnPlayerConnectFull(client);
+    PlayerManager_OnPlayerConnectFull(client);
 }
 
 void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
@@ -83,6 +90,17 @@ void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
     {
         PlantLogic_OnBombPlanted(client, bombsite_index, planted_c4);
     }
+}
+
+void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!client)
+    {
+        return;
+    }
+
+    PlayerManager_OnPlayerHurt(event);
 }
 
 void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)
