@@ -13,6 +13,11 @@
 #define POINTS 0
 #define CLIENT_USERID 1
 
+#define DEFAULT_SKIRMISH_ID "0"
+#define RETAKES_SKIRMISH_ID "12"
+
+ConVar sv_skirmish_id;
+
 ArrayList g_TerroristList;
 ArrayList g_CounterTerroristList;
 ArrayList g_PlayersList;
@@ -25,6 +30,11 @@ void PlayerManager_OnPluginStart()
     g_TerroristList = new ArrayList();
     g_CounterTerroristList = new ArrayList();
     g_PlayersList = new ArrayList(2);
+
+    if (!(sv_skirmish_id = FindConVar("sv_skirmish_id")))
+    {
+        SetFailState("Failed to find convar 'sv_skirmish_id'");
+    }
 }
 
 void PlayerManager_OnMapStart()
@@ -140,6 +150,17 @@ void PlayerManager_OnRoundPreStart()
     }
 }
 
+void PlayerManager_OnRoundFreezeEnd()
+{
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            ReplicateRetakeMode(current_client, true);
+        }
+    }
+}
+
 // Handle players who joined in the middle of a round.
 void PlayerManager_OnPlayerSpawn(int client)
 {
@@ -151,6 +172,9 @@ void PlayerManager_OnPlayerSpawn(int client)
         LogMessage("Auto assigned spawn role %d for client %d", g_Players[client].spawn_role, client);
         #endif
     }
+
+    // Too early here.
+    RequestFrame(DisableClientRetakeMode, GetClientUserId(client));
 }
 
 void PlayerManager_OnPlayerConnectFull(int client)
@@ -242,4 +266,22 @@ int SortScoreAscending(int position, int position_two, Handle array, Handle hndl
         return -1;
 
     return points < points_two;
+}
+
+void DisableClientRetakeMode(int client)
+{
+    if ((client = GetClientOfUserId(client)))
+    {
+        ReplicateRetakeMode(client, false);
+    }
+}
+
+void ReplicateRetakeMode(int client, bool value)
+{
+    if (IsFakeClient(client))
+    {
+        return;
+    }
+
+    sv_skirmish_id.ReplicateToClient(client, value ? RETAKES_SKIRMISH_ID : DEFAULT_SKIRMISH_ID);
 }

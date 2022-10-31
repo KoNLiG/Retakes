@@ -31,12 +31,12 @@ void DefuseLogic_OnBeginDefuse(int client, bool haskit, int planted_c4)
     InstaDefuseAttemptEx(client, planted_c4);
 }
 
-void DefuseLogic_OnBombPlanted(int client, int bombsite_index, int planted_c4)
+void DefuseLogic_OnBombDefused(int client, int bombsite_index, int planted_c4)
 {
     PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Success Defuse", LANG_SERVER);
 }
 
-void DefuseLogic_PlayerDeath(int client)
+void DefuseLogic_OnPlayerDeath(int client)
 {
     if (GetClientTeam(client) != CS_TEAM_T)
     {
@@ -58,7 +58,7 @@ void DefuseLogic_PlayerDeath(int client)
     InstaDefuseAttemptEx(defuser, planted_c4);
 }
 
-void DefuseLogic_InfernoExpire(int entity, float origin[3])
+void DefuseLogic_OnInfernoExpire(int entity, float origin[3])
 {
     int defuser = FindDefuser();
     if (defuser == -1)
@@ -75,7 +75,7 @@ void DefuseLogic_InfernoExpire(int entity, float origin[3])
     InstaDefuseAttemptEx(defuser, planted_c4);
 }
 
-void DefuseLogic_RoundPreStart()
+void DefuseLogic_OnRoundPreStart()
 {
     g_SentNotification = false;
 }
@@ -83,6 +83,11 @@ void DefuseLogic_RoundPreStart()
 // 'InstaDefuseAttempt' wrapper.
 void InstaDefuseAttemptEx(int client, int planted_c4)
 {
+    if (!retakes_instant_defuse.BoolValue)
+    {
+        return;
+    }
+
     DataPack dp = new DataPack();
     dp.WriteCell(GetClientUserId(client));
     dp.WriteCell(EntIndexToEntRef(planted_c4));

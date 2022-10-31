@@ -30,6 +30,24 @@ void RegisterConVars()
     g_MaxCounterTerrorist = CreateConVar("sm_retakes_max_t", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
     g_MaxRoundWinsBeforeScramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
 
+    retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5", "Amount of layers for navigation area adjacent trees. Used for angles computation.", .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
+
+    // 'plant_logic.sp' cvars.
+    retakes_auto_plant = CreateConVar("retakes_auto_plant", "1", "Whether to automatically plant a c4 if not planted after freeze time/planter has disconnected.", .hasMin = true, .hasMax = true, .max = 1.0);
+    retakes_instant_plant = CreateConVar("retakes_instant_plant", "1", "Whether to instantly plant a 'weapon_c4'.", .hasMin = true, .hasMax = true, .max = 1.0);
+    retakes_unfreeze_planter = CreateConVar("retakes_unfreeze_planter", "1", "Whether to allow the c4 planter to move during freeze time.", .hasMin = true, .hasMax = true, .max = 1.0);
+    retakes_lockup_bombsite = CreateConVar("retakes_lockup_bombsite", "1", "Whether to physically lock up the bombsite during freeze time. Unnecessary if 'retakes_unfreeze_planter' is disabled.", .hasMin = true, .hasMax = true, .max = 1.0);
+    retakes_skip_freeze_period = CreateConVar("retakes_skip_freeze_period", "1", "Whether to skip freeze period once c4 is successfully planted.", .hasMin = true, .hasMax = true, .max = 1.0);
+
+    // 'defuse_logic.sp' cvars.
+    retakes_instant_defuse = CreateConVar("retakes_instant_defuse", "1", "Whether to instantly defeuse a 'planted_c4'.");
+
+    // 'gameplay.sp' cvars.
+    retakes_max_consecutive_rounds_same_target_site = CreateConVar("retakes_max_consecutive_rounds_same_target_site", "4", "Limit the number of consecutive rounds targeting the same site. -1 to ignore.");
+
+    // 'database.sp' cvars.
+    retakes_database_entry = CreateConVar("retakes_database_entry", "modern_retakes", "Listed database entry in 'databases.cfg'.");
+    
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
 }
@@ -58,7 +76,7 @@ void Configuration_OnMapStart()
 void Configuration_OnDatabaseConnection()
 {
     char query[256];
-    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL, UNIQUE(`nav_area_index`, `bombsite_index`, `nav_mesh_area_team`))", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
+    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL)", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
     g_Database.Query(SQL_OnSpawnTableCreated, query);
 
     // Load all the spawn areas here, if couldn't on 'Configuration_OnMapStart'.
@@ -305,11 +323,6 @@ void ValidateLaserOrigin(float origin[3])
         origin[1] += normal[1] * -3;
         origin[2] += normal[2] * -3;
     }
-}
-
-bool Filter_ExcludePlayers(int entity, int contentsMask)
-{
-    return !(1 <= entity <= MaxClients);
 }
 
 //================================[ Commands Callbacks ]================================//
