@@ -68,6 +68,20 @@ void PlayerManager_OnRoundEnd()
 
 void PlayerManager_OnRoundPreStart()
 {
+    if (g_IsWaitingForPlayers)
+    {
+        // Set all players spawn role to None if we're waiting for players.
+        for (int current_client = 1; current_client <= MaxClients; current_client++)
+        {
+            if (IsClientInGame(current_client))
+            {
+                g_Players[current_client].spawn_role = SpawnRole_None;
+            }
+        }
+
+        return;
+    }
+
     for (int i = 1; i <= MaxClients; i++)
     {
         if (!IsClientInGame(i))
@@ -161,10 +175,18 @@ void PlayerManager_OnRoundFreezeEnd()
     }
 }
 
+void PlayerManger_OnClientPutInServer(int client)
+{
+    if (g_IsWaitingForPlayers && !ShouldWaitForPlayers())
+    {
+        SetWaitingForPlayersState(false);
+    }
+}
+
 // Handle players who joined in the middle of a round.
 void PlayerManager_OnPlayerSpawn(int client)
 {
-    if (g_Players[client].spawn_role == SpawnRole_None)
+    if (!g_IsWaitingForPlayers && g_Players[client].spawn_role == SpawnRole_None)
     {
         g_Players[client].spawn_role = GetClientTeam(client);
 

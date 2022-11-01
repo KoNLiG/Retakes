@@ -137,6 +137,13 @@
         "en"		"Attackers defused the bomb in time!"
         "he"		"!ניטרלו את הפצצה בזמן התוקפים"
     }
+
+	"Waiting For Players"
+	{
+		"#format"		"{1:d}"
+		"en"			"WAITING FOR {1} MORE PLAYER(S)!"
+		"he"			"!מחכים ל {1} שחקנים נוספים"
+	}
 }
 
 // - White

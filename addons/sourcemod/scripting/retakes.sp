@@ -133,13 +133,12 @@ bool g_SwapTeamsPerRoundStart;
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
 
-ConVar g_MinimumPlayers;
-ConVar g_CountBotsAsPlayers;
+// ConVar definitions. handled in 'configuration.sp'
+ConVar retakes_player_min;
+ConVar retakes_bots_are_players;
 ConVar g_MaxRoundWinsBeforeScramble;
 ConVar g_MaxCounterTerrorist;
 ConVar g_MaxTerrorist;
-// ConVar definitions. handled in 'configuration.sp'
-
 ConVar retakes_adjacent_tree_layers;
 ConVar retakes_auto_plant;
 ConVar retakes_instant_plant;
@@ -229,6 +228,8 @@ public void OnMapStart()
 public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
+
+    PlayerManger_OnClientPutInServer(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -290,25 +291,26 @@ bool IsWarmupPeriod()
     return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
-bool IsWaitingForPlayers()
+bool ShouldWaitForPlayers()
 {
-    int count;
+    return GetRetakeClientCount() < retakes_player_min.IntValue;
+}
 
-    if (g_CountBotsAsPlayers.BoolValue)
-        count = GetClientCount(false);
-    else
+int GetRetakeClientCount()
+{
+    if (retakes_bots_are_players.BoolValue)
     {
-        for (int i = 1; i <= MaxClients; i++)
-        {
-            if (!IsClientInGame(i))
-                continue;
+        return GetClientCount();
+    }
 
+    int count;
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+        {
             count++;
         }
     }
 
-    if (count >= g_MinimumPlayers.IntValue)
-        return false;
-
-    return true;
+    return count;
 }

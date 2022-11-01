@@ -109,7 +109,6 @@ void SpawnManager_OnPlayerSpawn(int client)
     {
     #if defined DEBUG
         profiler.Stop();
-        PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
     #endif
         return;
     }
