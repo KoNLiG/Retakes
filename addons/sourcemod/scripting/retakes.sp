@@ -94,18 +94,18 @@ enum struct EditMode
 
 enum struct Player
 {
+    int index;
+
     EditMode edit_mode;
 
     int spawn_role;
-
-    int userid;
 
     int points;
 
     //============================================//
     void Initiate(int client)
     {
-        this.userid = GetClientUserId(client);
+        this.index = client;
         this.points = 0;
     }
 
@@ -133,13 +133,13 @@ bool g_SwapTeamsPerRoundStart;
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
 
-ConVar g_MinimumPlayers;
-ConVar g_CountBotsAsPlayers;
-ConVar g_MaxRoundWinsBeforeScramble;
-ConVar g_MaxCounterTerrorist;
-ConVar g_MaxTerrorist;
 // ConVar definitions. handled in 'configuration.sp'
-
+ConVar retakes_preferred_team;
+ConVar retakes_player_min;
+ConVar retakes_bots_are_players;
+ConVar g_MaxRoundWinsBeforeScramble;
+ConVar retakes_max_attackers;
+ConVar retakes_max_defenders;
 ConVar retakes_adjacent_tree_layers;
 ConVar retakes_auto_plant;
 ConVar retakes_instant_plant;
@@ -229,6 +229,8 @@ public void OnMapStart()
 public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
+
+    PlayerManger_OnClientPutInServer(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -290,25 +292,36 @@ bool IsWarmupPeriod()
     return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
-bool IsWaitingForPlayers()
+bool ShouldWaitForPlayers()
 {
-    int count;
+    return GetRetakeClientCount() < retakes_player_min.IntValue;
+}
 
-    if (g_CountBotsAsPlayers.BoolValue)
-        count = GetClientCount(false);
-    else
+int GetRetakeClientCount()
+{
+    if (retakes_bots_are_players.BoolValue)
     {
-        for (int i = 1; i <= MaxClients; i++)
-        {
-            if (!IsClientInGame(i))
-                continue;
+        return GetClientCount();
+    }
 
+    int count;
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client) && !IsFakeClient(current_client))
+        {
             count++;
         }
     }
 
-    if (count >= g_MinimumPlayers.IntValue)
-        return false;
+    return count;
+}
 
-    return true;
+bool IsRetakeClient(int client)
+{
+    return retakes_bots_are_players.BoolValue || !retakes_bots_are_players.BoolValue && !IsFakeClient(client);
+}
+
+int GetTeamSpawnRole(int team)
+{
+    return team == CS_TEAM_SPECTATOR ? SpawnRole_None : team;
 }

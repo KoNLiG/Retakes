@@ -109,7 +109,6 @@ void SpawnManager_OnPlayerSpawn(int client)
     {
     #if defined DEBUG
         profiler.Stop();
-        PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: GetRandomSpawnLocation FAILED");
     #endif
         return;
     }
@@ -453,16 +452,5 @@ bool IsEntitySiteBarrier(int entity)
 
 int GetEntityName(int entity, char[] buffer, int maxlength)
 {
-    // 'GetEntDataString' doesn't support indexed string!
-    /*
-    static int m_iNameOffset;
-    if (!m_iNameOffset)
-    {
-        m_iNameOffset = FindSendPropInfo("CBaseEntity", "m_iName");
-    }
-
-    return GetEntDataString(entity, m_iNameOffset, buffer, maxlength);
-    */
-
     return GetEntPropString(entity, Prop_Data, "m_iName", buffer, maxlength);
 }

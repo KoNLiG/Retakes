@@ -38,7 +38,9 @@ void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 
 void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-    PlayerManager_OnRoundEnd();
+    int winner = event.GetInt("winner");
+
+    PlayerManager_OnRoundEnd(winner);
 }
 
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
@@ -100,7 +102,14 @@ void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    PlayerManager_OnPlayerHurt(event);
+    int attacker = GetClientOfUserId(event.GetInt("attacker"));
+    if (!attacker)
+    {
+        return;
+    }
+
+    int dmg_health = event.GetInt("dmg_health");
+    PlayerManager_OnPlayerHurt(client, attacker, dmg_health);
 }
 
 void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)

@@ -24,10 +24,11 @@ void Configuration_OnPluginStart()
 
 void RegisterConVars()
 {
-    g_MinimumPlayers = CreateConVar("sm_retakes_player_min", "2", "Minimum amount of players before retakes can start.", _, true, 1.0);
-    g_CountBotsAsPlayers = CreateConVar("sm_retakes_bots_are_players", "0", "Server bots will be treated as regular players.", _, true, 0.0, true, 1.0);
-    g_MaxTerrorist = CreateConVar("sm_retakes_max_ct", "5", "Max players allowed in the Counter-Terrorist team.", _, true, 1.0, true, 5.0);
-    g_MaxCounterTerrorist = CreateConVar("sm_retakes_max_t", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
+    retakes_preferred_team = CreateConVar("retakes_preferred_team", "3", "Team to transfer players to when the number of players is not equal between the two teams. 2 - Defenders/T, 3 - Attackers/CT, -1 - No preference");
+    retakes_player_min = CreateConVar("retakes_player_min", "2", "Minimum amount of players before retakes can start.", _, true, 1.0);
+    retakes_bots_are_players = CreateConVar("retakes_bots_are_players", "1", "Server bots will be treated as regular players.", _, true, 0.0, true, 1.0);
+    retakes_max_attackers = CreateConVar("retakes_max_attackers", "5", "Max players allowed in the Counter-Terrorist team.", _, true, 1.0, true, 5.0);
+    retakes_max_defenders = CreateConVar("retakes_max_defenders", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
     g_MaxRoundWinsBeforeScramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
 
     retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5", "Amount of layers for navigation area adjacent trees. Used for angles computation.", .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
@@ -47,7 +48,7 @@ void RegisterConVars()
 
     // 'database.sp' cvars.
     retakes_database_entry = CreateConVar("retakes_database_entry", "modern_retakes", "Listed database entry in 'databases.cfg'.");
-    
+
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
 }
@@ -56,9 +57,7 @@ void RegisterConVars()
 void RegisterCommands()
 {
     RegConsoleCmd("sm_retakes", Command_Retakes, "Retake settings.");
-    RegConsoleCmd("sm_retakes_swap", Command_Scramble, "Set teams swap.");
-    RegConsoleCmd("sm_retakes_scramble", Command_Scramble, "Set teams scramble.");
-
+    
     RegServerCmd("retakes_reloadnav", Command_ReloadNav, "Reloads the navigation spawn areas.");
 }
 
@@ -336,32 +335,6 @@ Action Command_Retakes(int client, int argc)
     }
 
     DisplayRetakesMenu(client);
-
-    return Plugin_Handled;
-}
-
-Action Command_Swap(int client, int argc)
-{
-    char buffer[32];
-    GetCmdArg(1, buffer, sizeof(buffer));
-
-    if (!strcmp(buffer, "force"))
-        InitiateTeamSwap();
-    else
-        g_SwapTeamsPerRoundStart = true;
-
-    return Plugin_Handled;
-}
-
-Action Command_Scramble(int client, int argc)
-{
-    char buffer[32];
-    GetCmdArg(1, buffer, sizeof(buffer));
-
-    if (!strcmp(buffer, "force"))
-        InitiateTeamScramble();
-    else
-        g_ScrambleTeamsPreRoundStart = true;
 
     return Plugin_Handled;
 }
