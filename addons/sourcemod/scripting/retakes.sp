@@ -94,18 +94,18 @@ enum struct EditMode
 
 enum struct Player
 {
+    int index;
+
     EditMode edit_mode;
 
     int spawn_role;
-
-    int userid;
 
     int points;
 
     //============================================//
     void Initiate(int client)
     {
-        this.userid = GetClientUserId(client);
+        this.index = client;
         this.points = 0;
     }
 
@@ -134,11 +134,12 @@ bool g_SwapTeamsPerRoundStart;
 float g_ServerTickrate;
 
 // ConVar definitions. handled in 'configuration.sp'
+ConVar retakes_preferred_team;
 ConVar retakes_player_min;
 ConVar retakes_bots_are_players;
 ConVar g_MaxRoundWinsBeforeScramble;
-ConVar g_MaxCounterTerrorist;
-ConVar g_MaxTerrorist;
+ConVar retakes_max_attackers;
+ConVar retakes_max_defenders;
 ConVar retakes_adjacent_tree_layers;
 ConVar retakes_auto_plant;
 ConVar retakes_instant_plant;
@@ -313,4 +314,14 @@ int GetRetakeClientCount()
     }
 
     return count;
+}
+
+bool IsRetakeClient(int client)
+{
+    return retakes_bots_are_players.BoolValue || !retakes_bots_are_players.BoolValue && !IsFakeClient(client);
+}
+
+int GetTeamSpawnRole(int team)
+{
+    return team == CS_TEAM_SPECTATOR ? SpawnRole_None : team;
 }

@@ -18,19 +18,11 @@
 
 ConVar sv_skirmish_id;
 
-ArrayList g_TerroristList;
-ArrayList g_CounterTerroristList;
-ArrayList g_PlayersList;
-
-int g_PlayerCount;
-int g_PlayerScores[MAXPLAYERS][2];
+// Index of the last winning team.
+int g_LastWinnerTeam;
 
 void PlayerManager_OnPluginStart()
 {
-    g_TerroristList = new ArrayList();
-    g_CounterTerroristList = new ArrayList();
-    g_PlayersList = new ArrayList(2);
-
     if (!(sv_skirmish_id = FindConVar("sv_skirmish_id")))
     {
         SetFailState("Failed to find convar 'sv_skirmish_id'");
@@ -43,27 +35,9 @@ void PlayerManager_OnMapStart()
     GameRules_SetProp("m_bIsQueuedMatchmaking", true);
 }
 
-void PlayerManager_OnRoundEnd()
+void PlayerManager_OnRoundEnd(int winner)
 {
-    g_PlayerCount = 0;
-    g_TerroristList.Clear();
-    g_CounterTerroristList.Clear();
-    g_PlayersList.Clear();
-
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (!IsClientInGame(i))
-            continue;
-
-        if (GetClientTeam(i) > CS_TEAM_SPECTATOR)
-            continue;
-
-        g_PlayerScores[i][POINTS] = g_Players[i].points;
-        g_PlayerScores[i][CLIENT_USERID] = g_Players[i].userid;
-        g_PlayersList.PushArray(g_PlayerScores[i]);
-
-        g_PlayerCount++;
-    }
+    g_LastWinnerTeam = winner;
 }
 
 void PlayerManager_OnRoundPreStart()
@@ -73,7 +47,7 @@ void PlayerManager_OnRoundPreStart()
         // Set all players spawn role to None if we're waiting for players.
         for (int current_client = 1; current_client <= MaxClients; current_client++)
         {
-            if (IsClientInGame(current_client))
+            if (IsClientInGame(current_client) && IsRetakeClient(current_client))
             {
                 g_Players[current_client].spawn_role = SpawnRole_None;
             }
@@ -82,86 +56,74 @@ void PlayerManager_OnRoundPreStart()
         return;
     }
 
-    for (int i = 1; i <= MaxClients; i++)
+    if (g_LastWinnerTeam == CS_TEAM_CT)
     {
-        if (!IsClientInGame(i))
-            continue;
+        // Initialize attackers.
+        ArrayList attackers = new ArrayList(sizeof(Player));
 
-        if (GetClientTeam(i) <= CS_TEAM_SPECTATOR)
-            continue;
-
-        g_PlayerScores[i][POINTS] = g_Players[i].points;
-        g_PlayerScores[i][CLIENT_USERID] = g_Players[i].userid;
-        g_PlayersList.PushArray(g_PlayerScores[i]);
-
-        g_PlayerCount++;
-    }
-
-    SortADTArrayCustom(g_PlayersList, SortScoreAscending);
-
-    int set_count = 1;
-
-    if (g_PlayerCount % 2 == 1)
-    {
-        for (int i = 1; i <= g_PlayerCount - 2; i += 2)
+        for (int current_client = 1; current_client <= MaxClients; current_client++)
         {
-            if (set_count % 2)
+            if (IsClientInGame(current_client) && IsRetakeClient(current_client) && GetClientTeam(current_client) == CS_TEAM_CT)
             {
-                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
-                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
+                attackers.PushArray(g_Players[current_client]);
             }
-
-            else
-            {
-                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
-                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
-            }
-
-            set_count++;
         }
 
-        if (GetRandomInt(0, 1) == 0)
-            g_CounterTerroristList.Push(g_PlayerScores[g_PlayerCount][CLIENT_USERID]);
+        // Sort the attackers arraylist by their points.
+        attackers.SortCustom(ADTSortByPoints);
 
-        else
-            g_TerroristList.Push(g_PlayerScores[g_PlayerCount][CLIENT_USERID]);
-    }
-
-    else
-    {
-        for (int i = 1; i <= g_PlayerCount - 1; i += 2)
+        // Erase any excesses.
+        while (attackers.Length > retakes_max_attackers.IntValue)
         {
-            if (set_count % 2)
-            {
-                g_CounterTerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
-                g_TerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
-            }
-
-            else
-            {
-                g_TerroristList.Push(g_PlayerScores[i][CLIENT_USERID]);
-                g_CounterTerroristList.Push(g_PlayerScores[i + 1][CLIENT_USERID]);
-            }
-
-            set_count++;
+            attackers.Erase(attackers.Length - 1);
         }
+
+        // Initialize attackers. (who does not appear in 'attackers')
+        ArrayList defenders = new ArrayList(sizeof(Player));
+
+        for (int current_client = 1; current_client <= MaxClients; current_client++)
+        {
+            if (IsClientInGame(current_client) && IsRetakeClient(current_client) && attackers.FindValue(current_client, Player::index) == -1)
+            {
+                defenders.PushArray(g_Players[current_client]);
+            }
+        }
+
+        // Initialize attackers. (excesses from 'defenders')
+        ArrayList spectators = new ArrayList(sizeof(Player));
+
+        while (defenders.Length > retakes_max_defenders.IntValue)
+        {
+            SwapArrayData(defenders, sizeof(Player), defenders.Length - 1, spectators);
+        }
+
+        // Balance teams.
+        if (retakes_preferred_team.IntValue != -1 && defenders.Length != attackers.Length)
+        {
+            for (int iterations = IntAbs(defenders.Length - attackers.Length); iterations; iterations--)
+            {
+                if (defenders.Length < attackers.Length && retakes_preferred_team.IntValue != CS_TEAM_T)
+                {
+                    SwapArrayData(attackers, sizeof(Player), attackers.Length - 1, defenders);
+                }
+                else if (defenders.Length > attackers.Length && retakes_preferred_team.IntValue != CS_TEAM_CT)
+                {
+                    SwapArrayData(defenders, sizeof(Player), defenders.Length - 1, attackers);
+                }
+            }
+        }
+
+        MovePlayersArray(attackers, CS_TEAM_T); // Move old attackers to their new team - Defenders/T.
+        MovePlayersArray(defenders, CS_TEAM_CT); // Move old defenders to their new team - Attackers/CT.
+        MovePlayersArray(spectators, CS_TEAM_SPECTATOR); // Move exceeding players to their new team - Spectators.
+
+        delete attackers;
+        delete defenders;
+        delete spectators;
     }
 
-    for (int i, client; i < g_CounterTerroristList.Length; i++)
-    {
-        if (!(client = GetClientOfUserId(g_CounterTerroristList.Get(i))))
-            continue;
-
-        SwitchClientTeam(client, CS_TEAM_CT);
-    }
-
-    for (int i, client; i < g_TerroristList.Length; i++)
-    {
-        if (!(client = GetClientOfUserId(g_TerroristList.Get(i))))
-            continue;
-
-        SwitchClientTeam(client, CS_TEAM_T);
-    }
+    AssignPlayersSpawnRole();
+    ResetPlayersPoints();
 }
 
 void PlayerManager_OnRoundFreezeEnd()
@@ -188,7 +150,7 @@ void PlayerManager_OnPlayerSpawn(int client)
 {
     if (!g_IsWaitingForPlayers && g_Players[client].spawn_role == SpawnRole_None)
     {
-        g_Players[client].spawn_role = GetClientTeam(client);
+        g_Players[client].spawn_role = GetTeamSpawnRole(GetClientTeam(client));
 
         #if defined DEBUG
         LogMessage("Auto assigned spawn role %d for client %d", g_Players[client].spawn_role, client);
@@ -201,93 +163,98 @@ void PlayerManager_OnPlayerSpawn(int client)
 
 void PlayerManager_OnPlayerConnectFull(int client)
 {
-    g_Players[client].spawn_role = CS_TEAM_SPECTATOR;
+    g_Players[client].spawn_role = SpawnRole_None;
 
-    ChangeClientTeam(client, CS_TEAM_SPECTATOR);
+    SetPlayerTeam(client, CS_TEAM_SPECTATOR);
 }
 
-void PlayerManager_OnPlayerDeath(Event event)
+void PlayerManager_OnPlayerHurt(int client, int attacker, int dmg_health)
 {
-    int assister = GetClientOfUserId(event.GetInt("assister"));
-    int attacker = GetClientOfUserId(event.GetInt("attacker"));
-    int victim = GetClientOfUserId(event.GetInt("userid"));
-    bool headshot = event.GetBool("headshot");
-    int points;
-    
-    points += (assister > 0) ? RETAKES_ASSIST_POINTS : 0;
-    points += (headshot) ? RETAKES_HEADSHOT_POINTS : 0;
-
-    if (attacker != victim)
-        points += RETAKES_KILL_POINTS;
-    else
-        points -= RETAKES_KILL_POINTS;
-
-    g_Players[attacker].points += points;
+    g_Players[attacker].points += dmg_health;
 }
 
-void PlayerManager_OnPlayerHurt(Event event)
+void SwapArrayData(ArrayList source, int size, int idx, ArrayList dest)
 {
-    // int assister = GetClientOfUserId(event.GetInt("assister"));
-    // int attacker = GetClientOfUserId(event.GetInt("attacker"));
-    // int victim = GetClientOfUserId(event.GetInt("userid"));
-    // int damage = event.GetInt("dmg_health");
-    // int hitgroup = event.GetInt("hitgroup");
+    any[] player = new any[size];
+    source.GetArray(idx, player, size);
+    source.Erase(idx);
+
+    dest.PushArray(player);
 }
 
-void InitiateTeamSwap()
+/**
+ * @return              -1 if first should go before second
+ *                      0 if first is equal to second
+ *                      1 if first should go after second
+ */
+int ADTSortByPoints(int index1, int index2, Handle array, Handle hndl)
 {
-    g_SwapTeamsPerRoundStart = false;
+    ArrayList al = view_as<ArrayList>(array);
+
+    Player player1, player2;
+    al.GetArray(index1, player1);
+    al.GetArray(index2, player2);
+
+    if (player1.points != player2.points)
+    {
+        return player1.points > player2.points ? -1 : 1;
+    }
+
+    return 0;
 }
 
-void InitiateTeamScramble()
+void MovePlayersArray(ArrayList array, int team)
 {
-    g_ScrambleTeamsPreRoundStart = false;
+    for (int current_idx, client; current_idx < array.Length; current_idx++)
+    {
+        client = array.Get(current_idx);
+
+        PrintToChatAll(" \x0CMoved %N to %d", client, team);
+
+        SetPlayerTeam(client, team);
+    }
 }
 
-void InitiateTeamBalance()
+void AssignPlayersSpawnRole()
 {
-    g_BalanceTeamsPreRoundStart = false;
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client) && IsRetakeClient(current_client))
+        {
+            g_Players[current_client].spawn_role = GetTeamSpawnRole(GetClientTeam(current_client));
+        }
+    }
+}
+
+void ResetPlayersPoints()
+{
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client) && IsRetakeClient(current_client))
+        {
+            g_Players[current_client].points = 0;
+        }
+    }
 }
 
 bool IsTeamSlotOpen(int team)
 {
     int count;
 
-    for (int i = 1; i <= MaxClients; i++)
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
     {
-        if (!IsClientInGame(i) || !IsClientConnected(i) || GetClientTeam(i) != team)
-            continue;
-
-        count++;
+        if (IsClientInGame(current_client) && IsRetakeClient(current_client) && GetClientTeam(current_client) == team)
+        {
+            count++;
+        }
     }
 
-    return (count < (team == CS_TEAM_CT ? g_MaxCounterTerrorist.IntValue : g_MaxTerrorist.IntValue));
-}
-
-void SwitchClientTeam(int client, int team)
-{
-    g_Players[client].spawn_role = team;
-
-    CS_SwitchTeam(client, team);
+    return count < (team == CS_TEAM_CT ? retakes_max_attackers.IntValue : retakes_max_defenders.IntValue);
 }
 
 int GetTotalRoundsPlayed()
 {
     return GameRules_GetProp("m_totalRoundsPlayed");
-}
-
-int SortScoreAscending(int position, int position_two, Handle array, Handle hndl)
-{
-    int client[2]; GetArrayArray(array, position, client, 2);
-    int client_two[2]; GetArrayArray(array, position_two, client_two, 2);
-
-    int points = client[POINTS];
-    int points_two = client_two[POINTS];
-
-    if (points > points_two)
-        return -1;
-
-    return points < points_two;
 }
 
 void DisableClientRetakeMode(int client)
@@ -306,4 +273,22 @@ void ReplicateRetakeMode(int client, bool value)
     }
 
     sv_skirmish_id.ReplicateToClient(client, value ? RETAKES_SKIRMISH_ID : DEFAULT_SKIRMISH_ID);
+}
+
+void SetPlayerTeam(int client, int team)
+{
+    // 'CS_SwitchTeam()' function does not supports spectator team, for some reason...
+    if (team == CS_TEAM_SPECTATOR)
+    {
+        ChangeClientTeam(client, team);
+    }
+    else
+    {
+        CS_SwitchTeam(client, team);
+    }
+}
+
+int IntAbs(int val)
+{
+   return (val < 0) ? -val : val;
 }
