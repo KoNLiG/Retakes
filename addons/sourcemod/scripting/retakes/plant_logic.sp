@@ -100,7 +100,7 @@ int SelectPlanter()
         }
     }
 
-    return clients_count ? clients[GetRandomInt(0, clients_count - 1)] : -1;
+    return clients_count ? clients[GetURandomInt() % clients_count] : -1;
 }
 
 // Retrieves the current planter player index, or -1 if unavailable.
