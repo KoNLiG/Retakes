@@ -137,7 +137,7 @@ float g_ServerTickrate;
 ConVar retakes_preferred_team;
 ConVar retakes_player_min;
 ConVar retakes_bots_are_players;
-ConVar g_MaxRoundWinsBeforeScramble;
+ConVar retakes_max_wins_scramble;
 ConVar retakes_max_attackers;
 ConVar retakes_max_defenders;
 ConVar retakes_adjacent_tree_layers;
