@@ -125,10 +125,6 @@ enum struct Player
 Player g_Players[MAXPLAYERS + 1];
 
 int g_LaserIndex;
-int g_WinRowCount;
-bool g_ScrambleTeamsPreRoundStart;
-bool g_BalanceTeamsPreRoundStart;
-bool g_SwapTeamsPerRoundStart;
 
 // Server tickrate. (64.0|128.0|...)
 float g_ServerTickrate;
