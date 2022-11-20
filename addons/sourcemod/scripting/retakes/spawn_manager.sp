@@ -230,21 +230,6 @@ void ComputeRandomSpawnAngles(float origin[3], NavArea nav_area, float result[3]
     MakeAnglesFromPoints(origin, center, result);
 }
 
-int count(ArrayList array, any val)
-{
-    int count;
-
-    for (int i = 0; i < array.Length; i++)
-    {
-        if (array.Get(i) == val)
-        {
-            count++;
-        }
-    }
-
-    return count;
-}
-
 void GetNavAdjacentTree(ArrayList array, NavArea nav_area, int layers)
 {
     if (layers <= 0)
