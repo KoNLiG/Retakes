@@ -103,12 +103,12 @@ void Frame_DisplayRequiredPlayers()
         return;
     }
 
-	int fade_color[3];
-	GetNextFadeColor(fade_color);
+    int fade_color[3];
+    GetNextFadeColor(fade_color);
 
-	PrintCenterTextAll("<font color='#%06X' class='fontSize-xl'>%t</font>", RGBToHex(fade_color), "Waiting For Players", retakes_player_min.IntValue - GetRetakeClientCount());
+    PrintCenterTextAll("<font color='#%06X' class='fontSize-xl'>%t</font>", RGBToHex(fade_color), "Waiting For Players", retakes_player_min.IntValue - GetRetakeClientCount());
 
-	RequestFrame(Frame_DisplayRequiredPlayers);
+    RequestFrame(Frame_DisplayRequiredPlayers);
 }
 
 void GetNextFadeColor(int color[3])
