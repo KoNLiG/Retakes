@@ -5,8 +5,6 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define MYSQL_TABLE_NAME "retakes_spawn_areas"
-
 #define MAX_MAP_NAME_LENGTH 128
 
 // 'TheNavAreas' address.
@@ -48,6 +46,8 @@ void RegisterConVars()
 
     // 'database.sp' cvars.
     retakes_database_entry = CreateConVar("retakes_database_entry", "modern_retakes", "Listed database entry in 'databases.cfg'.");
+    retakes_database_table_spawns = CreateConVar("retakes_database_table_spawn_ares", "retakes_spawn_areas", "Database table name for spawn area locations.");
+    retakes_database_table_distributer = CreateConVar("retakes_database_table_distributer", "retakes_distributer", "Database table name for player weapons.");
 
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
@@ -75,7 +75,11 @@ void Configuration_OnMapStart()
 void Configuration_OnDatabaseConnection()
 {
     char query[256];
-    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL)", MYSQL_TABLE_NAME, MAX_MAP_NAME_LENGTH);
+    char table_name[64];
+
+    retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
+
+    Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL)", table_name, MAX_MAP_NAME_LENGTH);
     g_Database.Query(SQL_OnSpawnTableCreated, query);
 
     // Load all the spawn areas here, if couldn't on 'Configuration_OnMapStart'.
@@ -108,7 +112,11 @@ void LoadSpawnAreas()
     }
 
     char query[256];
-    Format(query, sizeof(query), "SELECT `nav_area_index`, `bombsite_index`, `nav_mesh_area_team` FROM `%s` WHERE `map_name` = '%s'", MYSQL_TABLE_NAME, g_CurrentMapName);
+    char table_name[64];
+
+    retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
+
+    Format(query, sizeof(query), "SELECT `nav_area_index`, `bombsite_index`, `nav_mesh_area_team` FROM `%s` WHERE `map_name` = '%s'", table_name, g_CurrentMapName);
     g_Database.Query(SQL_OnLoadSpawnAreas, query);
 }
 
@@ -165,7 +173,11 @@ void SQL_OnLoadSpawnAreas(Database db, DBResultSet results, const char[] error, 
 void InsertSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_team)
 {
     char query[256];
-    Format(query, sizeof(query), "INSERT INTO `%s` VALUES ('%s', %d, %d, %d)", MYSQL_TABLE_NAME, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
+    char table_name[64];
+
+    retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
+    
+    Format(query, sizeof(query), "INSERT INTO `%s` VALUES ('%s', %d, %d, %d)", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnInsertSpawnArea, query);
 }
 
@@ -181,7 +193,11 @@ void SQL_OnInsertSpawnArea(Database db, DBResultSet results, const char[] error,
 void DeleteSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_team)
 {
     char query[256];
-    Format(query, sizeof(query), "DELETE FROM `%s` WHERE `map_name` = '%s' AND `nav_area_index` = '%d' AND `bombsite_index` = '%d' AND `nav_mesh_area_team` = '%d'", MYSQL_TABLE_NAME, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
+    char table_name[64];
+
+    retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
+    
+    Format(query, sizeof(query), "DELETE FROM `%s` WHERE `map_name` = '%s' AND `nav_area_index` = '%d' AND `bombsite_index` = '%d' AND `nav_mesh_area_team` = '%d'", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnDeleteSpawnArea, query);
 }
 

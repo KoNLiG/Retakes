@@ -149,6 +149,8 @@ ConVar retakes_skip_freeze_period;
 ConVar retakes_instant_defuse;
 ConVar retakes_max_consecutive_rounds_same_target_site;
 ConVar retakes_database_entry;
+ConVar retakes_database_table_spawns;
+ConVar retakes_database_table_distributer;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
