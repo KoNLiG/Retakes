@@ -252,6 +252,11 @@ public void OnClientDisconnect(int client)
     g_Players[client].Reset();
 }
 
+public void OnClientDisconnect_Post(int client)
+{
+	Gameplay_OnClientDisconnectPost();
+}
+
 void GetClientAimPosition(int client, float result[3])
 {
     float origin[3], angles[3];
