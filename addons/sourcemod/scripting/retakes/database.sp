@@ -22,6 +22,15 @@ void SQL_OnDatabaseConnected(Database db, const char[] error, any data)
         SetFailState("Unable to maintain connection to MySQL server (%s)", error);
     }
 
+    // Late load support.
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+           OnClientPutInServer(current_client);
+        }
+    }
+
     Configuration_OnDatabaseConnection();
     Distributer_OnDatabaseConnection();
 }

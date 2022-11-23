@@ -26,12 +26,12 @@ void DefuseLogic_OnPluginStart()
     mp_round_restart_delay = FindConVar("mp_round_restart_delay");
 }
 
-void DefuseLogic_OnBeginDefuse(int client, bool haskit, int planted_c4)
+void DefuseLogic_OnBeginDefuse(int client, int planted_c4)
 {
     InstaDefuseAttemptEx(client, planted_c4);
 }
 
-void DefuseLogic_OnBombDefused(int client, int bombsite_index, int planted_c4)
+void DefuseLogic_OnBombDefused()
 {
     PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Success Defuse", LANG_SERVER);
 }
@@ -58,7 +58,7 @@ void DefuseLogic_OnPlayerDeath(int client)
     InstaDefuseAttemptEx(defuser, planted_c4);
 }
 
-void DefuseLogic_OnInfernoExpire(int entity, float origin[3])
+void DefuseLogic_OnInfernoExpire()
 {
     int defuser = FindDefuser();
     if (defuser == -1)

@@ -137,7 +137,7 @@ void PlayerManager_OnRoundFreezeEnd()
     }
 }
 
-void PlayerManger_OnClientPutInServer(int client)
+void PlayerManger_OnClientPutInServer()
 {
     if (g_IsWaitingForPlayers && !ShouldWaitForPlayers())
     {
@@ -168,7 +168,7 @@ void PlayerManager_OnPlayerConnectFull(int client)
     SetPlayerTeam(client, CS_TEAM_SPECTATOR);
 }
 
-void PlayerManager_OnPlayerHurt(int client, int attacker, int dmg_health)
+void PlayerManager_OnPlayerHurt(int attacker, int dmg_health)
 {
     g_Players[attacker].points += dmg_health;
 }
@@ -207,9 +207,11 @@ void MovePlayersArray(ArrayList array, int team)
 {
     for (int current_idx, client; current_idx < array.Length; current_idx++)
     {
-        client = array.Get(current_idx);
+        client = array.Get(current_idx, Player::index);
 
+#if defined DEBUG
         PrintToChatAll(" \x0CMoved %N to %d", client, team);
+#endif
 
         SetPlayerTeam(client, team);
     }
@@ -235,26 +237,6 @@ void ResetPlayersPoints()
             g_Players[current_client].points = 0;
         }
     }
-}
-
-bool IsTeamSlotOpen(int team)
-{
-    int count;
-
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client) && IsRetakeClient(current_client) && GetClientTeam(current_client) == team)
-        {
-            count++;
-        }
-    }
-
-    return count < (team == CS_TEAM_CT ? retakes_max_attackers.IntValue : retakes_max_defenders.IntValue);
-}
-
-int GetTotalRoundsPlayed()
-{
-    return GameRules_GetProp("m_totalRoundsPlayed");
 }
 
 void DisableClientRetakeMode(int client)

@@ -316,7 +316,7 @@ bool IsNavAreaCornered(NavArea nav_area)
         }
     }
 
-    return count >= NUM_DIRECTIONS / 2;
+    return count >= view_as<int>(NUM_DIRECTIONS) / 2;
 }
 
 NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
@@ -424,7 +424,7 @@ stock void MakeAnglesFromPoints(const float pt1[3], const float pt2[3], float an
 
 bool IsControllingBot(int client)
 {
-    return GetEntProp(client, Prop_Send, "m_bIsControllingBot");
+    return GetEntProp(client, Prop_Send, "m_bIsControllingBot") != 0;
 }
 
 bool IsEntitySiteBarrier(int entity)
@@ -432,7 +432,7 @@ bool IsEntitySiteBarrier(int entity)
     char entity_name[16];
     GetEntityName(entity, entity_name, sizeof(entity_name));
 
-    return strcmp(entity_name, "retake") == true;
+    return strcmp(entity_name, "retake") == 1;
 }
 
 int GetEntityName(int entity, char[] buffer, int maxlength)

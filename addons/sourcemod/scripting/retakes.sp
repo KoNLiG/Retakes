@@ -225,15 +225,6 @@ public void OnPluginStart()
 
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
-
-    // Late load support. Disabled since database handle isn't ready for distributer at this moment.
-    // for (int current_client = 1; current_client <= MaxClients; current_client++)
-    // {
-    //     if (IsClientInGame(current_client))
-    //     {
-    //         OnClientPutInServer(current_client);
-    //     }
-    // }
 }
 
 public void OnMapStart()
@@ -250,7 +241,7 @@ public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
 
-    PlayerManger_OnClientPutInServer(client);
+    PlayerManger_OnClientPutInServer();
     Distributer_OnClientPutInServer(client);
 }
 
@@ -306,11 +297,6 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
-}
-
-bool IsWarmupPeriod()
-{
-    return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
 bool ShouldWaitForPlayers()
