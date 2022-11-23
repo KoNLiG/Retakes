@@ -1,0 +1,122 @@
+"Phrases"
+{
+    "weapon_usp_silencer"
+    {
+        "en"        "USP-S"
+    }
+
+    "weapon_hkp2000"
+    {
+        "en"        "P2000"
+    }
+
+    "weapon_fiveseven"
+    {
+        "en"        "Five Seven"
+    }
+
+    "weapon_cz75a"
+    {
+        "en"        "CZ75A"
+    }
+
+    "weapon_tec9"
+    {
+        "en"        "Tec-9"
+    }
+
+    "weapon_glock"
+    {
+        "en"        "Glock-18"
+    }
+
+    "weapon_deagle"
+    {
+        "en"        "Deagle"
+    }
+
+    "weapon_ump45"
+    {
+        "en"        "UMP-45"
+    }
+
+    "weapon_mp9"
+    {
+        "en"        "MP-9"
+    }
+
+    "weapon_mac10"
+    {
+        "en"        "MAC-10"
+    }
+
+    "weapon_revolver"
+    {
+        "en"        "R8 Revolver"
+    }
+
+    "weapon_elite"
+    {
+        "en"        "Dual Berettas"
+    }
+
+    "weapon_p250"
+    {
+        "en"        "P250"
+    }
+
+    "weapon_ak47"
+    {
+        "en"        "AK47"
+    }
+
+    "weapon_m4a1"
+    {
+        "en"        "M4A1"
+    }
+
+    "weapon_m4a1_silencer"
+    {
+        "en"        "M4A1-S"
+    }
+
+    "weapon_aug"
+    {
+        "en"        "AUG"
+    }
+
+    "weapon_awp"
+    {
+        "en"        "AWP"
+    }
+
+    "weapon_bizon"
+    {
+        "en"        "Bizon"
+    }
+
+    "weapon_famas"
+    {
+        "en"        "Famas"
+    }
+
+    "weapon_g3sg1"
+    {
+        "en"        "G3sg1"
+    }
+
+    "weapon_galilar"
+    {
+        "en"        "Galilar"
+    }
+
+    "weapon_molotov"
+    {
+        "en"        "Molotov"
+    }
+
+    "weapon_smokegrenade"
+    {
+        "en"        "Smoke Grenade"
+    }
+}
