@@ -71,7 +71,7 @@ void SQL_Distributer_OnClientConnect(Database database, DBResultSet results, con
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "SELECT * FROM `%s_distributer_loadouts` WHERE `id` = '%i'", table_name, g_Players[client].key);
+    g_Database.Format(query, sizeof(query), "SELECT DISTINCT name, primary_weapon_item_index, secondary_weapon_item_index FROM `%s_distributer_loadouts` WHERE `player_id` = %d", table_name, g_Players[client].key);
     g_Database.Query(SQL_Distributer_OnClientInfoFetched, query, g_Players[client].user_id, DBPrio_High);
 }
 
@@ -90,10 +90,16 @@ void SQL_Distributer_OnClientInfoFetched(Database database, DBResultSet results,
         return;
     }
 
+    int loadout_name;
     int primary_weapon;
     int secondary_Weapon;
 
+    results.FieldNameToNum("loadout_name", loadout_name);
     results.FieldNameToNum("primary_weapon_item_index", primary_weapon);
     results.FieldNameToNum("secondary_Weapon", secondary_Weapon);
 
+    while (results.FetchRow())
+    {
+
+    }
 }

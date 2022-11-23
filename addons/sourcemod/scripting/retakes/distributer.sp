@@ -123,7 +123,7 @@ void Distributer_OnDatabaseConnection()
     g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_players` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, PRIMARY KEY (`id`), UNIQUE `account_id_unique` (`account_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
     transaction.AddQuery(query);
 
-    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`player_id` BIGINT UNSIGNED NOT NULL, `loadout` VARCHAR(32), `primary_weapon_item_index` INT UNSIGNED, `secondary_weapon_item_index` INT UNSIGNED, PRIMARY KEY (`player_id`), CONSTRAINT `fk_retakes_distributer_loadouts` FOREIGN KEY (`player_id`) REFERENCES `%s_distributer_players` (`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name, table_name);
+    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`player_id` BIGINT UNSIGNED NOT NULL, `loadout_name` VARCHAR(32), `primary_weapon_item_index` INT UNSIGNED, `secondary_weapon_item_index` INT UNSIGNED, PRIMARY KEY (`player_id`), CONSTRAINT `fk_retakes_distributer_loadouts` FOREIGN KEY (`player_id`) REFERENCES `%s_distributer_players` (`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name, table_name);
     transaction.AddQuery(query);
 
     g_Database.Execute(transaction, SQL_Distributer_TransactionTables, SQL_Distributer_TransactionFailure, _, DBPrio_High);
@@ -136,7 +136,7 @@ void Distributer_OnClientPutInServer(int client)
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%i') ON DUPLICATE KEY UPDATE `account_id` = %i", table_name, g_Players[client].account_id, g_Players[client].account_id);
+    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%d') ON DUPLICATE KEY UPDATE `account_id` = %d", table_name, g_Players[client].account_id, g_Players[client].account_id);
     g_Database.Query(SQL_Distributer_OnClientConnect, query, g_Players[client].user_id);
 }
 
@@ -322,12 +322,12 @@ SMCResult SMCParser_OnRawLine(SMCParser parser, const char[] line, int line_num)
 void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 {
 #if defined DEBUG
-    PrintToServer("Distributer finished parsing %i loadouts", loadouts.Length);
+    PrintToServer("Distributer finished parsing %d loadouts", loadouts.Length);
 #endif
 
     if (failed)
     {
-        SetFailState("%s : There was a fatal error parsing distributer loadouts at line %i", PLUGIN_TAG, line_count);
+        SetFailState("%s : There was a fatal error parsing distributer loadouts at line %d", PLUGIN_TAG, line_count);
         return;
     }
 
@@ -346,7 +346,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         if (!TranslationPhraseExists(loadout.name))
         {
             fail_state = true;
-            LogError("Translation for \"%s\" loadout key not found at line %i", loadout.name, line_count);
+            LogError("Translation for \"%s\" loadout key not found at line %d", loadout.name, line_count);
         }
 
         for (int j; j <= LOADOUT_TEAM_MAX; j++)
@@ -361,7 +361,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
                 if (!TranslationPhraseExists(item_data.classname))
                 {
                     fail_state = true;
-                    LogError("Translation for \"%s\" weapon key not found at line %i", item_data.classname, line_count);
+                    LogError("Translation for \"%s\" weapon key not found at line %d", item_data.classname, line_count);
                 }
             }
         }
