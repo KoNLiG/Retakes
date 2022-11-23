@@ -12,32 +12,32 @@
 
 enum WeaponType
 {
-	WeaponType_FireArm,
-	WeaponType_Utility
+    WeaponType_FireArm,
+    WeaponType_Utility
 }
 
 enum struct LoadoutItemData
 {
     CSWeaponID item_id;
 
-	char classname[32];
+    char classname[32];
 
-	WeaponType type;
+    WeaponType type;
 
-	float chance;
+    float chance;
 
-	int max;
+    int max;
 }
 
 enum struct LoadoutData
 {
-	int kits;
+    int kits;
 
-	char name[24];
+    char name[24];
 
     ArrayList items[LOADOUT_TEAM_MAX];
 
-	void Initialize(const char[] name)
+    void Initialize(const char[] name)
     {
         strcopy(this.name, sizeof(LoadoutData::name), name);
 
@@ -132,84 +132,84 @@ public Action Command_Distributer(int client, int args)
 void SMCParser_OnStart(SMCParser parser)
 {
 #if defined DEBUG
-	PrintToServer("Loading Distributer configuration file");
+    PrintToServer("Loading Distributer configuration file");
 #endif
 }
 
 SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt_quotes)
 {
 #if defined DEBUG
-	PrintToServer("Distributer section: %s", name);
+    PrintToServer("Distributer section: %s", name);
 #endif
 
-	if (smc_parser_depth == 1)
+    if (smc_parser_depth == 1)
     {
-		smc_parser_count++;
+        smc_parser_count++;
     }
 
-	if (smc_parser_depth == 2 && smc_parser_count == 1)
-	{
+    if (smc_parser_depth == 2 && smc_parser_count == 1)
+    {
         LoadoutData loadout;
 
         loadout.Initialize(name);
 
         loadouts.PushArray(loadout, sizeof(loadout));
-	}
+    }
 
-	else if (smc_parser_depth == 3 && smc_parser_count == 1)
-	{
-		if (!strcmp(name, "Counter_Terrorist"))
-		{
-			current_loadout = LOADOUT_TEAM_CT;
-		}
+    else if (smc_parser_depth == 3 && smc_parser_count == 1)
+    {
+        if (!strcmp(name, "Counter_Terrorist"))
+        {
+            current_loadout = LOADOUT_TEAM_CT;
+        }
 
-		else if (!strcmp(name, "Terrorist"))
-		{
-			current_loadout = LOADOUT_TEAM_T;
-		}
+        else if (!strcmp(name, "Terrorist"))
+        {
+            current_loadout = LOADOUT_TEAM_T;
+        }
 
-		else
-		{
-			current_loadout = -1;
-		}
-	}
+        else
+        {
+            current_loadout = -1;
+        }
+    }
 
-	if (smc_parser_depth == 2 && smc_parser_count == 2)
-	{
-		strcopy(current_weapon, sizeof(current_weapon), name);
-	}
+    if (smc_parser_depth == 2 && smc_parser_count == 2)
+    {
+        strcopy(current_weapon, sizeof(current_weapon), name);
+    }
 
-	smc_parser_depth++;
+    smc_parser_depth++;
 
-	return SMCParse_Continue;
+    return SMCParse_Continue;
 }
 
 SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 {
-	smc_parser_depth--;
-	return SMCParse_Continue;
+    smc_parser_depth--;
+    return SMCParse_Continue;
 }
 
 SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
 #if defined DEBUG
-	PrintToServer("Distributer key: [%s] %s", key, value);
+    PrintToServer("Distributer key: [%s] %s", key, value);
 #endif
 
-	if (smc_parser_depth == 4 && smc_parser_count == 1)
-	{
-		static LoadoutItemData item_data;
+    if (smc_parser_depth == 4 && smc_parser_count == 1)
+    {
+        static LoadoutItemData item_data;
 
-		if (!strcmp(key, "weapon") || !strcmp(key, "utility"))
-		{
-			char buffer[32];
+        if (!strcmp(key, "weapon") || !strcmp(key, "utility"))
+        {
+            char buffer[32];
 
-			FormatEx(buffer, sizeof(buffer), "weapon_%s", value);
+            FormatEx(buffer, sizeof(buffer), "weapon_%s", value);
 
             CSWeaponID weapon_id = CS_AliasToWeaponID(buffer);
 
-			if (!weapon_id)
-			{
+            if (!weapon_id)
+            {
                 return SMCParse_Continue;
             }
 
@@ -229,15 +229,15 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
             loadouts.GetArray(loadouts.Length - 1, loadout, sizeof(loadout));
 
             switch (current_loadout)
-			{
-				case LOADOUT_TEAM_CT: loadout.items[LOADOUT_TEAM_CT].PushArray(item_data, sizeof(item_data));
-				case LOADOUT_TEAM_T: loadout.items[LOADOUT_TEAM_T].PushArray(item_data, sizeof(item_data));
-				default: return SMCParse_HaltFail;
-			}
-		}
+            {
+                case LOADOUT_TEAM_CT: loadout.items[LOADOUT_TEAM_CT].PushArray(item_data, sizeof(item_data));
+                case LOADOUT_TEAM_T: loadout.items[LOADOUT_TEAM_T].PushArray(item_data, sizeof(item_data));
+                default: return SMCParse_HaltFail;
+            }
+        }
 
-		if (!strcmp(key, "kits"))
-		{
+        if (!strcmp(key, "kits"))
+        {
             LoadoutData loadout;
 
             loadouts.GetArray(loadouts.Length - 1, loadout, sizeof(loadout));
@@ -245,23 +245,23 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
             loadout.kits = StringToInt(value);
 
             loadouts.SetArray(loadouts.Length, loadout, sizeof(loadout));
-		}
-	}
+        }
+    }
 
-	else if (smc_parser_depth == 3 && smc_parser_count == 2)
-	{
-		int position;
+    else if (smc_parser_depth == 3 && smc_parser_count == 2)
+    {
+        int position;
 
-		char buffer[32];
+        char buffer[32];
 
         LoadoutData loadout;
 
-		static LoadoutItemData item_data;
+        static LoadoutItemData item_data;
 
-		FormatEx(buffer, sizeof(buffer), "weapon_%s", current_weapon);
+        FormatEx(buffer, sizeof(buffer), "weapon_%s", current_weapon);
 
         for (int i; i < loadouts.Length; i++)
-		{
+        {
             if (!loadouts.GetArray(i, loadout, sizeof(loadout)))
             {
                 continue;
@@ -288,10 +288,10 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
                     loadout.items[j].SetArray(position, item_data, sizeof(item_data));
                 }
             }
-		}
-	}
+        }
+    }
 
-	return SMCParse_Continue;
+    return SMCParse_Continue;
 }
 
 SMCResult SMCParser_OnRawLine(SMCParser parser, const char[] line, int line_num)
@@ -359,13 +359,13 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
 void Distributer_OnPlayerSpawn(int client)
 {
-	if (!retakes_distributer_enable.BoolValue)
+    if (!retakes_distributer_enable.BoolValue)
     {
         return;
     }
 
-	if (IsFakeClient(client))
-	{
+    if (IsFakeClient(client))
+    {
         return;
     }
 }
@@ -399,24 +399,24 @@ void DisplayDistributerMenu(int client)
 
 int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option)
 {
-	switch (action)
-	{
-		case MenuAction_Select:
-		{
-			char buffer[32];
+    switch (action)
+    {
+        case MenuAction_Select:
+        {
+            char buffer[32];
 
-			menu.GetItem(option, buffer, sizeof(buffer));
+            menu.GetItem(option, buffer, sizeof(buffer));
 
-			DisplayDistributerLoadoutMenu(buffer, client);
-		}
+            DisplayDistributerLoadoutMenu(buffer, client);
+        }
 
         case MenuAction_End:
         {
             delete menu;
         }
-	}
+    }
 
-	return 0;
+    return 0;
 }
 
 void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
