@@ -493,7 +493,6 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
     menu.Display(client, MENU_TIME_FOREVER);
 }
 
-
 int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int option)
 {
     switch (action)
