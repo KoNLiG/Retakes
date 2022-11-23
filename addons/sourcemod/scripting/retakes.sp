@@ -339,3 +339,9 @@ int GetTeamSpawnRole(int team)
 {
     return team == CS_TEAM_SPECTATOR ? SpawnRole_None : team;
 }
+
+// Doesn't include spectator slots.
+int GetRetakeMaxHumanPlayers()
+{
+	return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
+}
