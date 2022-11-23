@@ -291,7 +291,6 @@ SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 
     return SMCParse_Continue;
 }
-#include <consolecolors>
 
 SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
