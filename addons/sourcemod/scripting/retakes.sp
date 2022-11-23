@@ -12,6 +12,8 @@
 // Enable debug mode.
 #define DEBUG
 
+#define PLUGIN_TAG "Retakes"
+
 #if defined DEBUG
 #include <profiler>
 #endif

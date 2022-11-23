@@ -74,8 +74,24 @@ char current_weapon[sizeof(LoadoutItemData::classname)];
 
 public void Distributer_OnPluginStart()
 {
+    bool file_exists;
+
     char path[PLATFORM_MAX_PATH];
+
     BuildPath(Path_SM, path, sizeof(path), "data/retakes/distributer.cfg");
+
+    file_exists = FileExists(path);
+
+    if (!file_exists && !retakes_distributer_enable.BoolValue)
+    {
+        return;
+    }
+
+    else if (!file_exists && retakes_distributer_enable.BoolValue)
+    {
+        SetFailState("%s : Unable to find distributer.cfg file", PLUGIN_TAG);
+        return;
+    }
 
     loadouts = new ArrayList(sizeof(LoadoutData));
 
