@@ -486,13 +486,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
         }
     }
 
-    if (menu.ItemCount <= 3)
-    {
-        for (int i; i <= 2; i++)
-        {
-            menu.AddItem(NULL_STRING, NULL_STRING, ITEMDRAW_NOTEXT);
-        }
-    }
+    FixMenuGap(menu);
 
     menu.ExitButton = true;
     menu.ExitBackButton = true;

@@ -345,3 +345,12 @@ int GetRetakeMaxHumanPlayers()
 {
 	return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
 }
+
+void FixMenuGap(Menu menu)
+{
+    int max = (6 - menu.ItemCount);
+    for (int i; i < max; i++)
+    {
+        menu.AddItem("", "", ITEMDRAW_NOTEXT);
+    }
+}
