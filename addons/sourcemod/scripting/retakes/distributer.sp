@@ -23,7 +23,7 @@ enum struct LoadoutItemData
 	char classname[32];
 
 	WeaponType type;
-    
+
 	float chance;
 
 	int max;
@@ -153,7 +153,7 @@ SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt
 
         loadout.Initialize(name);
 
-        loadouts.PushArray(loadout, sizeof(loadout));        
+        loadouts.PushArray(loadout, sizeof(loadout));
 	}
 
 	else if (smc_parser_depth == 3 && smc_parser_count == 1)
@@ -255,7 +255,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 		char buffer[32];
 
         LoadoutData loadout;
-        
+
 		static LoadoutItemData item_data;
 
 		FormatEx(buffer, sizeof(buffer), "weapon_%s", current_weapon);
@@ -432,7 +432,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
     Menu menu = new Menu(Handler_DistributerLoadoutMenu);
 
     FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "MenuPrefix", client, loadout_name, client);
-    
+
     menu.SetTitle(buffer);
 
     for (int i = loadouts.Length - 1; i >= 0; i--)
@@ -527,6 +527,6 @@ bool CS_FindEquippedInventoryItem(int client, CSWeaponID weapon_id)
             return true;
         }
     }
-    
+
     return false;
 }
