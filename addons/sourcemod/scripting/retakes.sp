@@ -287,9 +287,9 @@ void DisarmClient(int client)
 {
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
-    for (int current_weapon, ent; current_weapon < max_weapons; current_weapon++)
+    for (int weapon, ent; weapon < max_weapons; weapon++)
     {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_weapon)) != -1)
+        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) != -1)
         {
             RemovePlayerItem(client, ent);
             RemoveEntity(ent);
