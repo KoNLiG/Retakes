@@ -223,15 +223,6 @@ public void OnPluginStart()
 
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
-
-    // Late load support. Disabled since database handle isn't ready for distributer at this moment.
-    // for (int current_client = 1; current_client <= MaxClients; current_client++)
-    // {
-    //     if (IsClientInGame(current_client))
-    //     {
-    //         OnClientPutInServer(current_client);
-    //     }
-    // }
 }
 
 public void OnMapStart()
