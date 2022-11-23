@@ -23,6 +23,7 @@ void Configuration_OnPluginStart()
 void RegisterConVars()
 {
     retakes_preferred_team = CreateConVar("retakes_preferred_team", "3", "Team to transfer players to when the number of players is not equal between the two teams. 2 - Defenders/T, 3 - Attackers/CT, -1 - No preference");
+    retakes_queued_players_team = CreateConVar("retakes_queued_players_team", "3", "Team index queued players will be assigned to after leaving queue. 2 - Defenders/T, 3 - Attackers/CT");
     retakes_player_min = CreateConVar("retakes_player_min", "2", "Minimum amount of players before retakes can start.", _, true, 1.0);
     retakes_bots_are_players = CreateConVar("retakes_bots_are_players", "1", "Server bots will be treated as regular players.", _, true, 0.0, true, 1.0);
     retakes_max_attackers = CreateConVar("retakes_max_attackers", "5", "Max players allowed in the Counter-Terrorist team.", _, true, 1.0, true, 5.0);
@@ -51,7 +52,7 @@ void RegisterConVars()
 
     // 'distributer.sp' cvars.
     retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "1", "Enable or disable the weapons distributer.");
-    
+
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
 }
@@ -60,7 +61,7 @@ void RegisterConVars()
 void RegisterCommands()
 {
     RegConsoleCmd("sm_retakes", Command_Retakes, "Retake settings.");
-    
+
     RegServerCmd("retakes_reloadnav", Command_ReloadNav, "Reloads the navigation spawn areas.");
 }
 

@@ -5,6 +5,7 @@
 #include <retakes>
 #include <nav_mesh>
 #include <autoexecconfig>
+#include <queue>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -150,6 +151,7 @@ float g_ServerTickrate;
 
 // ConVar definitions. handled in 'configuration.sp'
 ConVar retakes_preferred_team;
+ConVar retakes_queued_players_team;
 ConVar retakes_player_min;
 ConVar retakes_bots_are_players;
 ConVar retakes_max_wins_scramble;
