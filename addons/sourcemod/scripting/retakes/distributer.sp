@@ -620,6 +620,7 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
 
             EquipPlayerWeapon(client, weapon);
 
+            // Bug here when the menu loads on 'WEAPONTYPE_SECONDARY'
             if (!g_Players[client].close_menu)
             {
                 DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_menu, client, WEAPONTYPE_SECONDARY);
