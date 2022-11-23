@@ -70,6 +70,7 @@ ArrayList loadouts;
 int smc_parser_depth;
 int smc_parser_count;
 int current_loadout;
+int line_count;
 char current_weapon[sizeof(LoadoutItemData::classname)];
 
 public void Distributer_OnPluginStart()
@@ -135,7 +136,7 @@ void Distributer_OnClientPutInServer(int client)
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%s') ON DUPLICATE KEY UPDATE `account_id` = %i", table_name, g_Players[client].account_id, g_Players[client].account_id);
+    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%i') ON DUPLICATE KEY UPDATE `account_id` = %i", table_name, g_Players[client].account_id, g_Players[client].account_id);
     g_Database.Query(SQL_Distributer_OnClientConnect, query, g_Players[client].user_id);
 }
 
@@ -203,6 +204,7 @@ SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt
 SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 {
     smc_parser_depth--;
+
     return SMCParse_Continue;
 }
 
@@ -312,6 +314,8 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
 SMCResult SMCParser_OnRawLine(SMCParser parser, const char[] line, int line_num)
 {
+    line_count++;
+
     return SMCParse_Continue;
 }
 
@@ -323,7 +327,8 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (failed)
     {
-        SetFailState("There was a fatal error");
+        SetFailState("%s : There was a fatal error parsing distributer loadouts at line %i", PLUGIN_TAG, line_count);
+        return;
     }
 
     bool fail_state;
@@ -338,15 +343,10 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
             continue;
         }
 
-        if (!strlen(loadout.name))
-        {
-            continue;
-        }
-
         if (!TranslationPhraseExists(loadout.name))
         {
             fail_state = true;
-            LogError("Translation for \"%s\" loadout key not found", loadout.name);
+            LogError("Translation for \"%s\" loadout key not found at line %i", loadout.name, line_count);
         }
 
         for (int j; j <= LOADOUT_TEAM_MAX; j++)
@@ -361,7 +361,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
                 if (!TranslationPhraseExists(item_data.classname))
                 {
                     fail_state = true;
-                    LogError("Translation for \"%s\" weapon key not found", item_data.classname);
+                    LogError("Translation for \"%s\" weapon key not found at line %i", item_data.classname, line_count);
                 }
             }
         }
@@ -369,7 +369,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (fail_state)
     {
-        SetFailState("There are missing translations for distributer");
+        SetFailState("%s : There are missing translations for distributer part of the retakes plugin", PLUGIN_TAG);
     }
 }
 
@@ -475,6 +475,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
                 continue;
             }
 
+            // Have something better in mind and I'm going to use PTaH
             if (!strcmp(item_data.classname, "weapon_m4a1"))
             {
                 item_data.classname = CS_FindEquippedInventoryItem(client, item_data.item_id) ? "weapon_m4a1" : "weapon_m4a1_silencer";
