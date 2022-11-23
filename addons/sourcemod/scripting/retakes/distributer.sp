@@ -119,7 +119,7 @@ void Distributer_OnDatabaseConnection()
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
     g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, `loadout_name` VARCHAR(32), `primary_def_index_t` INT UNSIGNED, `primary_def_index_ct` INT UNSIGNED, `secondary_def_index_t` INT UNSIGNED, `secondary_def_index_ct` INT UNSIGNED, PRIMARY KEY (`id`, `account_id`), UNIQUE INDEX `UNIQUE1` (`id` ASC)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
-    g_Database.Query(SQL_Distributer_CreateTables, query, _, DBPrio_High);
+    g_Database.Query(SQL_OnDistributerTableCreated, query, _, DBPrio_High);
 }
 
 void Distributer_OnClientPutInServer(int client)
@@ -130,7 +130,73 @@ void Distributer_OnClientPutInServer(int client)
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
     g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%d') ON DUPLICATE KEY UPDATE `account_id` = %d", table_name, g_Players[client].account_id, g_Players[client].account_id);
-    g_Database.Query(SQL_Distributer_OnClientConnect, query, g_Players[client].user_id);
+    g_Database.Query(SQL_OnClientConnect, query, g_Players[client].user_id);
+}
+
+void SQL_OnDistributerTableCreated(Database database, DBResultSet results, const char[] error, any data)
+{
+    if (!database || !results || error[0])
+    {
+        LogError("%s There was an error creating the distributer table \n\n%s", PLUGIN_TAG, error);
+        return;
+    }
+}
+
+void SQL_OnClientConnect(Database database, DBResultSet results, const char[] error, int userid)
+{
+    if (!database || !results || error[0])
+    {
+        LogError("%s There was an error fecthing player data \n\n%s", PLUGIN_TAG, error);
+        return;
+    }
+
+    int client = GetClientOfUserId(userid);
+
+    if (!client)
+    {
+        return;
+    }
+
+    int key;
+    results.FieldNameToNum("id", key);
+    g_Players[client].key = results.FetchInt(key);
+
+    char query[256];
+    char table_name[32];
+
+    retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
+
+    g_Database.Format(query, sizeof(query), "SELECT DISTINCT name, primary_weapon_item_index, secondary_weapon_item_index FROM `%s_distributer_loadouts` WHERE `player_id` = %d", table_name, g_Players[client].key);
+    g_Database.Query(SQL_Distributer_OnClientInfoFetched, query, g_Players[client].user_id, DBPrio_High);
+}
+
+void SQL_Distributer_OnClientInfoFetched(Database database, DBResultSet results, const char[] error, int userid)
+{
+    if (!database || !results || error[0])
+    {
+        LogError("There was an error saving player weapon data! %s", error);
+        return;
+    }
+
+    int client = GetClientOfUserId(userid);
+
+    if (!client)
+    {
+        return;
+    }
+
+    int loadout_name;
+    int primary_weapon;
+    int secondary_Weapon;
+
+    results.FieldNameToNum("loadout_name", loadout_name);
+    results.FieldNameToNum("primary_weapon_item_index", primary_weapon);
+    results.FieldNameToNum("secondary_Weapon", secondary_Weapon);
+
+    while (results.FetchRow())
+    {
+
+    }
 }
 
 public Action Command_Distributer(int client, int args)
