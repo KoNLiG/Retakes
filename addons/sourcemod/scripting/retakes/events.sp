@@ -80,19 +80,7 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
 
 void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!client)
-    {
-        return;
-    }
-
-    int bombsite_index = event.GetInt("site");
-
-    int planted_c4 = GetPlantedC4();
-    if (planted_c4 != -1)
-    {
-        PlantLogic_OnBombPlanted(client, bombsite_index, planted_c4);
-    }
+    PlantLogic_OnBombPlanted();
 }
 
 void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -110,24 +98,12 @@ void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
     }
 
     int dmg_health = event.GetInt("dmg_health");
-    PlayerManager_OnPlayerHurt(client, attacker, dmg_health);
+    PlayerManager_OnPlayerHurt(attacker, dmg_health);
 }
 
 void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!client)
-    {
-        return;
-    }
-
-    int bombsite_index = event.GetInt("site");
-
-    int planted_c4 = GetPlantedC4();
-    if (planted_c4 != -1)
-    {
-        DefuseLogic_OnBombDefused(client, bombsite_index, planted_c4);
-    }
+    DefuseLogic_OnBombDefused();
 }
 
 void Event_BeginPlant(Event event, const char[] name, bool dontBroadcast)
@@ -138,12 +114,10 @@ void Event_BeginPlant(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    int bombsite_index = event.GetInt("site");
-
     int weapon_c4 = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
     if (weapon_c4 != -1)
     {
-        PlantLogic_OnBeginPlant(client, bombsite_index, weapon_c4);
+        PlantLogic_OnBeginPlant(weapon_c4);
     }
 }
 
@@ -155,23 +129,14 @@ void Event_BeginDefuse(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    bool haskit = event.GetBool("haskit");
-
     int planted_c4 = GetPlantedC4();
     if (planted_c4 != -1)
     {
-        DefuseLogic_OnBeginDefuse(client, haskit, planted_c4);
+        DefuseLogic_OnBeginDefuse(client, planted_c4);
     }
 }
 
 void Event_InfernoExpire(Event event, const char[] name, bool dontBroadcast)
 {
-    int entity = event.GetInt("entityid");
-
-    float origin[3];
-    origin[0] = event.GetFloat("x");
-    origin[1] = event.GetFloat("y");
-    origin[2] = event.GetFloat("z");
-
-    DefuseLogic_OnInfernoExpire(entity, origin);
+    DefuseLogic_OnInfernoExpire();
 }

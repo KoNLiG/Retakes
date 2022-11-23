@@ -241,7 +241,7 @@ public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
 
-    PlayerManger_OnClientPutInServer(client);
+    PlayerManger_OnClientPutInServer();
     Distributer_OnClientPutInServer(client);
 }
 
@@ -297,11 +297,6 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
-}
-
-bool IsWarmupPeriod()
-{
-    return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
 bool ShouldWaitForPlayers()
