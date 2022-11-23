@@ -59,7 +59,7 @@ enum struct LoadoutData
 
     void Clear()
     {
-        for (int i; i <= LOADOUT_TEAM_CT; i++)
+        for (int i; i < LOADOUT_TEAM_MAX; i++)
         {
             delete this.items[i];
         }
