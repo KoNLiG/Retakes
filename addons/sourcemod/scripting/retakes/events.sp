@@ -13,8 +13,9 @@ void Events_OnPluginStart()
     HookEvent("player_spawn", Event_PlayerSpawn);
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("player_connect_full", Event_PlayerConnectFull);
-    HookEvent("bomb_planted", Event_BombPlanted);
+    HookEvent("player_team", Event_PlayerTeam);
     HookEvent("player_hurt", Event_PlayerHurt);
+    HookEvent("bomb_planted", Event_BombPlanted);
     HookEvent("bomb_defused", Event_BombDefused);
     HookEvent("bomb_beginplant", Event_BeginPlant);
     HookEvent("bomb_begindefuse", Event_BeginDefuse);
@@ -78,9 +79,18 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
     PlayerManager_OnPlayerConnectFull(client);
 }
 
-void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
+void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 {
-    PlantLogic_OnBombPlanted();
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!client)
+    {
+        return;
+    }
+
+    int team = event.GetInt("team"), oldteam = event.GetInt("oldteam");
+    bool disconnect = event.GetBool("disconnect");
+
+    PlayerManager_OnPlayerTeam(client, team, oldteam, disconnect);
 }
 
 void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
@@ -99,6 +109,11 @@ void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)
 
     int dmg_health = event.GetInt("dmg_health");
     PlayerManager_OnPlayerHurt(attacker, dmg_health);
+}
+
+void Event_BombPlanted(Event event, const char[] name, bool dontBroadcast)
+{
+    PlantLogic_OnBombPlanted();
 }
 
 void Event_BombDefused(Event event, const char[] name, bool dontBroadcast)

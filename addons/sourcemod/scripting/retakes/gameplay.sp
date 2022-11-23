@@ -45,6 +45,14 @@ void Gameplay_OnRoundFreezeEnd()
     SetRoundInProgress(true);
 }
 
+void Gameplay_OnClientDisconnectPost()
+{
+    if (g_IsWaitingForPlayers && !GetRetakeClientCount())
+    {
+        SetWaitingForPlayersState(false);
+    }
+}
+
 void SelectBombsite()
 {
     // 'x ^ 1' is practically the same as '!x' but without a tag mismatch warning.

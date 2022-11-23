@@ -145,6 +145,13 @@
 		"he"			"!מחכים ל {1} שחקנים נוספים"
 	}
 
+	"Placed In Queue"
+	{
+		"#format"		"{1:s}"
+		"en"			"You were put in the queue in {1} place."
+		"he"			".{1} הוכנסת לתור במקום "
+	}
+
     "Distributer"
     {
         "en"        "Distributer"

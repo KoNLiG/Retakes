@@ -5,6 +5,7 @@
 #include <retakes>
 #include <nav_mesh>
 #include <autoexecconfig>
+#include <queue>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -150,6 +151,7 @@ float g_ServerTickrate;
 
 // ConVar definitions. handled in 'configuration.sp'
 ConVar retakes_preferred_team;
+ConVar retakes_queued_players_team;
 ConVar retakes_player_min;
 ConVar retakes_bots_are_players;
 ConVar retakes_max_wins_scramble;
@@ -252,6 +254,11 @@ public void OnClientDisconnect(int client)
     g_Players[client].Reset();
 }
 
+public void OnClientDisconnect_Post(int client)
+{
+	Gameplay_OnClientDisconnectPost();
+}
+
 void GetClientAimPosition(int client, float result[3])
 {
     float origin[3], angles[3];
@@ -331,4 +338,10 @@ bool IsRetakeClient(int client)
 int GetTeamSpawnRole(int team)
 {
     return team == CS_TEAM_SPECTATOR ? SpawnRole_None : team;
+}
+
+// Doesn't include spectator slots.
+int GetRetakeMaxHumanPlayers()
+{
+	return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
 }
