@@ -34,8 +34,8 @@
 
     "Spawn Area Error"
     {
-        "en"	"An error occured while adding the new spawn area."
-        "he"	"שגיאה נוצרה בתהליך יצירת האזור ספאון החדש."
+        "en"	" An error occured while adding the new spawn area."
+        "he"	" שגיאה נוצרה בתהליך יצירת האזור ספאון החדש."
     }
 
     "Added Spawn Area"
@@ -48,8 +48,8 @@
     "Deleted Spawn Area"
     {
         "#format"		"{1:s},{2:s}"
-        "en"			"Successfully deleted a spawn area in bombsite {1} for {2}."
-        "he"			"אזור ספאון נחמק בהצלחה באתר פצצה {1} לקבוצה {2}."
+        "en"			"Successfully deleted a spawn area in bombsite  {1} for {2}."
+        "he"			"אזור ספאון נחמק בהצלחה באתר פצצה  {1} לקבוצה {2}."
     }
 
     // Menu text phrases.
@@ -144,18 +144,144 @@
 		"en"			"WAITING FOR {1} MORE PLAYER(S)!"
 		"he"			"!מחכים ל {1} שחקנים נוספים"
 	}
-}
 
-// - White
-// - Red
-// - Team color (may cause player's color dot before symbol)
-// - Green
-// - Light green
-// - Green(money awards)
-// - Light red
-// - CT color
-//	 - T color
-// - Light blue
-// - Blue
-// - Violet
-// - Light red 2
+    "Distributer"
+    {
+        "en"        "Distributer"
+    }
+
+    "weapon_usp_silencer"
+    {
+        "en"        "USP-S"
+    }
+
+    "weapon_hkp2000"
+    {
+        "en"        "P2000"
+    }
+
+    "weapon_fiveseven"
+    {
+        "en"        "Five Seven"
+    }
+
+    "weapon_cz75a"
+    {
+        "en"        "CZ75A"
+    }
+
+    "weapon_tec9"
+    {
+        "en"        "Tec-9"
+    }
+
+    "weapon_glock"
+    {
+        "en"        "Glock-18"
+    }
+
+    "weapon_deagle"
+    {
+        "en"        "Deagle"
+    }
+
+    "weapon_ump45"
+    {
+        "en"        "UMP-45"
+    }
+
+    "weapon_mp9"
+    {
+        "en"        "MP-9"
+    }
+
+    "weapon_mac10"
+    {
+        "en"        "MAC-10"
+    }
+
+    "weapon_revolver"
+    {
+        "en"        "R8 Revolver"
+    }
+
+    "weapon_elite"
+    {
+        "en"        "Dual Berettas"
+    }
+
+    "weapon_p250"
+    {
+        "en"        "P250"
+    }
+
+    "weapon_ak47"
+    {
+        "en"        "AK47"
+    }
+
+    "weapon_m4a1"
+    {
+        "en"        "M4A1"
+    }
+
+    "weapon_m4a1_silencer"
+    {
+        "en"        "M4A1-S"
+    }
+
+    "weapon_aug"
+    {
+        "en"        "AUG"
+    }
+
+    "weapon_awp"
+    {
+        "en"        "AWP"
+    }
+
+    "weapon_bizon"
+    {
+        "en"        "Bizon"
+    }
+
+    "weapon_famas"
+    {
+        "en"        "Famas"
+    }
+
+    "weapon_g3sg1"
+    {
+        "en"        "G3sg1"
+    }
+
+    "weapon_galilar"
+    {
+        "en"        "Galilar"
+    }
+
+    "weapon_molotov"
+    {
+        "en"        "Molotov"
+    }
+
+    "weapon_smokegrenade"
+    {
+        "en"        "Smoke Grenade"
+    }
+
+    "Full_Buy"
+    {
+        "en"          "Full Buy"
+    }
+
+    "Force_Buy"
+    {
+        "en"          "Force Buy"
+    }
+
+    "Pistol_Buy"
+    {
+        "en"          "Pistol Buy"
+    }
+}

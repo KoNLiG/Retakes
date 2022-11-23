@@ -5,6 +5,7 @@
 #include <retakes>
 #include <nav_mesh>
 #include <autoexecconfig>
+#include <consolecolors>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -94,9 +95,17 @@ enum struct EditMode
 
 enum struct Player
 {
+    int key;
+
     int index;
 
+    int user_id;
+
+    int account_id;
+
     EditMode edit_mode;
+
+    StringMap weapons_map;
 
     int spawn_role;
 
@@ -105,7 +114,16 @@ enum struct Player
     //============================================//
     void Initiate(int client)
     {
+        this.key = 0;
+
         this.index = client;
+
+        this.user_id = GetClientUserId(this.index);
+
+        this.account_id = GetSteamAccountID(this.index);
+
+        this.weapons_map = new StringMap();
+
         this.points = 0;
     }
 
@@ -147,6 +165,7 @@ ConVar retakes_max_consecutive_rounds_same_target_site;
 ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
+ConVar retakes_distributer_enable;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
@@ -156,6 +175,7 @@ ConVar retakes_database_table_distributer;
 #include "retakes/spawn_manager.sp"
 #include "retakes/player_manager.sp"
 #include "retakes/configuration.sp"
+#include "retakes/distributer.sp"
 #include "retakes/sdk.sp"
 #include "retakes/plant_logic.sp"
 #include "retakes/defuse_logic.sp"
@@ -192,6 +212,7 @@ public void OnPluginStart()
     LoadTranslations("localization.phrases");
 
     Configuration_OnPluginStart();
+    Distributer_OnPluginStart();
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
@@ -229,6 +250,7 @@ public void OnClientPutInServer(int client)
     g_Players[client].Initiate(client);
 
     PlayerManger_OnClientPutInServer(client);
+    Distributer_OnClientPutInServer(client);
 }
 
 public void OnClientDisconnect(int client)

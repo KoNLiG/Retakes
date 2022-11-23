@@ -49,6 +49,9 @@ void RegisterConVars()
     retakes_database_table_spawns = CreateConVar("retakes_database_table_spawn_ares", "retakes_spawn_areas", "Database table name for spawn area locations.");
     retakes_database_table_distributer = CreateConVar("retakes_database_table_distributer", "retakes_distributer", "Database table name for player weapons.");
 
+    // 'distributer.sp' cvars.
+    retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "1", "Enable or disable the weapons distributer.");
+    
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
 }

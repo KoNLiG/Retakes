@@ -53,6 +53,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
     PlayerManager_OnPlayerSpawn(client);
     SpawnManager_OnPlayerSpawn(client);
+    Distributer_OnPlayerSpawn(client);
 }
 
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
