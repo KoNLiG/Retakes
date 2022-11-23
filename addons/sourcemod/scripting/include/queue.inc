@@ -7,18 +7,18 @@
 
 // A FIFO Queue methodmap
 // @Author JoinedSenses
-methodmap Queue < ArrayList {
+methodmap Queue < Handle {
 	// Creates A FIFO Queue based on the behaviors of ArrayList and ArrayStack.
 	// @param blocksize     The number of cells each member of the queue can
 	//                      hold.
 	// @return              New Handle to Queue object.
 	public Queue(int blocksize = 1) {
-		return view_as<Queue>(new ArrayList(blocksize));
+		return view_as<Queue>(CreateArray(blocksize));
 	}
 
 	// Clears a queue of all entries.
 	public void Clear() {
-		this.Clear();
+		ClearArray(this);
 	}
 
 	// Clones a queue, returning a new handle with the same size and data.
@@ -28,7 +28,7 @@ methodmap Queue < ArrayList {
 	//
 	// @return              New handle to the cloned queue object.
 	public Queue Clone() {
-		return view_as<Queue>(this.Clone());
+		return view_as<Queue>(CloneArray(this));
 	}
 
 	// Pushes a value onto the end of the queue
@@ -39,14 +39,14 @@ methodmap Queue < ArrayList {
 	// @param value         Value to push.
 	// @error               Invalid Handle or out of memory.
 	public void Push(any value) {
-		this.Push(value);
+		PushArrayCell(this, value);
 	}
 
 	// Pushes a string onto the end of the queue, truncating it if it is too big.
 	//
 	// @param value         String to push.
 	public void PushString(const char[] value) {
-		this.PushString(value);
+		PushArrayString(this, value);
 	}
 
 	// Pushes an array of cells onto the end of the queue. The cells
@@ -58,7 +58,7 @@ methodmap Queue < ArrayList {
 	//                      will be equal to the blocksize.  If set higher than the
 	//                      blocksize, the operation will be truncated.
 	public void PushArray(const any[] values, int size = -1) {
-		this.PushArray(values, size);
+		PushArrayArray(this, values, size);
 	}
 
 	// Retrieves and removes a cell value from the head of the queue
@@ -66,8 +66,8 @@ methodmap Queue < ArrayList {
 	// @return              Value read.
 	// @error               Invalid index (0).
 	public any Pop() {
-		any value = this.Get(0);
-		this.Erase(0);
+		any value = GetArrayCell(this, 0);
+		RemoveFromArray(this, 0);
 		return value;
 	}
 
@@ -78,8 +78,8 @@ methodmap Queue < ArrayList {
 	// @return              Number of characters copied.
 	// @error               Invalid index (0).
 	public int PopString(char[] buffer, int maxlength) {
-		int charCount = this.GetString(0, buffer, maxlength);
-		this.Erase(0);
+		int charCount = GetArrayString(this, 0, buffer, maxlength);
+		RemoveFromArray(this, 0);
 		return charCount;
 	}
 
@@ -91,8 +91,8 @@ methodmap Queue < ArrayList {
 	// @return              Number of cells copied.
 	// @error               Invalid index (0).
 	public int PopArray(any[] buffer, int size = -1) {
-		int cellCount = this.GetArray(0, buffer, size);
-		this.Erase(0);
+		int cellCount = GetArrayArray(this, 0, buffer, size);
+		RemoveFromArray(this, 0);
 		return cellCount;
 	}
 
@@ -101,7 +101,7 @@ methodmap Queue < ArrayList {
 	// @return              Value read.
 	// @error               Invalid index (0).
 	public any Peek() {
-		return this.Get(0);
+		return GetArrayCell(this, 0);
 	}
 
 	// Retrieves a string value from the head of the queue
@@ -111,7 +111,7 @@ methodmap Queue < ArrayList {
 	// @return              Number of characters copied.
 	// @error               Invalid index (0).
 	public int PeekString(char[] buffer, int maxlength) {
-		return this.GetString(0, buffer, maxlength);
+		return GetArrayString(this, 0, buffer, maxlength);
 	}
 
 	// Retrieves an array value from the head of the queue
@@ -122,21 +122,21 @@ methodmap Queue < ArrayList {
 	// @return              Number of cells copied.
 	// @error               Invalid index (0).
 	public int PeekArray(any[] buffer, int size = -1) {
-		return this.GetArray(0, buffer, size);
+		return GetArrayArray(this, 0, buffer, size);
 	}
 
 	// Returns true if the queue is empty, false otherwise.
 	property bool Empty {
-		public get() { return !this.Length; }
+		public get() { return !GetArraySize(this); }
 	}
 
 	// Returns length of the queue
 	property int Length {
-		public get() { return this.Length; }
+		public get() { return GetArraySize(this); }
 	}
 
 	// Returns the blocksize the queue was created with.
 	property int BlockSize {
-		public get() { return this.BlockSize; }
+		public get() { return GetArrayBlockSize(this); }
 	}
 }
