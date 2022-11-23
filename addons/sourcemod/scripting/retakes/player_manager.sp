@@ -207,9 +207,11 @@ void MovePlayersArray(ArrayList array, int team)
 {
     for (int current_idx, client; current_idx < array.Length; current_idx++)
     {
-        client = array.Get(current_idx);
+        client = array.Get(current_idx, Player::index);
 
+#if defined DEBUG
         PrintToChatAll(" \x0CMoved %N to %d", client, team);
+#endif
 
         SetPlayerTeam(client, team);
     }
