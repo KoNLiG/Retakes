@@ -67,11 +67,11 @@ enum struct LoadoutData
 }
 
 ArrayList loadouts;
-int smc_parser_depth;
-int smc_parser_count;
-int current_loadout;
-int line_count;
-char current_weapon[sizeof(LoadoutItemData::classname)];
+int       smc_parser_depth;
+int       smc_parser_count;
+int       current_loadout;
+int       line_count;
+char      current_weapon[sizeof(LoadoutItemData::classname)];
 
 public void Distributer_OnPluginStart()
 {
@@ -118,15 +118,8 @@ void Distributer_OnDatabaseConnection()
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    Transaction transaction = new Transaction();
-
-    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_players` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, PRIMARY KEY (`id`), UNIQUE `account_id_unique` (`account_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
-    transaction.AddQuery(query);
-
-    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`player_id` BIGINT UNSIGNED NOT NULL, `loadout_name` VARCHAR(32), `primary_weapon_item_index` INT UNSIGNED, `secondary_weapon_item_index` INT UNSIGNED, PRIMARY KEY (`player_id`), CONSTRAINT `fk_retakes_distributer_loadouts` FOREIGN KEY (`player_id`) REFERENCES `%s_distributer_players` (`id`) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name, table_name);
-    transaction.AddQuery(query);
-
-    g_Database.Execute(transaction, SQL_Distributer_TransactionTables, SQL_Distributer_TransactionFailure, _, DBPrio_High);
+    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, `loadout_name` VARCHAR(32), `primary_def_index_t` INT UNSIGNED, `primary_def_index_ct` INT UNSIGNED, `secondary_def_index_t` INT UNSIGNED, `secondary_def_index_ct` INT UNSIGNED, PRIMARY KEY (`id`, `account_id`), UNIQUE INDEX `UNIQUE1` (`id` ASC)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
+    g_Database.Query(SQL_Distributer_CreateTables, query, _, DBPrio_High);
 }
 
 void Distributer_OnClientPutInServer(int client)
@@ -333,7 +326,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     bool fail_state;
 
-    LoadoutData loadout;
+    LoadoutData     loadout;
     LoadoutItemData item_data;
 
     for (int i = loadouts.Length - 1; i >= 0; i--)
@@ -488,7 +481,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
 
     FixMenuGap(menu);
 
-    menu.ExitButton = true;
+    menu.ExitButton     = true;
     menu.ExitBackButton = true;
     menu.Display(client, MENU_TIME_FOREVER);
 }
@@ -506,7 +499,6 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
             int weapon = GivePlayerItem(client, buffer);
 
             EquipPlayerWeapon(client, weapon);
-
 
             // DisplayDistributerLoadoutMenu(..., ...)
         }
@@ -530,7 +522,7 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
 
 bool CS_FindEquippedInventoryItem(int client, CSWeaponID weapon_id)
 {
-    for (int i = GetEntPropArraySize(client, Prop_Send, "m_EquippedLoadoutItemDefIndices") - 1; i >= 0 ; i--)
+    for (int i = GetEntPropArraySize(client, Prop_Send, "m_EquippedLoadoutItemDefIndices") - 1; i >= 0; i--)
     {
         if (CS_WeaponIDToItemDefIndex(weapon_id) == GetEntProp(client, Prop_Send, "m_EquippedLoadoutItemDefIndices", _, i))
         {
