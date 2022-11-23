@@ -12,6 +12,8 @@
 // Enable debug mode.
 #define DEBUG
 
+#define PLUGIN_TAG "Retakes"
+
 #if defined DEBUG
 #include <profiler>
 #endif
@@ -94,9 +96,17 @@ enum struct EditMode
 
 enum struct Player
 {
+    int key;
+
     int index;
 
+    int user_id;
+
+    int account_id;
+
     EditMode edit_mode;
+
+    StringMap weapons_map;
 
     int spawn_role;
 
@@ -105,7 +115,16 @@ enum struct Player
     //============================================//
     void Initiate(int client)
     {
+        this.key = 0;
+
         this.index = client;
+
+        this.user_id = GetClientUserId(this.index);
+
+        this.account_id = GetSteamAccountID(this.index);
+
+        this.weapons_map = new StringMap();
+
         this.points = 0;
     }
 
@@ -147,6 +166,7 @@ ConVar retakes_max_consecutive_rounds_same_target_site;
 ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
+ConVar retakes_distributer_enable;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
@@ -156,6 +176,7 @@ ConVar retakes_database_table_distributer;
 #include "retakes/spawn_manager.sp"
 #include "retakes/player_manager.sp"
 #include "retakes/configuration.sp"
+#include "retakes/distributer.sp"
 #include "retakes/sdk.sp"
 #include "retakes/plant_logic.sp"
 #include "retakes/defuse_logic.sp"
@@ -192,6 +213,7 @@ public void OnPluginStart()
     LoadTranslations("localization.phrases");
 
     Configuration_OnPluginStart();
+    Distributer_OnPluginStart();
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
@@ -203,15 +225,6 @@ public void OnPluginStart()
 
     // Get the server tickrate once.
     g_ServerTickrate = 1.0 / GetTickInterval();
-
-    // Late load support.
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client))
-        {
-            OnClientPutInServer(current_client);
-        }
-    }
 }
 
 public void OnMapStart()
@@ -228,7 +241,8 @@ public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
 
-    PlayerManger_OnClientPutInServer(client);
+    PlayerManger_OnClientPutInServer();
+    Distributer_OnClientPutInServer(client);
 }
 
 public void OnClientDisconnect(int client)
@@ -265,9 +279,9 @@ void DisarmClient(int client)
 {
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
-    for (int current_weapon, ent; current_weapon < max_weapons; current_weapon++)
+    for (int weapon, ent; weapon < max_weapons; weapon++)
     {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_weapon)) != -1)
+        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) != -1)
         {
             RemovePlayerItem(client, ent);
             RemoveEntity(ent);
@@ -283,11 +297,6 @@ bool IsVectorZero(float vec[3])
 int GetPlantedC4()
 {
     return FindEntityByClassname(-1, "planted_c4");
-}
-
-bool IsWarmupPeriod()
-{
-    return view_as<bool>(GameRules_GetProp("m_bWarmupPeriod"));
 }
 
 bool ShouldWaitForPlayers()

@@ -45,12 +45,12 @@ void PlantLogic_OnRoundFreezeEnd()
     LockupBombsite(g_TargetSite, false);
 }
 
-void PlantLogic_OnBeginPlant(int client, int bombsite_index, int weapon_c4)
+void PlantLogic_OnBeginPlant(int weapon_c4)
 {
     ForceC4Plant(weapon_c4);
 }
 
-void PlantLogic_OnBombPlanted(int planter, int bombsite_index, int planted_c4)
+void PlantLogic_OnBombPlanted()
 {
     SetFreezePeriod(false);
 }
