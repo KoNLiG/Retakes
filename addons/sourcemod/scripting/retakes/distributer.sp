@@ -4,11 +4,19 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define MAX_LOADOUTS_LENGTH 10
-#define LOADOUTS_MAX_LENGTH 25
-#define LOADOUT_TEAM_T 0
-#define LOADOUT_TEAM_CT 1
+#define LOADOUT_TEAM_T   0
+#define LOADOUT_TEAM_CT  1
 #define LOADOUT_TEAM_MAX 2
+
+#define WEAPONTYPE_PRIMARY   (1 << 0)
+#define WEAPONTYPE_SECONDARY (2 << 1)
+#define WEAPONTYPE_UTILITY   (3 >> 2)
+
+enum struct PlayerLoadout
+{
+    int primary_weapon[4];
+    int secondary_weapon[4];
+}
 
 enum WeaponType
 {
@@ -22,9 +30,9 @@ enum struct LoadoutItemData
 
     char classname[32];
 
-    WeaponType type;
-
     float chance;
+
+    int flags;
 
     int max;
 }
@@ -118,19 +126,8 @@ void Distributer_OnDatabaseConnection()
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_distributer_loadouts` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, `loadout_name` VARCHAR(32), `primary_def_index_t` INT UNSIGNED, `primary_def_index_ct` INT UNSIGNED, `secondary_def_index_t` INT UNSIGNED, `secondary_def_index_ct` INT UNSIGNED, PRIMARY KEY (`id`, `account_id`), UNIQUE INDEX `UNIQUE1` (`id` ASC)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
+    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s_players` (`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, `account_id` INT NOT NULL, `loadout_name` VARCHAR(32), `primary_def_index_t` INT UNSIGNED, `primary_def_index_ct` INT UNSIGNED, `secondary_def_index_t` INT UNSIGNED, `secondary_def_index_ct` INT UNSIGNED, PRIMARY KEY (`id`, `account_id`), UNIQUE INDEX `UNIQUE1` (`id` ASC)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;", table_name);
     g_Database.Query(SQL_OnDistributerTableCreated, query, _, DBPrio_High);
-}
-
-void Distributer_OnClientPutInServer(int client)
-{
-    char query[256];
-    char table_name[32];
-
-    retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
-
-    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_distributer_players` (`account_id`) VALUES ('%d') ON DUPLICATE KEY UPDATE `account_id` = %d", table_name, g_Players[client].account_id, g_Players[client].account_id);
-    g_Database.Query(SQL_OnClientConnect, query, g_Players[client].user_id);
 }
 
 void SQL_OnDistributerTableCreated(Database database, DBResultSet results, const char[] error, any data)
@@ -140,6 +137,17 @@ void SQL_OnDistributerTableCreated(Database database, DBResultSet results, const
         LogError("%s There was an error creating the distributer table \n\n%s", PLUGIN_TAG, error);
         return;
     }
+}
+
+void Distributer_OnClientPutInServer(int client)
+{
+    char query[256];
+    char table_name[32];
+
+    retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
+
+    g_Database.Format(query, sizeof(query), "INSERT INTO `%s_players` (`account_id`) VALUES (%d) ON DUPLICATE KEY UPDATE `account_id` = %i", table_name, g_Players[client].account_id, g_Players[client].account_id);
+    g_Database.Query(SQL_OnClientConnect, query, g_Players[client].user_id, DBPrio_High);
 }
 
 void SQL_OnClientConnect(Database database, DBResultSet results, const char[] error, int userid)
@@ -157,20 +165,16 @@ void SQL_OnClientConnect(Database database, DBResultSet results, const char[] er
         return;
     }
 
-    int key;
-    results.FieldNameToNum("id", key);
-    g_Players[client].key = results.FetchInt(key);
-
     char query[256];
     char table_name[32];
 
     retakes_database_table_distributer.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "SELECT DISTINCT name, primary_weapon_item_index, secondary_weapon_item_index FROM `%s_distributer_loadouts` WHERE `player_id` = %d", table_name, g_Players[client].key);
-    g_Database.Query(SQL_Distributer_OnClientInfoFetched, query, g_Players[client].user_id, DBPrio_High);
+    g_Database.Format(query, sizeof(query), "SELECT * FROM `%s_players` WHERE `id` = %d", table_name, g_Players[client].key);
+    g_Database.Query(SQL_OnClientInfoFetched, query, g_Players[client].user_id, DBPrio_High);
 }
 
-void SQL_Distributer_OnClientInfoFetched(Database database, DBResultSet results, const char[] error, int userid)
+void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[] error, int userid)
 {
     if (!database || !results || error[0])
     {
@@ -185,17 +189,38 @@ void SQL_Distributer_OnClientInfoFetched(Database database, DBResultSet results,
         return;
     }
 
+    int key;
     int loadout_name;
-    int primary_weapon;
-    int secondary_Weapon;
+    int primary_weapon[2];
+    int secondary_weapon[2];
 
+    results.FieldNameToNum("id", key);
     results.FieldNameToNum("loadout_name", loadout_name);
-    results.FieldNameToNum("primary_weapon_item_index", primary_weapon);
-    results.FieldNameToNum("secondary_Weapon", secondary_Weapon);
+    results.FieldNameToNum("primary_def_index_t", primary_weapon[0]);
+    results.FieldNameToNum("primary_def_index_ct", primary_weapon[1]);
+    results.FieldNameToNum("secondary_def_index_t", secondary_weapon[0]);
+    results.FieldNameToNum("secondary_def_index_ct", secondary_weapon[1]);
+
+    char buffer[64];
+    PlayerLoadout player_loadout;
 
     while (results.FetchRow())
     {
+        g_Players[client].key = results.FetchInt(key);
 
+        results.FetchString(loadout_name, buffer, sizeof(buffer));
+
+        for (int i; i < 2; i++)
+        {
+            player_loadout.primary_weapon[i + 2] = results.FetchInt(primary_weapon[i]);
+        }
+
+        for (int i; i < 2; i++)
+        {
+            player_loadout.secondary_weapon[i + 2] = results.FetchInt(secondary_weapon[i]);
+        }
+
+        g_Players[client].weapons_map.SetArray(buffer, player_loadout, sizeof(player_loadout));
     }
 }
 
@@ -266,6 +291,7 @@ SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 
     return SMCParse_Continue;
 }
+#include <consolecolors>
 
 SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
@@ -277,8 +303,10 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
     {
         static LoadoutItemData item_data;
 
-        if (!strcmp(key, "weapon") || !strcmp(key, "utility"))
+        if (StrContains(key, "weapon") != -1 || !strcmp(key, "utility"))
         {
+            int flags;
+
             char buffer[32];
 
             FormatEx(buffer, sizeof(buffer), "weapon_%s", value);
@@ -294,12 +322,24 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
             strcopy(item_data.classname, sizeof(LoadoutItemData::classname), buffer);
 
-            item_data.type = WeaponType_FireArm;
+            static const char key_keys[][] = { "primary", "secondary", "utility" };
 
-            if (!strcmp(key, "utility"))
+            for (int i; i < sizeof(key_keys); i++)
             {
-                item_data.type = WeaponType_Utility;
+                if (!strncmp(key, key_keys[i], sizeof(key_keys[][])))
+                {
+                    switch (i)
+                    {
+                        case 0: flags |= WEAPONTYPE_PRIMARY;
+                        case 1: flags |= WEAPONTYPE_SECONDARY;
+                        case 2: flags |= WEAPONTYPE_UTILITY;
+                    }
+
+                    break;
+                }
             }
+
+            item_data.flags = flags;
 
             LoadoutData loadout;
 
@@ -482,7 +522,11 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
 
             menu.GetItem(option, buffer, sizeof(buffer));
 
-            DisplayDistributerLoadoutMenu(buffer, client);
+            strcopy(g_Players[client].current_loadout_menu, sizeof(Player::current_loadout_menu), buffer);
+
+            g_Players[client].close_menu = false;
+
+            DisplayDistributerLoadoutMenu(buffer, client, WEAPONTYPE_PRIMARY);
         }
 
         case MenuAction_End:
@@ -494,7 +538,7 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
     return 0;
 }
 
-void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
+void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int view = WEAPONTYPE_PRIMARY)
 {
     char buffer[64];
 
@@ -506,7 +550,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
 
     Menu menu = new Menu(Handler_DistributerLoadoutMenu);
 
-    FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "MenuPrefix", client, loadout_name, client);
+    FormatEx(buffer, sizeof(buffer), "%T%T %T:\n%T\n ", "MenuPrefix", client, loadout_name, client, (view & WEAPONTYPE_PRIMARY) ? "Primary Weapon" : "Secondary Weapon", client, (team == LOADOUT_TEAM_CT) ? "Team CT" : "Team T", client);
 
     menu.SetTitle(buffer);
 
@@ -529,7 +573,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
                 continue;
             }
 
-            if (item_data.type == WeaponType_Utility)
+            if (!(item_data.flags & view))
             {
                 continue;
             }
@@ -545,10 +589,21 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client)
         }
     }
 
+    if (menu.ItemCount <= 0)
+    {
+        DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_menu, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
+        return;
+    }
+
     FixMenuGap(menu);
 
-    menu.ExitButton     = true;
-    menu.ExitBackButton = true;
+    menu.ExitButton = true;
+
+    if (!g_Players[client].close_menu)
+    {
+        menu.ExitBackButton = true;
+    }
+
     menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -566,7 +621,12 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
 
             EquipPlayerWeapon(client, weapon);
 
-            // DisplayDistributerLoadoutMenu(..., ...)
+            if (!g_Players[client].close_menu)
+            {
+                DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_menu, client, WEAPONTYPE_SECONDARY);
+            }
+
+            g_Players[client].close_menu = true;
         }
 
         case MenuAction_Cancel:
@@ -575,6 +635,11 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
             {
                 DisplayDistributerMenu(client);
             }
+
+            // else if (option == MenuCancel_Exit && g_Players[client].close_menu)
+            // {
+            //     g_Players[client].close_menu = false;
+            // }
         }
 
         case MenuAction_End:

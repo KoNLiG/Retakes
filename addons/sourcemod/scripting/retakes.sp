@@ -109,6 +109,9 @@ enum struct Player
 
     StringMap weapons_map;
 
+    char current_loadout_menu[32];
+    bool close_menu;
+
     int spawn_role;
 
     int points;
@@ -125,6 +128,10 @@ enum struct Player
         this.account_id = GetSteamAccountID(this.index);
 
         this.weapons_map = new StringMap();
+
+        this.current_loadout_menu[0] = '\n';
+
+        this.close_menu = false;
 
         this.points = 0;
     }

@@ -138,23 +138,43 @@
         "he"		"!ניטרלו את הפצצה בזמן התוקפים"
     }
 
-	"Waiting For Players"
-	{
-		"#format"		"{1:d}"
-		"en"			"WAITING FOR {1} MORE PLAYER(S)!"
-		"he"			"!מחכים ל {1} שחקנים נוספים"
-	}
+    "Waiting For Players"
+    {
+        "#format"		"{1:d}"
+        "en"			"WAITING FOR {1} MORE PLAYER(S)!"
+        "he"			"!מחכים ל {1} שחקנים נוספים"
+    }
 
-	"Placed In Queue"
-	{
-		"#format"		"{1:s}"
-		"en"			"You were put in the queue in {1} place."
-		"he"			".{1} הוכנסת לתור במקום "
-	}
+    "Placed In Queue"
+    {
+        "#format"		"{1:s}"
+        "en"			"You were put in the queue in {1} place."
+        "he"			".{1} הוכנסת לתור במקום "
+    }
 
     "Distributer"
     {
         "en"        "Distributer"
+    }
+
+    "Primary Weapon"
+    {
+        "en"        "Primary Weapon"
+    }
+
+    "Secondary Weapon"
+    {
+        "en"        "Secondary Weapon"
+    }
+
+    "Team CT"
+    {
+        "en"        "Counter Terrorist Team"
+    }
+
+    "Team T"
+    {
+        "en"        "Terrorist Team"
     }
 
     "weapon_usp_silencer"
