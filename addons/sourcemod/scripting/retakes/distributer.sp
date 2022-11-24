@@ -80,6 +80,7 @@ int       smc_parser_count;
 int       current_loadout;
 int       line_count;
 char      current_weapon[sizeof(LoadoutItemData::classname)];
+float grace_period;
 
 public void Distributer_OnPluginStart()
 {
@@ -471,6 +472,11 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
     }
 }
 
+void Distributer_OnRoundStart()
+{
+    grace_period = GetGameTime() + retakes_distributer_grace_period.FloatValue;
+}
+
 void Distributer_OnPlayerSpawn(int client)
 {
     if (!retakes_distributer_enable.BoolValue)
@@ -521,7 +527,7 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
 
             menu.GetItem(option, buffer, sizeof(buffer));
 
-            strcopy(g_Players[client].current_loadout_menu, sizeof(Player::current_loadout_menu), buffer);
+            strcopy(g_Players[client].current_loadout_name, sizeof(Player::current_loadout_name), buffer);
 
             g_Players[client].close_menu = false;
 
@@ -590,7 +596,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int vi
 
     if (menu.ItemCount <= 0)
     {
-        DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_menu, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
+        DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
         return;
     }
 
@@ -616,17 +622,20 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
 
             menu.GetItem(option, buffer, sizeof(buffer));
 
-            int weapon = GivePlayerItem(client, buffer);
-
-            EquipPlayerWeapon(client, weapon);
-
-            // Bug here when the menu loads on 'WEAPONTYPE_SECONDARY'
-            if (!g_Players[client].close_menu)
+            if (GetGameTime() < grace_period)
             {
-                DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_menu, client, WEAPONTYPE_SECONDARY);
-            }
+                int weapon = GivePlayerItem(client, buffer);
 
-            g_Players[client].close_menu = true;
+                EquipPlayerWeapon(client, weapon);
+
+                // Bug here when the menu loads on 'WEAPONTYPE_SECONDARY'
+                if (!g_Players[client].close_menu)
+                {
+                    DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, WEAPONTYPE_SECONDARY);
+                }
+
+                g_Players[client].close_menu = true;
+            }
         }
 
         case MenuAction_Cancel:

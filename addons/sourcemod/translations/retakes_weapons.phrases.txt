@@ -67,7 +67,7 @@
 
     "weapon_ak47"
     {
-        "en"        "AK47"
+        "en"        "AK-47"
     }
 
     "weapon_m4a1"

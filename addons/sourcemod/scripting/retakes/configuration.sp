@@ -52,6 +52,7 @@ void RegisterConVars()
 
     // 'distributer.sp' cvars.
     retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "1", "Enable or disable the weapons distributer.");
+    retakes_distributer_grace_period = CreateConVar("retakes_distributer_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
 
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();

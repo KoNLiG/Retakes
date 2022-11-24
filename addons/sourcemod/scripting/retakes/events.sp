@@ -7,6 +7,7 @@
 // Hook events.
 void Events_OnPluginStart()
 {
+    HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd);
@@ -20,6 +21,11 @@ void Events_OnPluginStart()
     HookEvent("bomb_beginplant", Event_BeginPlant);
     HookEvent("bomb_begindefuse", Event_BeginDefuse);
     HookEvent("inferno_expire", Event_InfernoExpire);
+}
+
+void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    Distributer_OnRoundStart();
 }
 
 void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)

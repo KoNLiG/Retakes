@@ -109,12 +109,15 @@ enum struct Player
 
     StringMap weapons_map;
 
-    char current_loadout_menu[32];
+    char current_loadout_name[32];
+
     bool close_menu;
 
     int spawn_role;
 
     int points;
+
+    float time;
 
     //============================================//
     void Initiate(int client)
@@ -129,7 +132,7 @@ enum struct Player
 
         this.weapons_map = new StringMap();
 
-        this.current_loadout_menu[0] = '\n';
+        this.current_loadout_name[0] = '\n';
 
         this.close_menu = false;
 
@@ -176,6 +179,7 @@ ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
 ConVar retakes_distributer_enable;
+ConVar retakes_distributer_grace_period;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN
