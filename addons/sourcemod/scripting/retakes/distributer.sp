@@ -118,6 +118,8 @@ public void Distributer_OnPluginStart()
     delete parser;
 
     RegConsoleCmd("sm_distributer", Command_Distributer);
+
+    grace_period = GetGameTime() + retakes_distributer_grace_period.FloatValue;
 }
 
 void Distributer_OnDatabaseConnection()
@@ -596,7 +598,9 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int vi
 
     if (menu.ItemCount <= 0)
     {
+        g_Players[client].close_menu = true;
         DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
+        delete menu;
         return;
     }
 
@@ -628,7 +632,6 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
 
                 EquipPlayerWeapon(client, weapon);
 
-                // Bug here when the menu loads on 'WEAPONTYPE_SECONDARY'
                 if (!g_Players[client].close_menu)
                 {
                     DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, WEAPONTYPE_SECONDARY);
