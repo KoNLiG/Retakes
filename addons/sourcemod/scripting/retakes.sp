@@ -97,8 +97,6 @@ enum struct EditMode
 
 enum struct Player
 {
-    int key;
-
     int index;
 
     int user_id;
@@ -109,7 +107,13 @@ enum struct Player
 
     StringMap weapons_map;
 
+    int weapons_def_index[2];
+
+    bool kit;
+
     char current_loadout_name[32];
+
+    int current_loadout_view;
 
     bool close_menu;
 
@@ -117,13 +121,9 @@ enum struct Player
 
     int points;
 
-    float time;
-
     //============================================//
     void Initiate(int client)
     {
-        this.key = 0;
-
         this.index = client;
 
         this.user_id = GetClientUserId(this.index);
@@ -137,6 +137,16 @@ enum struct Player
         this.close_menu = false;
 
         this.points = 0;
+    }
+
+    void ClearLoadout()
+    {
+        for (int i; i < 2; i++)
+        {
+            this.weapons_def_index[i] = 0;
+        }
+
+        this.kit = false;
     }
 
     void Reset()
@@ -199,7 +209,7 @@ ConVar retakes_distributer_grace_period;
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
-    author = "Natanel 'LuqS', Omer 'KoNLiG', DRANIX",
+    author = "Natanel 'LuqS', Omer 'KoNLiG', Daniel 'DRANIX'",
     description = "The new generation of Retakes gameplay!",
     version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
@@ -262,6 +272,7 @@ public void OnClientPutInServer(int client)
 public void OnClientDisconnect(int client)
 {
     PlantLogic_OnClientDisconnect(client);
+    Distributer_OnClientDisconnect(client);
 
     g_Players[client].Reset();
 }
@@ -294,18 +305,27 @@ void StringToLower(char[] str)
     }
 }
 
-void DisarmClient(int client)
+void DisarmClientFirearms(int client)
 {
+    char classname[32];
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
     for (int weapon, ent; weapon < max_weapons; weapon++)
     {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) != -1)
+        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) == -1
+         || (GetEntityClassname(ent, classname, sizeof(classname)) && IsKnifeClassname(classname)))
         {
-            RemovePlayerItem(client, ent);
-            RemoveEntity(ent);
+            continue;
         }
+
+        RemovePlayerItem(client, ent);
+        RemoveEntity(ent);
     }
+}
+
+bool IsKnifeClassname(const char[] classname)
+{
+    return (StrContains(classname, "knife") != -1 || StrContains(classname, "bayonet") != -1);
 }
 
 bool IsVectorZero(float vec[3])
@@ -365,4 +385,31 @@ void FixMenuGap(Menu menu)
     {
         menu.AddItem("", "", ITEMDRAW_NOTEXT);
     }
+}
+
+int SelectRandomClient(int spawn_role = -1)
+{
+    int clients_count;
+    int[] clients = new int[MaxClients];
+
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            if (spawn_role >= SpawnRole_None)
+            {
+                if (g_Players[current_client].spawn_role == spawn_role)
+                {
+                    clients[clients_count++] = current_client;
+                }
+            }
+
+            else
+            {
+                clients[clients_count++] = current_client;
+            }
+        }
+    }
+
+    return clients_count ? clients[GetURandomInt() % clients_count] : -1;
 }

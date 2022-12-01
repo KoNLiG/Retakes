@@ -7,7 +7,6 @@
 // Hook events.
 void Events_OnPluginStart()
 {
-    HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd);
@@ -23,17 +22,13 @@ void Events_OnPluginStart()
     HookEvent("inferno_expire", Event_InfernoExpire);
 }
 
-void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
-{
-    Distributer_OnRoundStart();
-}
-
 void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
     Gameplay_OnRoundPreStart();
     PlayerManager_OnRoundPreStart();
     PlantLogic_OnRoundPreStart();
     DefuseLogic_OnRoundPreStart();
+    Distributer_OnRoundPreStart();
 }
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
