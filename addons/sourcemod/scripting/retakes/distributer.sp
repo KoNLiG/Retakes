@@ -160,6 +160,26 @@ void Distributer_OnClientPutInServer(int client)
         return;
     }
 
+    LoadoutData loadout_data;
+
+    for (int i = loadouts.Length - 1; i >= 0; i--)
+    {
+        if (!loadouts.GetArray(i, loadout_data, sizeof(loadout_data)))
+        {
+            continue;
+        }
+
+        PlayerLoadout player_loadout_data;
+
+        for (int j; j < 2; j++)
+        {
+            player_loadout_data.primary_weapon_def_index[j] = 0;
+            player_loadout_data.secondary_weapon_def_index[j] = 0;
+        }
+
+        g_Players[client].weapons_map.SetArray(loadout_data.name, player_loadout_data, sizeof(player_loadout_data));
+    }
+
     char query[256];
     char table_name[32];
 
@@ -384,7 +404,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
             strcopy(item_data.classname, sizeof(LoadoutItemData::classname), buffer);
 
-            static const char key_keys[][] = { "primary", "secondary", "utility" };
+            static const char key_keys[][] = { "primary_weapon", "secondary_weapon", "utility" };
 
             for (int i; i < sizeof(key_keys); i++)
             {
@@ -546,7 +566,9 @@ void Distributer_OnRoundPreStart()
     PlayerLoadout player_loadout_data;
 
     // temp
-    loadouts.GetArray(GetRandomInt(0, loadouts.Length - 1), loadout_data, sizeof(loadout_data));
+    loadouts.GetArray(0, loadout_data, sizeof(loadout_data));
+
+    PrintToChatAll("%s", loadout_data.name);
 
     for (int team, current_client = 1; current_client <= MaxClients; current_client++)
     {
@@ -582,8 +604,10 @@ void Distributer_OnPlayerSpawn(int client)
         return;
     }
 
-    char classname[32];
+    char class_name[32];
     CSWeaponID weapon_id[2];
+
+    DisarmClientFirearms(client);
 
     for (int weapon, current_weapons; current_weapons < 2; current_weapons++)
     {
@@ -597,10 +621,10 @@ void Distributer_OnPlayerSpawn(int client)
 
         if (weapon_id[current_weapons] != CSWeapon_NONE)
         {
-            // format weapon
-            CS_WeaponIDToAlias(weapon_id[current_weapons], classname, sizeof(classname));
+            CS_WeaponIDToAlias(weapon_id[current_weapons], class_name, sizeof(class_name));
+            Format(class_name, sizeof(class_name), "weapon_%s", class_name);
 
-            weapon = GivePlayerItem(client, classname);
+            weapon = GivePlayerItem(client, class_name);
 
             if (weapon != -1)
             {
@@ -651,7 +675,7 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
 
             g_Players[client].close_menu = false;
 
-            DisplayDistributerLoadoutMenu(buffer, client, WEAPONTYPE_PRIMARY);
+            DisplayDistributerLoadoutMenu(buffer, client);
         }
 
         case MenuAction_End:
@@ -700,7 +724,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int vi
                 continue;
             }
 
-            if (!(item_data.flags & view))
+            if (item_data.flags ^ view)
             {
                 continue;
             }
@@ -718,9 +742,12 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int vi
 
     if (menu.ItemCount <= 0)
     {
-        // g_Players[client].close_menu = true;
+        if (!g_Players[client].close_menu)
+        {
+            DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
+        }
 
-        DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, (view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
+        g_Players[client].close_menu = true;
 
         delete menu;
 
@@ -759,22 +786,23 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
                 EquipPlayerWeapon(client, weapon);
             }
 
+            // int weapon_def_index[2];
             PlayerLoadout player_loadout_data;
-
             int team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
-            switch (g_Players[client].current_loadout_view)
+
+            // switch (g_Players[client].current_loadout_view)
+            // {
+            //     case WEAPONTYPE_PRIMARY: weapon_def_index[0] = CS_WeaponIDToItemDefIndex(CS_AliasToWeaponID(buffer));
+            //     case WEAPONTYPE_SECONDARY: weapon_def_index[1] = CS_WeaponIDToItemDefIndex(CS_AliasToWeaponID(buffer));
+            // }
+
+            // set the data here.
+
+            if (!g_Players[client].close_menu)
             {
-                case WEAPONTYPE_PRIMARY: player_loadout_data.primary_weapon_def_index[team] = CS_WeaponIDToItemDefIndex(CS_AliasToWeaponID(buffer));
-                case WEAPONTYPE_SECONDARY: player_loadout_data.secondary_weapon_def_index[team] = CS_WeaponIDToItemDefIndex(CS_AliasToWeaponID(buffer));
-            }
-
-            g_Players[client].weapons_map.SetArray(g_Players[client].current_loadout_name, player_loadout_data, sizeof(player_loadout_data));
-
-            // Open remaining loadout weapon choice menu
-            if (g_Players[client].weapons_map.GetArray(g_Players[client].current_loadout_name, player_loadout_data, sizeof(player_loadout_data)))
-            {
-
+                g_Players[client].close_menu = true;
+                DisplayDistributerLoadoutMenu(g_Players[client].current_loadout_name, client, (g_Players[client].current_loadout_view == WEAPONTYPE_PRIMARY) ? WEAPONTYPE_SECONDARY : WEAPONTYPE_PRIMARY);
             }
         }
 
