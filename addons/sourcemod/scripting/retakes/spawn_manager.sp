@@ -87,7 +87,7 @@ void InitializeBombsites()
 
 void SpawnManager_OnPlayerSpawn(int client)
 {
- #if defined DEBUG
+#if defined DEBUG
     static Profiler profiler;
     if (!profiler)
     {
@@ -121,10 +121,10 @@ void SpawnManager_OnPlayerSpawn(int client)
 
     TeleportEntity(client, origin, angles);
 
-    #if defined DEBUG
+#if defined DEBUG
     profiler.Stop();
     PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
-    #endif
+#endif
 }
 
 bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)
