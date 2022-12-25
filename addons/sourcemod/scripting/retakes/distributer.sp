@@ -527,8 +527,6 @@ void Distributer_OnRoundPreStart()
 
     loadouts.GetArray(GetURandomInt() % loadouts.Length, loadout_data, sizeof(loadout_data));
 
-    PrintToChatAll(" mode \x06: %s", loadout_data.name);
-
     for (int team, iterations, max_iterations, current_client = 1; current_client <= MaxClients; current_client++)
     {
         if (!IsClientConnected(current_client) || !IsClientInGame(current_client))
