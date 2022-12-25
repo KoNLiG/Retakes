@@ -41,6 +41,7 @@ void RegisterConVars()
 
     // 'defuse_logic.sp' cvars.
     retakes_instant_defuse = CreateConVar("retakes_instant_defuse", "1", "Whether to instantly defeuse a 'planted_c4'.");
+    retakes_explode_no_time = CreateConVar("retakes_explode_no_time", "1", "Whether to explode the 'planted_c4' if the defuser runs out of time.");
 
     // 'gameplay.sp' cvars.
     retakes_max_consecutive_rounds_same_target_site = CreateConVar("retakes_max_consecutive_rounds_same_target_site", "4", "Limit the number of consecutive rounds targeting the same site. -1 to ignore.");
@@ -51,9 +52,7 @@ void RegisterConVars()
     retakes_database_table_distributer = CreateConVar("retakes_database_table_distributer", "retakes_distributer", "Database table name for player weapons.");
 
     // 'distributer.sp' cvars.
-    retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "1", "Enable or disable the weapons distributer.");
-    retakes_distributer_grace_period = CreateConVar("retakes_distributer_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
-    retakes_distributer_force_weapon = CreateConVar("retakes_distributer_force_weapon", "0", "Force weapons over default equipped weapons.");
+    retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "0", "Enable or disable the weapons distributer.");
 
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();

@@ -189,8 +189,7 @@ ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
 ConVar retakes_distributer_enable;
-ConVar retakes_distributer_grace_period;
-ConVar retakes_distributer_force_weapon;
+ConVar retakes_explode_no_time;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN

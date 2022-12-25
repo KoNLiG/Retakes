@@ -126,15 +126,18 @@ void InstaDefuseAttempt(DataPack dp)
 
     // Note: Enough time to defuse would be: [remaining_time >= defuse_time]
 
-    if (IsInfernoNearC4(planted_c4, client))
+    if (!retakes_explode_no_time.BoolValue)
     {
-        if (!g_SentNotification)
+        if (IsInfernoNearC4(planted_c4, client))
         {
-            PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
-            g_SentNotification = true;
-        }
+            if (!g_SentNotification)
+            {
+                PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
+                g_SentNotification = true;
+            }
 
-        return;
+            return;
+        }
     }
 
     if (remaining_time < defuse_time)
@@ -143,7 +146,12 @@ void InstaDefuseAttempt(DataPack dp)
         {
             PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Fail Defuse", LANG_SERVER, remaining_time);
 
-            CS_TerminateRound(mp_round_restart_delay.FloatValue - 1.0, CSRoundEnd_TerroristWin);
+            if (retakes_explode_no_time.BoolValue)
+            {
+                SetEntPropFloat(planted_c4, Prop_Send, "m_flC4Blow", 1.0);
+            }
+
+            CS_TerminateRound(mp_round_restart_delay.FloatValue - 1.0, CSRoundEnd_TerroristsPlanted);
 
             g_SentNotification = true;
         }
