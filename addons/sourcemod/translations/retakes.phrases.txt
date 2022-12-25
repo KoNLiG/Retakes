@@ -167,6 +167,22 @@
         "en"        "Secondary Weapon"
     }
 
+    "Weapon Type Primary"
+    {
+        "en"        "Primary Weapon"
+    }
+
+    "Weapon Type Secondary"
+    {
+        "en"        "Secondary Weapon"
+    }
+
+    "New Weapon"
+    {
+        "#format"   "{1:t},{2:t}"
+        "en"        "Weapon {2} set for {1}"
+    }
+
     "Team CT"
     {
         "en"        "Counter Terrorist Team"
@@ -177,17 +193,17 @@
         "en"        "Terrorist Team"
     }
 
-    "Full_Buy"
+    "Full Buy"
     {
         "en"          "Full Buy"
     }
 
-    "Force_Buy"
+    "Force Buy"
     {
         "en"          "Force Buy"
     }
 
-    "Pistol_Buy"
+    "Pistol Buy"
     {
         "en"          "Pistol Buy"
     }

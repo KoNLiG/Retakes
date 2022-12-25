@@ -107,7 +107,7 @@ enum struct Player
 
     StringMap weapons_map;
 
-    int weapons_def_index[2];
+    CSWeaponID weapons_id[2];
 
     bool kit;
 
@@ -143,7 +143,7 @@ enum struct Player
     {
         for (int i; i < 2; i++)
         {
-            this.weapons_def_index[i] = 0;
+            this.weapons_id[i] = CSWeapon_NONE;
         }
 
         this.kit = false;
@@ -190,6 +190,7 @@ ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
 ConVar retakes_distributer_enable;
 ConVar retakes_distributer_grace_period;
+ConVar retakes_distributer_force_weapon;
 
 // Must be included after all definitions.
 #define COMPILING_FROM_MAIN

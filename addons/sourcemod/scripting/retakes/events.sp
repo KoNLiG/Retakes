@@ -11,6 +11,7 @@ void Events_OnPluginStart()
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd);
     HookEvent("player_spawn", Event_PlayerSpawn);
+    HookEvent("player_spawn", Event_PlayerSpawnPost, EventHookMode_Post);
     HookEvent("player_death", Event_PlayerDeath);
     HookEvent("player_connect_full", Event_PlayerConnectFull);
     HookEvent("player_team", Event_PlayerTeam);
@@ -55,7 +56,17 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 
     PlayerManager_OnPlayerSpawn(client);
     SpawnManager_OnPlayerSpawn(client);
-    Distributer_OnPlayerSpawn(client);
+}
+
+void Event_PlayerSpawnPost(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!client)
+    {
+        return;
+    }
+
+    Distributer_OnPlayerSpawnPost(client);
 }
 
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)

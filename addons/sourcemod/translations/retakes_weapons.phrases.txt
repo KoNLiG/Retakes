@@ -50,6 +50,11 @@
         "en"        "MAC-10"
     }
 
+    "weapon_mp5sd"
+    {
+        "en"        "MP5SD"
+    }
+
     "weapon_revolver"
     {
         "en"        "R8 Revolver"
