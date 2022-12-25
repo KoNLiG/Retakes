@@ -14,8 +14,8 @@
 
 enum struct PlayerLoadout
 {
-    CSWeaponID primary_weapon_id[2];
-    CSWeaponID secondary_weapon_id[2];
+    CSWeaponID primary_weapon_id[LOADOUT_TEAM_MAX];
+    CSWeaponID secondary_weapon_id[LOADOUT_TEAM_MAX];
 }
 
 enum struct LoadoutItemData
@@ -589,7 +589,7 @@ void Frame_DistributeWeapons(int client)
 {
     char class_name[32];
 
-    for (int weapon, current_weapons; current_weapons < 2; current_weapons++)
+    for (int weapon, current_weapons; current_weapons < CS_SLOT_KNIFE; current_weapons++)
     {
         if (g_Players[client].weapons_id[current_weapons] == CSWeapon_NONE)
         {
