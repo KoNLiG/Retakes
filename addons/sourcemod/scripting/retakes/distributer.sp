@@ -529,7 +529,7 @@ void Distributer_OnRoundPreStart()
 
     for (int team, iterations, max_iterations, current_client = 1; current_client <= MaxClients; current_client++)
     {
-        if (!IsClientConnected(current_client) || !IsClientInGame(current_client))
+        if (!IsClientInGame(current_client))
         {
             continue;
         }
