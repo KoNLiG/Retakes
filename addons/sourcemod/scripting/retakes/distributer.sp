@@ -573,7 +573,7 @@ void Distributer_OnRoundPreStart()
     }
 }
 
-void Distributer_OnPlayerSpawnPost(int client)
+void Distributer_OnPlayerSpawn(int client)
 {
     if (!retakes_distributer_enable.BoolValue)
     {
