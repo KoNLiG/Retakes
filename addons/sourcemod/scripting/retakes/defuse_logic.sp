@@ -19,11 +19,13 @@ bool g_SentNotification;
 
 ConVar inferno_max_range;
 ConVar mp_round_restart_delay;
+ConVar mp_friendlyfire;
 
 void DefuseLogic_OnPluginStart()
 {
     inferno_max_range = FindConVar("inferno_max_range");
     mp_round_restart_delay = FindConVar("mp_round_restart_delay");
+    mp_friendlyfire = FindConVar("mp_friendlyfire");
 }
 
 void DefuseLogic_OnBeginDefuse(int client, int planted_c4)
@@ -193,7 +195,7 @@ bool IsInfernoNearC4(int planted_c4, int defuser)
     {
         // Exclude friendly inferno.
         int inferno_owner = GetEntPropEnt(ent, Prop_Send, "m_hOwnerEntity");
-        if (defuser != inferno_owner && GetClientTeam(inferno_owner) == CS_TEAM_CT)
+        if (defuser != inferno_owner && (!mp_friendlyfire.BoolValue && GetClientTeam(inferno_owner) == CS_TEAM_CT))
         {
             continue;
         }
