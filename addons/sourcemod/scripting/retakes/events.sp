@@ -8,6 +8,7 @@
 void Events_OnPluginStart()
 {
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
+    HookEvent("rond_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd);
     HookEvent("player_spawn", Event_PlayerSpawn);
@@ -28,6 +29,11 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
     PlayerManager_OnRoundPreStart();
     PlantLogic_OnRoundPreStart();
     DefuseLogic_OnRoundPreStart();
+}
+
+void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    Gameplay_OnRoundStart();
 }
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)

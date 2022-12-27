@@ -89,6 +89,22 @@
         "he"	"אתר פצצה"
     }
 
+    "Bombsite A"
+    {
+        "en"	"A"
+    }
+
+    "Bombsite B"
+    {
+        "en"	"B"
+    }
+
+    "Bombsite HTML"
+    {
+        "#format"   "{1:t}"
+        "en"	    "<font color='#FFFFFF' class='fontSize-xl'>RETAKE <font color='#FFA500'>{1}</font>"
+    }
+
     "Add Area"
     {
         "en"	"Add Area"
