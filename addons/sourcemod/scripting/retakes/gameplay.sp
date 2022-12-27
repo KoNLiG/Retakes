@@ -13,12 +13,18 @@ int g_ConsecutiveRounds[Bombsite_Max];
 bool g_IsWaitingForPlayers;
 
 ConVar mp_ignore_round_win_conditions;
+ConVar mp_freezetime;
 
 void Gameplay_OnPluginStart()
 {
     if (!(mp_ignore_round_win_conditions = FindConVar("mp_ignore_round_win_conditions")))
     {
         SetFailState("Failed to find convar 'mp_ignore_round_win_conditions'");
+    }
+
+    if (!(mp_freezetime = FindConVar("mp_freezetime")))
+    {
+        SetFailState("Failed to find convar 'mp_freezetime'");
     }
 }
 
