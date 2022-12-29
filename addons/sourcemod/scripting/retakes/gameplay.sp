@@ -13,12 +13,18 @@ int g_ConsecutiveRounds[Bombsite_Max];
 bool g_IsWaitingForPlayers;
 
 ConVar mp_ignore_round_win_conditions;
+ConVar mp_freezetime;
 
 void Gameplay_OnPluginStart()
 {
     if (!(mp_ignore_round_win_conditions = FindConVar("mp_ignore_round_win_conditions")))
     {
         SetFailState("Failed to find convar 'mp_ignore_round_win_conditions'");
+    }
+
+    if (!(mp_freezetime = FindConVar("mp_freezetime")))
+    {
+        SetFailState("Failed to find convar 'mp_freezetime'");
     }
 }
 
@@ -38,6 +44,36 @@ void Gameplay_OnRoundPreStart()
     SelectBombsite();
 
     SetRoundInProgress(false);
+}
+
+void Gameplay_OnRoundStart()
+{
+    Event show_survival_respawn_status = CreateEvent("show_survival_respawn_status");
+
+    if (show_survival_respawn_status == INVALID_HANDLE)
+    {
+        return;
+    }
+
+    char message[128];
+
+    show_survival_respawn_status.SetInt("duration", mp_freezetime.IntValue);
+
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (!IsClientInGame(current_client) || IsFakeClient(current_client) || g_Players[current_client].spawn_role < SpawnRole_Attacker)
+        {
+            continue;
+        }
+
+        FormatEx(message, sizeof(message), "%T", "Bombsite HTML", current_client, g_TargetSite == Bombsite_A ? "Bombsite A" : "Bombsite B");
+
+        show_survival_respawn_status.SetString("loc_token", message);
+        show_survival_respawn_status.SetInt("userid", g_Players[current_client].user_id);
+        show_survival_respawn_status.FireToClient(current_client);
+    }
+
+    delete show_survival_respawn_status;
 }
 
 void Gameplay_OnRoundFreezeEnd()
