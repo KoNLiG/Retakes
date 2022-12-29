@@ -8,7 +8,7 @@
 void Events_OnPluginStart()
 {
     HookEvent("round_prestart", Event_RoundPreStart, EventHookMode_PostNoCopy);
-    HookEvent("rond_start", Event_RoundStart, EventHookMode_PostNoCopy);
+    HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
     HookEvent("round_freeze_end", Event_RoundFreezeEnd, EventHookMode_PostNoCopy);
     HookEvent("round_end", Event_RoundEnd);
     HookEvent("player_spawn", Event_PlayerSpawn);
