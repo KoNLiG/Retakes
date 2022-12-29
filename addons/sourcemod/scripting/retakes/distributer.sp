@@ -4,16 +4,16 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define LOADOUT_TEAM_T   0
-#define LOADOUT_TEAM_CT  1
-#define LOADOUT_TEAM_MAX 2
-#define LOADOUT_WEAPON_PRIMARY 0
+#define LOADOUT_TEAM_T           0
+#define LOADOUT_TEAM_CT          1
+#define LOADOUT_TEAM_MAX         2
+#define LOADOUT_WEAPON_PRIMARY   0
 #define LOADOUT_WEAPON_SECONDARY 1
-#define LOADOUT_WEAPON_MAX 2
+#define LOADOUT_WEAPON_MAX       2
 
-#define WEAPONTYPE_PRIMARY   (1 << 0)
-#define WEAPONTYPE_SECONDARY (1 << 1)
-#define WEAPONTYPE_UTILITY   (1 << 2)
+#define WEAPONTYPE_PRIMARY       (1 << 0)
+#define WEAPONTYPE_SECONDARY     (1 << 1)
+#define WEAPONTYPE_UTILITY       (1 << 2)
 
 enum struct PlayerLoadout
 {
@@ -25,26 +25,26 @@ enum struct LoadoutItemData
 {
     CSWeaponID item_id;
 
-    char classname[32];
+    char       classname[32];
 
-    float chance;
+    float      chance;
 
-    int flags;
+    int        flags;
 
-    int max;
+    int        max;
 }
 
 enum struct LoadoutData
 {
-    int kits;
+    int       kits;
 
-    char name[24];
+    char      name[24];
 
     ArrayList items[LOADOUT_TEAM_MAX];
 
-    int item_primary_count[LOADOUT_TEAM_MAX];
+    int       item_primary_count[LOADOUT_TEAM_MAX];
 
-    int item_secondary_count[LOADOUT_TEAM_MAX];
+    int       item_secondary_count[LOADOUT_TEAM_MAX];
 
     void Initialize(const char[] name)
     {
@@ -93,9 +93,9 @@ public void Distributer_OnPluginStart()
         return;
     }
 
-    loadouts = new ArrayList(sizeof(LoadoutData));
+    loadouts              = new ArrayList(sizeof(LoadoutData));
 
-    SMCParser parser = new SMCParser();
+    SMCParser parser      = new SMCParser();
 
     parser.OnStart        = SMCParser_OnStart;
     parser.OnEnterSection = SMCParser_OnEnterSection;
@@ -104,7 +104,7 @@ public void Distributer_OnPluginStart()
     parser.OnRawLine      = SMCParser_OnRawLine;
     parser.OnEnd          = SMCParser_OnEnd;
 
-    SMCError error = parser.ParseFile(buffer);
+    SMCError error        = parser.ParseFile(buffer);
 
     if (error != SMCError_Okay)
     {
@@ -162,7 +162,7 @@ void Distributer_OnClientPutInServer(int client)
 
         for (int current_team; current_team < LOADOUT_TEAM_MAX; current_team++)
         {
-            player_loadout_data.primary_weapon_id[current_team] = CSWeapon_NONE;
+            player_loadout_data.primary_weapon_id[current_team]   = CSWeapon_NONE;
             player_loadout_data.secondary_weapon_id[current_team] = CSWeapon_NONE;
         }
 
@@ -190,13 +190,13 @@ void Distributer_OnClientDisconnect(int client)
         return;
     }
 
-    char buffer[32];
-    char query[256];
-    char table_name[32];
+    char              buffer[32];
+    char              query[256];
+    char              table_name[32];
 
-    PlayerLoadout player_loadout_data;
+    PlayerLoadout     player_loadout_data;
 
-    Transaction transaction = new Transaction();
+    Transaction       transaction      = new Transaction();
 
     StringMapSnapshot loadout_snapshot = g_Players[client].weapons_map.Snapshot();
 
@@ -211,19 +211,19 @@ void Distributer_OnClientDisconnect(int client)
             continue;
         }
 
-        FormatEx(query, sizeof(query), "INSERT INTO `%s_players` VALUES (%d, '%s', %d, %d, %d, %d) ON DUPLICATE KEY UPDATE `loadout_name` = '%s', `primary_wep_id_t` = %d, `primary_wep_id_ct` = %d, `secondary_wep_id_t` = %d, `secondary_wep_id_ct` = %d;", 
-        table_name, 
-        g_Players[client].account_id, 
-        buffer, 
-        player_loadout_data.primary_weapon_id[LOADOUT_TEAM_T], 
-        player_loadout_data.primary_weapon_id[LOADOUT_TEAM_CT], 
-        player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_T], 
-        player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_CT], 
-        buffer, 
-        player_loadout_data.primary_weapon_id[LOADOUT_TEAM_T], 
-        player_loadout_data.primary_weapon_id[LOADOUT_TEAM_CT], 
-        player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_T], 
-        player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_CT]);
+        FormatEx(query, sizeof(query), "INSERT INTO `%s_players` VALUES (%d, '%s', %d, %d, %d, %d) ON DUPLICATE KEY UPDATE `loadout_name` = '%s', `primary_wep_id_t` = %d, `primary_wep_id_ct` = %d, `secondary_wep_id_t` = %d, `secondary_wep_id_ct` = %d;",
+                 table_name,
+                 g_Players[client].account_id,
+                 buffer,
+                 player_loadout_data.primary_weapon_id[LOADOUT_TEAM_T],
+                 player_loadout_data.primary_weapon_id[LOADOUT_TEAM_CT],
+                 player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_T],
+                 player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_CT],
+                 buffer,
+                 player_loadout_data.primary_weapon_id[LOADOUT_TEAM_T],
+                 player_loadout_data.primary_weapon_id[LOADOUT_TEAM_CT],
+                 player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_T],
+                 player_loadout_data.secondary_weapon_id[LOADOUT_TEAM_CT]);
 
         transaction.AddQuery(query);
     }
@@ -267,7 +267,7 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
     results.FieldNameToNum("secondary_wep_id_t", secondary_weapon[LOADOUT_TEAM_T]);
     results.FieldNameToNum("secondary_wep_id_ct", secondary_weapon[LOADOUT_TEAM_CT]);
 
-    char buffer[64];
+    char          buffer[64];
     PlayerLoadout player_loadout;
 
     while (results.FetchRow())
@@ -276,7 +276,7 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
 
         for (int current_team; current_team < LOADOUT_TEAM_MAX; current_team++)
         {
-            player_loadout.primary_weapon_id[current_team] = view_as<CSWeaponID>(results.FetchInt(primary_weapon[current_team]));
+            player_loadout.primary_weapon_id[current_team]   = view_as<CSWeaponID>(results.FetchInt(primary_weapon[current_team]));
             player_loadout.secondary_weapon_id[current_team] = view_as<CSWeaponID>(results.FetchInt(secondary_weapon[current_team]));
         }
 
@@ -364,7 +364,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
         if (StrContains(key, "weapon") != -1 || !strcmp(key, "utility"))
         {
-            int flags;
+            int  flags;
 
             char buffer[32];
 
@@ -509,7 +509,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         return;
     }
 
-    bool fail_state;
+    bool            fail_state;
 
     LoadoutData     loadout_data;
     LoadoutItemData item_data;
@@ -556,7 +556,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
         for (int i; i < LOADOUT_TEAM_MAX; i++)
         {
-            loadout_data.item_primary_count[i] = item_count[i][LOADOUT_WEAPON_PRIMARY];
+            loadout_data.item_primary_count[i]   = item_count[i][LOADOUT_WEAPON_PRIMARY];
             loadout_data.item_secondary_count[i] = item_count[i][LOADOUT_WEAPON_SECONDARY];
         }
 
@@ -576,9 +576,9 @@ void Distributer_OnRoundPreStart()
         return;
     }
 
-    LoadoutData loadout_data;
+    LoadoutData     loadout_data;
     LoadoutItemData item_data;
-    PlayerLoadout player_loadout_data;
+    PlayerLoadout   player_loadout_data;
 
     loadouts.GetArray(GetURandomInt() % loadouts.Length, loadout_data, sizeof(loadout_data));
 
@@ -598,7 +598,7 @@ void Distributer_OnRoundPreStart()
 
         g_Players[current_client].ClearLoadout();
 
-        items_length = loadout_data.items[team].Length;
+        items_length    = loadout_data.items[team].Length;
 
         int[] items_num = new int[items_length];
 
@@ -609,7 +609,7 @@ void Distributer_OnRoundPreStart()
 
         if (g_Players[current_client].weapons_map.GetArray(loadout_data.name, player_loadout_data, sizeof(player_loadout_data)))
         {
-            g_Players[current_client].weapons_id[LOADOUT_WEAPON_PRIMARY] = player_loadout_data.primary_weapon_id[team];
+            g_Players[current_client].weapons_id[LOADOUT_WEAPON_PRIMARY]   = player_loadout_data.primary_weapon_id[team];
             g_Players[current_client].weapons_id[LOADOUT_WEAPON_SECONDARY] = player_loadout_data.secondary_weapon_id[team];
 
             for (int current_weapon; current_weapon < LOADOUT_WEAPON_MAX; current_weapon++)
@@ -621,7 +621,7 @@ void Distributer_OnRoundPreStart()
                     for (int j = items_length - 1; j >= 0; j--)
                     {
                         loadout_data.items[team].GetArray(items_num[j], item_data, sizeof(item_data));
-        
+
                         if (item_data.flags & (current_weapon == LOADOUT_WEAPON_PRIMARY ? WEAPONTYPE_PRIMARY : WEAPONTYPE_SECONDARY) && !g_Players[current_client].weapons_id[current_weapon])
                         {
                             g_Players[current_client].weapons_id[current_weapon] = item_data.item_id;
@@ -677,11 +677,11 @@ void Frame_DistributeWeapons(int userid)
 
 void DisplayDistributerMenu(int client)
 {
-    char buffer[64];
+    char        buffer[64];
 
     LoadoutData loadout;
 
-    Menu menu = new Menu(Handler_DistributerMenu);
+    Menu        menu = new Menu(Handler_DistributerMenu);
 
     FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "MenuPrefix", client, "Distributer", client);
 
@@ -736,17 +736,17 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
 
 void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int view = WEAPONTYPE_PRIMARY)
 {
-    char buffer[64];
+    char            buffer[64];
 
-    LoadoutData loadout_data;
+    LoadoutData     loadout_data;
 
     LoadoutItemData item_data;
 
     g_Players[client].current_loadout_view = view;
 
-    int team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
+    int  team                              = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
-    Menu menu = new Menu(Handler_DistributerLoadoutMenu);
+    Menu menu                              = new Menu(Handler_DistributerLoadoutMenu);
 
     FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "MenuPrefix", client, loadout_name, client, view & WEAPONTYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
 
@@ -817,7 +817,7 @@ void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int vi
 
     FixMenuGap(menu);
 
-    menu.ExitButton = true;
+    menu.ExitButton     = true;
     menu.ExitBackButton = true;
 
     menu.Display(client, MENU_TIME_FOREVER);
@@ -843,10 +843,10 @@ int Handler_DistributerLoadoutMenu(Menu menu, MenuAction action, int client, int
                 }
             }
 
-            char loadout_name[48];
+            char          loadout_name[48];
             PlayerLoadout player_loadout_data;
-            int view = g_Players[client].current_loadout_view;
-            int team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
+            int           view = g_Players[client].current_loadout_view;
+            int           team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
             strcopy(loadout_name, sizeof(loadout_name), g_Players[client].current_loadout_name);
 
