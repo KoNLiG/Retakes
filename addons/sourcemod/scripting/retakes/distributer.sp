@@ -252,7 +252,7 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
 
     int client = GetClientOfUserId(userid);
 
-    if (!client)
+    if (!client || results.RowCount == 0)
     {
         return;
     }
