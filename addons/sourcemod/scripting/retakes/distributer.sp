@@ -640,8 +640,6 @@ void Distributer_OnPlayerSpawn(int client)
         return;
     }
 
-    DisarmClientFirearms(client);
-
     RequestFrame(Frame_DistributeWeapons, g_Players[client].user_id);
 }
 

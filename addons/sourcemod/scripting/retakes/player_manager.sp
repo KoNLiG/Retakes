@@ -91,6 +91,7 @@ void PlayerManager_OnPlayerSpawn(int client)
 {
     // Too early here.
     RequestFrame(DisableClientRetakeMode, GetClientUserId(client));
+    RequestFrame(DisarmClientFirearms, GetClientUserId(client));
 }
 
 void PlayerManager_OnPlayerConnectFull(int client)

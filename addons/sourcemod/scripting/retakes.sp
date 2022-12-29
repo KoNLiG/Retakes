@@ -307,8 +307,15 @@ void StringToLower(char[] str)
     }
 }
 
-void DisarmClientFirearms(int client)
+void DisarmClientFirearms(int userid)
 {
+    int client = GetClientOfUserId(userid);
+
+    if (!client)
+    {
+        return;
+    }
+
     char classname[32];
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 

@@ -73,8 +73,6 @@ void SetupPlanter(int userid)
         return;
     }
 
-    DisarmClientFirearms(planter);
-
     int c4_entity = GivePlayerItem(planter, "weapon_c4");
     if (c4_entity == -1)
     {
