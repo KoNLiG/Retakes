@@ -115,8 +115,6 @@ public void Distributer_OnPluginStart()
     }
 
     delete parser;
-
-    RegConsoleCmd("sm_distributer", Command_Distributer);
 }
 
 void Distributer_OnDatabaseConnection()
@@ -421,6 +419,26 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
             loadout_data.kits = StringToInt(value);
 
             loadouts.SetArray(loadouts.Length, loadout_data, sizeof(loadout_data));
+        }
+    }
+
+    else if (smc_parser_depth == 2 && smc_parser_count == 2)
+    {
+        if (!strcmp(key, "loadout_commands"))
+        {
+            char buffer[24][24];
+            ExplodeString(value, ",", buffer, sizeof(buffer[]), 24);
+
+            for (int i; i < 24; i++)
+            {
+                if (buffer[i][0] == '\x0')
+                {
+                    continue;
+                }
+
+                Format(buffer[i], 24, "sm_%s", buffer[i]);
+                RegConsoleCmd(buffer[i], Command_Distributer);
+            }
         }
     }
 
