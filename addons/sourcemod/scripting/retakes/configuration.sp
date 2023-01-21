@@ -55,9 +55,19 @@ void RegisterConVars()
     retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "0", "Enable or disable the weapons distributer.");
     retakes_distributer_grace_period = CreateConVar("retakes_distributer_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
     retakes_distributer_force_weapon = CreateConVar("retakes_distributer_force_weapon", "0", "Force weapons over default equipped weapons.");
+    retakes_distributer_ammo_limit = CreateConVar("retakes_distributer_ammo_limit", "4", "Grenade amount limit.");
+    retakes_distributer_ammo_limit.AddChangeHook(OnConVarChanged);
     
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
+}
+
+void OnConVarChanged(ConVar convar, const char[] old_value, const char[] new_value)
+{
+    if (convar == retakes_distributer_ammo_limit)
+    {
+        FindConVar("ammo_grenade_limit_total").IntValue = StringToInt(new_value);
+    }
 }
 
 // Register all plugin commands.

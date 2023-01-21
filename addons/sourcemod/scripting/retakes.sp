@@ -107,9 +107,13 @@ enum struct Player
 
     StringMap weapons_map;
 
-    CSWeaponID weapons_id[2];
+    CSWeaponID weapons_id[8];
 
     bool kit;
+
+    bool assult_suit;
+
+    bool kevlar;
 
     char current_loadout_name[32];
 
@@ -141,12 +145,14 @@ enum struct Player
 
     void ClearLoadout()
     {
-        for (int i; i < 2; i++)
+        for (int i; i < 8; i++)
         {
             this.weapons_id[i] = CSWeapon_NONE;
         }
 
         this.kit = false;
+        this.kevlar = false;
+        this.assult_suit = false;
     }
 
     void Reset()
@@ -191,6 +197,7 @@ ConVar retakes_database_table_distributer;
 ConVar retakes_distributer_enable;
 ConVar retakes_distributer_grace_period;
 ConVar retakes_distributer_force_weapon;
+ConVar retakes_distributer_ammo_limit;
 ConVar retakes_explode_no_time;
 
 // Must be included after all definitions.

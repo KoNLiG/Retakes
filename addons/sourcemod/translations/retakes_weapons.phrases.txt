@@ -124,4 +124,29 @@
     {
         "en"        "Smoke Grenade"
     }
+
+    "weapon_flashbang"
+    {
+        "en"        "Flashbang"
+    }
+
+    "weapon_incgrenade"
+    {
+        "en"        "Incendiary"
+    }
+
+    "item_assultsuit"
+    {
+        "en"        "Kevlar + Helmet"
+    }
+
+    "item_kevlar"
+    {
+        "en"        "Kevlar"
+    }
+
+    "item_kit"
+    {
+        "en"        "Defuse Kit"
+    }
 }
