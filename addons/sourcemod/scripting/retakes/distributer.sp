@@ -248,7 +248,11 @@ void Distributer_OnClientDisconnect(int client)
 
     delete loadout_snapshot;
 
+#if defined DEBUG
     g_Database.Execute(transaction, SQL_OnClientInfoSaved, SQL_OnClientInfoSavedError, .priority = DBPrio_High);
+#else
+    g_Database.Execute(transaction, .onError = SQL_OnClientInfoSavedError, .priority = DBPrio_High);
+#endif
 }
 
 #if defined DEBUG
