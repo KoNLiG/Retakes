@@ -16,7 +16,7 @@ void PlantLogic_OnPluginStart()
 
 void PlantLogic_OnRoundPreStart()
 {
-    int planter = SelectPlanter();
+    int planter = SelectRandomClient(SpawnRole_Defender);
 
     // Failed to select a random planter
     // meaning that there are 0 player in the defender team, abort.
@@ -73,8 +73,6 @@ void SetupPlanter(int userid)
         return;
     }
 
-    DisarmClient(planter);
-
     int c4_entity = GivePlayerItem(planter, "weapon_c4");
     if (c4_entity == -1)
     {
@@ -87,21 +85,21 @@ void SetupPlanter(int userid)
 }
 
 // Generatse a random player index from the defender team to act as a planter.
-int SelectPlanter()
-{
-    int clients_count;
-    int[] clients = new int[MaxClients];
+// int SelectPlanter()
+// {
+//     int clients_count;
+//     int[] clients = new int[MaxClients];
 
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client) && g_Players[current_client].spawn_role == SpawnRole_Defender)
-        {
-            clients[clients_count++] = current_client;
-        }
-    }
+//     for (int current_client = 1; current_client <= MaxClients; current_client++)
+//     {
+//         if (IsClientInGame(current_client) && g_Players[current_client].spawn_role == SpawnRole_Defender)
+//         {
+//             clients[clients_count++] = current_client;
+//         }
+//     }
 
-    return clients_count ? clients[GetURandomInt() % clients_count] : -1;
-}
+//     return clients_count ? clients[GetURandomInt() % clients_count] : -1;
+// }
 
 // Retrieves the current planter player index, or -1 if unavailable.
 int GetPlanter()

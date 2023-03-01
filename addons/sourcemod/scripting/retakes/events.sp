@@ -29,6 +29,7 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
     PlayerManager_OnRoundPreStart();
     PlantLogic_OnRoundPreStart();
     DefuseLogic_OnRoundPreStart();
+    Distributer_OnRoundPreStart();
 }
 
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)

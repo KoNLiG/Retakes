@@ -53,9 +53,21 @@ void RegisterConVars()
 
     // 'distributer.sp' cvars.
     retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "0", "Enable or disable the weapons distributer.");
-
+    retakes_distributer_grace_period = CreateConVar("retakes_distributer_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
+    retakes_distributer_force_weapon = CreateConVar("retakes_distributer_force_weapon", "0", "Force weapons over default equipped weapons.");
+    retakes_distributer_ammo_limit = CreateConVar("retakes_distributer_ammo_limit", "4", "Grenade amount limit.");
+    retakes_distributer_ammo_limit.AddChangeHook(OnConVarChanged);
+    
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
+}
+
+void OnConVarChanged(ConVar convar, const char[] old_value, const char[] new_value)
+{
+    if (convar == retakes_distributer_ammo_limit)
+    {
+        FindConVar("ammo_grenade_limit_total").IntValue = StringToInt(new_value);
+    }
 }
 
 // Register all plugin commands.
@@ -181,7 +193,7 @@ void InsertSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_t
     char table_name[64];
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
-    
+
     Format(query, sizeof(query), "INSERT INTO `%s` VALUES ('%s', %d, %d, %d)", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnInsertSpawnArea, query);
 }
@@ -201,7 +213,7 @@ void DeleteSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_t
     char table_name[64];
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
-    
+
     Format(query, sizeof(query), "DELETE FROM `%s` WHERE `map_name` = '%s' AND `nav_area_index` = '%d' AND `bombsite_index` = '%d' AND `nav_mesh_area_team` = '%d'", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnDeleteSpawnArea, query);
 }
@@ -612,15 +624,6 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
     }
 
     return 0;
-}
-
-void FixMenuGap(Menu menu)
-{
-    int max = (6 - menu.ItemCount);
-    for (int i; i < max; i++)
-    {
-        menu.AddItem("", "", ITEMDRAW_NOTEXT);
-    }
 }
 
 bool IsNavAreaConfigurated(NavArea nav_area, int &bombsite_index = -1, int &nav_mesh_team = -1, int &index = -1)

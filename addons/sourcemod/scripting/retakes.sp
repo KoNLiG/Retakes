@@ -97,8 +97,6 @@ enum struct EditMode
 
 enum struct Player
 {
-    int key;
-
     int index;
 
     int user_id;
@@ -109,6 +107,20 @@ enum struct Player
 
     StringMap weapons_map;
 
+    CSWeaponID weapons_id[8];
+
+    bool kit;
+
+    bool assult_suit;
+
+    bool kevlar;
+
+    char current_loadout_name[32];
+
+    int current_loadout_view;
+
+    bool close_menu;
+
     int spawn_role;
 
     int points;
@@ -116,8 +128,6 @@ enum struct Player
     //============================================//
     void Initiate(int client)
     {
-        this.key = 0;
-
         this.index = client;
 
         this.user_id = GetClientUserId(this.index);
@@ -126,7 +136,23 @@ enum struct Player
 
         this.weapons_map = new StringMap();
 
+        this.current_loadout_name[0] = '\n';
+
+        this.close_menu = false;
+
         this.points = 0;
+    }
+
+    void ClearLoadout()
+    {
+        for (int i; i < 8; i++)
+        {
+            this.weapons_id[i] = CSWeapon_NONE;
+        }
+
+        this.kit = false;
+        this.kevlar = false;
+        this.assult_suit = false;
     }
 
     void Reset()
@@ -169,6 +195,9 @@ ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributer;
 ConVar retakes_distributer_enable;
+ConVar retakes_distributer_grace_period;
+ConVar retakes_distributer_force_weapon;
+ConVar retakes_distributer_ammo_limit;
 ConVar retakes_explode_no_time;
 
 // Must be included after all definitions.
@@ -189,7 +218,7 @@ ConVar retakes_explode_no_time;
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
-    author = "Natanel 'LuqS', Omer 'KoNLiG', DRANIX",
+    author = "Natanel 'LuqS', Omer 'KoNLiG', Daniel 'DRANIX'",
     description = "The new generation of Retakes gameplay!",
     version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
@@ -213,6 +242,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 public void OnPluginStart()
 {
     LoadTranslations("retakes.phrases");
+    LoadTranslations("retakes_weapons.phrases");
     LoadTranslations("localization.phrases");
 
     Configuration_OnPluginStart();
@@ -251,6 +281,7 @@ public void OnClientPutInServer(int client)
 public void OnClientDisconnect(int client)
 {
     PlantLogic_OnClientDisconnect(client);
+    Distributer_OnClientDisconnect(client);
 
     g_Players[client].Reset();
 }
@@ -283,18 +314,34 @@ void StringToLower(char[] str)
     }
 }
 
-void DisarmClient(int client)
+void DisarmClientFirearms(int userid)
 {
+    int client = GetClientOfUserId(userid);
+
+    if (!client)
+    {
+        return;
+    }
+
+    char classname[32];
     int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
 
     for (int weapon, ent; weapon < max_weapons; weapon++)
     {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) != -1)
+        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) == -1
+         || (GetEntityClassname(ent, classname, sizeof(classname)) && IsKnifeClassname(classname)))
         {
-            RemovePlayerItem(client, ent);
-            RemoveEntity(ent);
+            continue;
         }
+
+        RemovePlayerItem(client, ent);
+        RemoveEntity(ent);
     }
+}
+
+bool IsKnifeClassname(const char[] classname)
+{
+    return (StrContains(classname, "knife") != -1 || StrContains(classname, "bayonet") != -1);
 }
 
 bool IsVectorZero(float vec[3])
@@ -345,4 +392,40 @@ int GetTeamSpawnRole(int team)
 int GetRetakeMaxHumanPlayers()
 {
 	return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
+}
+
+void FixMenuGap(Menu menu)
+{
+    int max = (6 - menu.ItemCount);
+    for (int i; i < max; i++)
+    {
+        menu.AddItem("", "", ITEMDRAW_NOTEXT);
+    }
+}
+
+int SelectRandomClient(int spawn_role = -1)
+{
+    int clients_count;
+    int[] clients = new int[MaxClients];
+
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            if (spawn_role >= SpawnRole_None)
+            {
+                if (g_Players[current_client].spawn_role == spawn_role)
+                {
+                    clients[clients_count++] = current_client;
+                }
+            }
+
+            else
+            {
+                clients[clients_count++] = current_client;
+            }
+        }
+    }
+
+    return clients_count ? clients[GetURandomInt() % clients_count] : -1;
 }
