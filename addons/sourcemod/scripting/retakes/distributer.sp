@@ -4,9 +4,9 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define LOADOUT_TEAM_T           0
-#define LOADOUT_TEAM_CT          1
-#define LOADOUT_TEAM_MAX         2
+#define LOADOUT_TEAM_T   0
+#define LOADOUT_TEAM_CT  1
+#define LOADOUT_TEAM_MAX 2
 
 #define LOADOUT_WEAPON_PRIMARY   0
 #define LOADOUT_WEAPON_SECONDARY 1
@@ -18,14 +18,14 @@
 #define LOADOUT_WEAPON_GRENADE4  7
 #define LOADOUT_WEAPON_MAX       8
 
-#define MAX_SLOT_FIREGRENADE     0
-#define MAX_SLOT_SMOKEGRENADE    1
-#define MAX_SLOT_MAX             2
+#define MAX_SLOT_FIREGRENADE  0
+#define MAX_SLOT_SMOKEGRENADE 1
+#define MAX_SLOT_MAX          2
 
-#define WEAPONTYPE_PRIMARY       (1 << 0)
-#define WEAPONTYPE_SECONDARY     (1 << 1)
-#define WEAPONTYPE_UTILITY       (1 << 2)
-#define WEAPONTYPE_ITEM          (1 << 3)
+#define WEAPONTYPE_PRIMARY   (1 << 0)
+#define WEAPONTYPE_SECONDARY (1 << 1)
+#define WEAPONTYPE_UTILITY   (1 << 2)
+#define WEAPONTYPE_ITEM      (1 << 3)
 
 enum struct PlayerLoadout
 {
@@ -37,24 +37,24 @@ enum struct LoadoutItemData
 {
     CSWeaponID item_id;
 
-    char       classname[32];
+    char classname[32];
 
-    float      chance;
+    float chance;
 
-    int        flags;
+    int flags;
 
-    int        max;
+    int max;
 }
 
 enum struct LoadoutData
 {
-    char      name[24];
+    char name[24];
 
     ArrayList items[LOADOUT_TEAM_MAX];
 
-    int       item_primary_count[LOADOUT_TEAM_MAX];
+    int item_primary_count[LOADOUT_TEAM_MAX];
 
-    int       item_secondary_count[LOADOUT_TEAM_MAX];
+    int item_secondary_count[LOADOUT_TEAM_MAX];
 
     // int       item_grenade_count[LOADOUT_TEAM_MAX];
 
@@ -111,9 +111,9 @@ public void Distributer_OnPluginStart()
         return;
     }
 
-    loadouts              = new ArrayList(sizeof(LoadoutData));
+    loadouts = new ArrayList(sizeof(LoadoutData));
 
-    SMCParser parser      = new SMCParser();
+    SMCParser parser = new SMCParser();
 
     parser.OnStart        = SMCParser_OnStart;
     parser.OnEnterSection = SMCParser_OnEnterSection;
@@ -122,7 +122,7 @@ public void Distributer_OnPluginStart()
     parser.OnRawLine      = SMCParser_OnRawLine;
     parser.OnEnd          = SMCParser_OnEnd;
 
-    SMCError error        = parser.ParseFile(buffer);
+    SMCError error = parser.ParseFile(buffer);
 
     if (error != SMCError_Okay)
     {
@@ -208,13 +208,13 @@ void Distributer_OnClientDisconnect(int client)
         return;
     }
 
-    char              buffer[32];
-    char              query[256];
-    char              table_name[32];
+    char buffer[32];
+    char query[256];
+    char table_name[32];
 
-    PlayerLoadout     player_loadout_data;
+    PlayerLoadout player_loadout_data;
 
-    Transaction       transaction      = new Transaction();
+    Transaction transaction = new Transaction();
 
     StringMapSnapshot loadout_snapshot = g_Players[client].weapons_map.Snapshot();
 
@@ -256,7 +256,7 @@ void Distributer_OnClientDisconnect(int client)
 }
 
 #if defined DEBUG
-void SQL_OnClientInfoSaved(Database db, any data, int numQueries, Handle[] results, any[] queryData)
+void        SQL_OnClientInfoSaved(Database db, any data, int numQueries, Handle[] results, any[] queryData)
 {
     LogMessage("Player data transaction completed successfully (%d queries)", numQueries);
 }
@@ -393,7 +393,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
         if (StrContains(key, "weapon") != -1 || !strcmp(key, "utility") || !strcmp(key, "item"))
         {
-            int  flags;
+            int flags;
 
             char buffer[32];
 
@@ -537,7 +537,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         return;
     }
 
-    bool            fail_state;
+    bool fail_state;
 
     LoadoutData     loadout_data;
     LoadoutItemData item_data;
@@ -638,7 +638,7 @@ void Distributer_OnRoundPreStart()
 
         g_Players[current_client].ClearLoadout();
 
-        items_length    = loadout_data.items[team].Length;
+        items_length = loadout_data.items[team].Length;
 
         int[] items_num = new int[items_length];
 
@@ -779,11 +779,11 @@ void Frame_DistributeWeapons(int userid)
 
 void DisplayDistributerMenu(int client)
 {
-    char        buffer[64];
+    char buffer[64];
 
     LoadoutData loadout;
 
-    Menu        menu = new Menu(Handler_DistributerMenu);
+    Menu menu = new Menu(Handler_DistributerMenu);
 
     FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "MenuPrefix", client, "Distributer", client);
 
@@ -838,17 +838,17 @@ int Handler_DistributerMenu(Menu menu, MenuAction action, int client, int option
 
 void DisplayDistributerLoadoutMenu(const char[] loadout_name, int client, int view = WEAPONTYPE_PRIMARY)
 {
-    char            buffer[64];
+    char buffer[64];
 
-    LoadoutData     loadout_data;
+    LoadoutData loadout_data;
 
     LoadoutItemData item_data;
 
     g_Players[client].current_loadout_view = view;
 
-    int  team                              = GetClientTeam(client) - LOADOUT_TEAM_MAX;
+    int team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
-    Menu menu                              = new Menu(Handler_DistributerLoadoutMenu);
+    Menu menu = new Menu(Handler_DistributerLoadoutMenu);
 
     FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "MenuPrefix", client, loadout_name, client, view & WEAPONTYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
 
