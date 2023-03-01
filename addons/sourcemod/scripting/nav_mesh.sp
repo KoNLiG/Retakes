@@ -150,7 +150,7 @@ void CreateNatives()
     CreateNative("TheNavMesh.GetNearestNavArea", Native_GetNearestNavArea);
 
     // int GetPlaceCount()
-    CreateNative("TheNavMesh.PlaceCount.get", Native_GetPlaceCount);
+    CreateNative("TheNavMesh.GetPlaceCount", Native_GetPlaceCount);
 
     // TheNavAreas()
     CreateNative("TheNavAreas.TheNavAreas", Native_TheNavAreas);
@@ -325,7 +325,7 @@ any Native_GetAdjacentArea(Handle plugin, int numParams)
 any Native_PlaceToName(Handle plugin, int numParams)
 {
     int place_index = GetNativeCell(1);
-    if (!(0 <= place_index <= TheNavMesh.GetPlaceCount))
+    if (!(1 <= place_index <= TheNavMesh.GetPlaceCount()))
     {
         ThrowNativeError(SP_ERROR_NATIVE, "Invalid area place index.");
     }
