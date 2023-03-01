@@ -128,18 +128,19 @@ void InstaDefuseAttempt(DataPack dp)
 
     // Note: Enough time to defuse would be: [remaining_time >= defuse_time]
 
-    if (!retakes_explode_no_time.BoolValue)
+    if (remaining_time >= defuse_time && IsInfernoNearC4(planted_c4, client))
     {
-        if (IsInfernoNearC4(planted_c4, client))
+        if (!g_SentNotification)
         {
-            if (!g_SentNotification)
-            {
-                PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
-                g_SentNotification = true;
-            }
-
-            return;
+            PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
+            g_SentNotification = true;
         }
+
+        return;
+    }
+    else
+    {
+        g_SentNotification = false;
     }
 
     if (remaining_time < defuse_time)
