@@ -94,10 +94,10 @@ void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
-    int team = event.GetInt("team"), oldteam = event.GetInt("oldteam");
+    int team = event.GetInt("team"), old_team = event.GetInt("oldteam");
     bool disconnect = event.GetBool("disconnect");
 
-    PlayerManager_OnPlayerTeam(client, team, oldteam, disconnect);
+    PlayerManager_OnPlayerTeam(client, team, old_team, disconnect);
 }
 
 void Event_PlayerHurt(Event event, const char[] name, bool dontBroadcast)

@@ -121,6 +121,8 @@ enum struct Player
 
     bool close_menu;
 
+    int old_team;
+
     int spawn_role;
 
     int points;
