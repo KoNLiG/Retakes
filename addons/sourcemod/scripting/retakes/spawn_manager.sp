@@ -42,7 +42,7 @@ void SpawnManager_OnMapStart()
 // HACK: apparently initializing the bombsites on 'OnMapStart' is too early,
 // 		 'OnConfigsExecuted' is a decent alternative since it's called
 // 		 once per map and it's more delayed.
-public void OnConfigsExecuted()
+void SpawnManager_OnConfigsExecuted()
 {
     InitializeBombsites();
 }

@@ -90,8 +90,8 @@ void PlayerManger_OnClientPutInServer()
 void PlayerManager_OnPlayerSpawn(int client)
 {
     // Too early here.
-    RequestFrame(DisableClientRetakeMode, GetClientUserId(client));
-    RequestFrame(DisarmClientFirearms, GetClientUserId(client));
+    RequestFrame(DisableClientRetakeMode, g_Players[client].user_id);
+    RequestFrame(DisarmClientFirearms, g_Players[client].user_id);
 }
 
 void PlayerManager_OnPlayerConnectFull(int client)
@@ -105,7 +105,7 @@ void PlayerManager_OnPlayerConnectFull(int client)
     SetPlayerTeam(client, CS_TEAM_SPECTATOR);
 
     // Add the player to the end of the queue.
-    g_QueuedPlayers.Push(GetClientUserId(client));
+    g_QueuedPlayers.Push(g_Players[client].user_id);
 
     // Notify the player.
     char place[16];
