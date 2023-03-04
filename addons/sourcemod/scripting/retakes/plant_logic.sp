@@ -9,9 +9,10 @@
 
 #assert defined COMPILING_FROM_MAIN
 
+int g_PlanterUserID;
+
 void PlantLogic_OnPluginStart()
 {
-
 }
 
 void PlantLogic_OnRoundPreStart()
@@ -26,10 +27,11 @@ void PlantLogic_OnRoundPreStart()
     }
 
     g_Players[planter].spawn_role = SpawnRole_Planter;
+    g_PlanterUserID = g_Players[planter].user_id;
 
     // This is too early to setup the planter.
     // The player is gurranted to spawn in the next frame.
-    RequestFrame(SetupPlanter, GetClientUserId(planter));
+    RequestFrame(SetupPlanter, g_Players[planter].user_id);
 
     LockupBombsite(g_TargetSite, true);
 }
@@ -104,12 +106,10 @@ void SetupPlanter(int userid)
 // Retrieves the current planter player index, or -1 if unavailable.
 int GetPlanter()
 {
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    int planter = GetClientOfUserId(g_PlanterUserID);
+    if (planter == -1 || g_Players[planter].spawn_role != SpawnRole_Planter)
     {
-        if (IsClientInGame(current_client) && g_Players[current_client].spawn_role == SpawnRole_Planter)
-        {
-            return current_client;
-        }
+        return -1;
     }
 
     return -1;
@@ -215,7 +215,7 @@ void NotifyBombPlanted(int client, int bombsite_index)
     Event event = CreateEvent("bomb_planted");
     if (event != null)
     {
-        event.SetInt("userid", GetClientUserId(client));
+        event.SetInt("userid", g_Players[client].user_id);
         event.SetInt("site", bombsite_index);
         event.Fire();
     }

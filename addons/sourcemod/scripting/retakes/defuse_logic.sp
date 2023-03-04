@@ -91,7 +91,7 @@ void InstaDefuseAttemptEx(int client, int planted_c4)
     }
 
     DataPack dp = new DataPack();
-    dp.WriteCell(GetClientUserId(client));
+    dp.WriteCell(g_Players[client].user_id);
     dp.WriteCell(EntIndexToEntRef(planted_c4));
     RequestFrame(InstaDefuseAttempt, dp);
 }

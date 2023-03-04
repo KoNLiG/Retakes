@@ -42,6 +42,7 @@ void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
     PlantLogic_OnRoundFreezeEnd();
     PlayerManager_OnRoundFreezeEnd();
     Gameplay_OnRoundFreezeEnd();
+    Distributer_OnRoundFreezeEnd();
 }
 
 void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)

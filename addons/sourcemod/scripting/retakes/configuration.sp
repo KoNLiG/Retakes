@@ -57,7 +57,7 @@ void RegisterConVars()
     retakes_distributer_force_weapon = CreateConVar("retakes_distributer_force_weapon", "0", "Force weapons over default equipped weapons.");
     retakes_distributer_ammo_limit = CreateConVar("retakes_distributer_ammo_limit", "4", "Grenade amount limit.");
     retakes_distributer_ammo_limit.AddChangeHook(OnConVarChanged);
-    
+
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
 }

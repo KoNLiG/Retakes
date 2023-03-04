@@ -87,7 +87,7 @@ int       line_count = -1;
 char      current_weapon_class_name[sizeof(LoadoutItemData::classname)];
 ConVar    ammo_grenade_limit_total;
 
-public void Distributer_OnPluginStart()
+void Distributer_OnConfigsExecuted()
 {
     if (!retakes_distributer_enable.BoolValue)
     {
@@ -137,6 +137,10 @@ public void Distributer_OnPluginStart()
     }
 
     delete parser;
+}
+
+public void Distributer_OnPluginStart()
+{
 }
 
 void Distributer_OnDatabaseConnection()
@@ -626,6 +630,10 @@ void Distributer_OnRoundPreStart()
 
     static const grenade_offset = LOADOUT_WEAPON_SECONDARY + 2;
 
+#if defined DEBUG
+    PrintToChatAll("loadouts.Length: %d", loadouts.Length);
+#endif
+
     loadouts.GetArray(GetURandomInt() % loadouts.Length, loadout_data, sizeof(loadout_data));
 
     for (int current_team, current_client = 1; current_client <= MaxClients; current_client++)
@@ -760,15 +768,24 @@ void Distributer_OnRoundPreStart()
                     }
                 }
             }
-            
+
             delete filtered_items;
         }
     }
 }
 
+void Distributer_OnRoundFreezeEnd()
+{
+    int planter = GetPlanter();
+    if (planter != -1)
+    {
+        Frame_DistributeWeapons(g_Players[planter].user_id);
+    }
+}
+
 void Distributer_OnPlayerSpawn(int client)
 {
-    if (!retakes_distributer_enable.BoolValue)
+    if (!retakes_distributer_enable.BoolValue || GetPlanter() == client)
     {
         return;
     }

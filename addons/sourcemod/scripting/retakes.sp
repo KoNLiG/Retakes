@@ -272,6 +272,21 @@ public void OnMapStart()
     g_LaserIndex = PrecacheModel("materials/sprites/laserbeam.vmt");
 }
 
+public void OnConfigsExecuted()
+{
+    Distributer_OnConfigsExecuted();
+    SpawnManager_OnConfigsExecuted();
+
+    // Late load support.
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+           OnClientPutInServer(current_client);
+        }
+    }
+}
+
 public void OnClientPutInServer(int client)
 {
     g_Players[client].Initiate(client);
