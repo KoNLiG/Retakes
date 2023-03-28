@@ -220,7 +220,7 @@ ConVar retakes_explode_no_time;
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
-    author = "Natanel 'LuqS', Omer 'KoNLiG', Daniel 'DRANIX'",
+    author = "Omer 'KoNLiG', DRANIX",
     description = "The new generation of Retakes gameplay!",
     version = "1.0.0",
     url = "https://github.com/KoNLiG/Retakes"
