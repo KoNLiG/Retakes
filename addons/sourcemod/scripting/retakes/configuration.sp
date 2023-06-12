@@ -28,7 +28,7 @@ void RegisterConVars()
     retakes_bots_are_players = CreateConVar("retakes_bots_are_players", "1", "Server bots will be treated as regular players.", _, true, 0.0, true, 1.0);
     retakes_max_attackers = CreateConVar("retakes_max_attackers", "5", "Max players allowed in the Counter-Terrorist team.", _, true, 1.0, true, 5.0);
     retakes_max_defenders = CreateConVar("retakes_max_defenders", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
-    retakes_max_wins_scramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
+    // retakes_max_wins_scramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
 
     retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5", "Amount of layers for navigation area adjacent trees. Used for angles computation.", .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
 
