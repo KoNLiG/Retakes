@@ -651,7 +651,7 @@ void Distributer_OnRoundPreStart()
         for (int j = loadout_data.items[i].Length - 1; j >= 0; j--)
         {
             loadout_data.items[i].GetArray(j, item_data, sizeof(item_data));
-    
+
             switch (item_data.flags)
             {
                 case WEAPONTYPE_PRIMARY: filtered_items[i][LOADOUT_WEAPON_PRIMARY].Push(j);
@@ -660,7 +660,7 @@ void Distributer_OnRoundPreStart()
                 case WEAPONTYPE_ITEM: filtered_items[i][LOADOUT_WEAPON_ITEM].Push(j);
             }
         }
-    }    
+    }
 
     for (int current_team, current_client = 1; current_client <= MaxClients; current_client++)
     {

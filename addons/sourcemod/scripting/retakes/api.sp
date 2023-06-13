@@ -32,16 +32,16 @@ any Native_GetTargetBombsite(Handle plugin, int numParams)
 void CreateForwards()
 {
     g_OnBombsiteSelected = new GlobalForward(
-		"Retakes_OnBombsiteSelected",
-		ET_Ignore,  // Ignore any return values. (void)
-		Param_CellByRef  // int &bombsite_index
-		);
+        "Retakes_OnBombsiteSelected",
+        ET_Ignore,  // Ignore any return values. (void)
+        Param_CellByRef  // int &bombsite_index
+        );
 
     g_OnBombsiteSelectedPost = new GlobalForward(
-		"Retakes_OnBombsiteSelectedPost",
-		ET_Ignore,  // Ignore any return values. (void)
-		Param_Cell  // int bombsite_index
-		);
+        "Retakes_OnBombsiteSelectedPost",
+        ET_Ignore,  // Ignore any return values. (void)
+        Param_Cell  // int bombsite_index
+        );
 }
 
 void Call_OnBombsiteSelected(int &bombsite_index)

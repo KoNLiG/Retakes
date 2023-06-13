@@ -157,35 +157,35 @@ void Frame_DisplayRequiredPlayers()
 
 void GetNextFadeColor(int color[3])
 {
-	static int fade_color[3] = { 255, 0, 0 };
+    static int fade_color[3] = { 255, 0, 0 };
 
-	if (fade_color[0] > 0 && !fade_color[2])
-	{
-		fade_color[0]--;
-		fade_color[1]++;
-	}
+    if (fade_color[0] > 0 && !fade_color[2])
+    {
+        fade_color[0]--;
+        fade_color[1]++;
+    }
 
-	if (fade_color[1] > 0 && !fade_color[0])
-	{
-		fade_color[1]--;
-		fade_color[2]++;
-	}
+    if (fade_color[1] > 0 && !fade_color[0])
+    {
+        fade_color[1]--;
+        fade_color[2]++;
+    }
 
-	if (fade_color[2] > 0 && !fade_color[1])
-	{
-		fade_color[2]--;
-		fade_color[0]++;
-	}
+    if (fade_color[2] > 0 && !fade_color[1])
+    {
+        fade_color[2]--;
+        fade_color[0]++;
+    }
 
-	color = fade_color;
+    color = fade_color;
 }
 
 int RGBToHex(int color[3])
 {
-	int hex;
-	hex |= ((color[0] & 0xFF) << 16);
-	hex |= ((color[1] & 0xFF) << 8);
-	hex |= ((color[2] & 0xFF) << 0);
+    int hex;
+    hex |= ((color[0] & 0xFF) << 16);
+    hex |= ((color[1] & 0xFF) << 8);
+    hex |= ((color[2] & 0xFF) << 0);
 
-	return hex;
+    return hex;
 }
