@@ -112,7 +112,7 @@ int GetPlanter()
         return -1;
     }
 
-    return -1;
+    return planter;
 }
 
 void UnfreezePlanter(int client)
