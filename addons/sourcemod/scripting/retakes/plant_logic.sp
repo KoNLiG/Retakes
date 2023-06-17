@@ -164,17 +164,20 @@ bool CreateNaturalPlantedC4()
     float plant_origin[3];
     GenerateSpawnLocation(planter, g_Bombsites[g_TargetSite].mins, g_Bombsites[g_TargetSite].maxs, plant_origin);
 
-    int planted_c4 = CreateEntityByName("planted_c4");
-    if (planted_c4 == -1 || !DispatchSpawn(planted_c4))
+    // Make the to spawn the c4 on the ground.
+    TR_TraceRay(plant_origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite);
+    if (!TR_DidHit())
     {
         return false;
     }
 
-    // Make the to spawn the c4 on the ground.
-    TR_TraceRay(plant_origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite);
     TR_GetEndPosition(plant_origin);
 
-    TeleportEntity(planted_c4, plant_origin);
+    int planted_c4 = CreateEntityByName("planted_c4");
+    if (planted_c4 == -1 || !DispatchKeyValueVector(planted_c4, "origin", plant_origin) || !DispatchSpawn(planted_c4))
+    {
+        return false;
+    }
 
     SetEntProp(planted_c4, Prop_Send, "m_bBombTicking", true, 1);
 
@@ -183,41 +186,33 @@ bool CreateNaturalPlantedC4()
     GetClientMins(planter, mins);
     GetClientMaxs(planter, maxs);
 
-    if (ValidateSpawn(planter, plant_origin, mins, maxs))
+    if (!ValidateSpawn(planter, plant_origin, mins, maxs))
     {
-        TeleportEntity(planter, plant_origin);
+        return false;
     }
 
-    // Remove the old c4 if exists.
-    int weapon_c4 = GetPlayerWeaponSlot(planter, CS_SLOT_C4);
-    if (weapon_c4 != -1)
-    {
-        RemovePlayerItem(planter, weapon_c4);
-        RemoveEntity(weapon_c4);
-    }
+    TeleportEntity(planter, plant_origin);
+
+    RemoveBombWeapons();
 
     NotifyBombPlanted(planter, g_TargetSite);
 
     return true;
 }
 
-void NotifyRoundFreezeEnd()
+// Removes any 'weapon_c4' entities.
+void RemoveBombWeapons()
 {
-    Event event = CreateEvent("round_freeze_end");
-    if (event != null)
+    int weapon_c4;
+    while ((weapon_c4 = FindEntityByClassname(weapon_c4, "weapon_c4")) != -1)
     {
-        event.Fire();
-    }
-}
+        int weapon_c4_owner = GetEntPropEnt(weapon_c4, Prop_Send, "m_hOwnerEntity");
+        if (weapon_c4_owner != -1)
+        {
+            SDKHooks_DropWeapon(weapon_c4_owner, weapon_c4);
+        }
 
-void NotifyBombPlanted(int client, int bombsite_index)
-{
-    Event event = CreateEvent("bomb_planted");
-    if (event != null)
-    {
-        event.SetInt("userid", g_Players[client].user_id);
-        event.SetInt("site", bombsite_index);
-        event.Fire();
+        RemoveEntity(weapon_c4);
     }
 }
 
@@ -244,8 +239,30 @@ void SetFreezePeriod(bool value)
 // Note: 'weapon_c4' is not the same as 'planted_c4'
 void ForceC4Plant(int weapon_c4)
 {
-    if (retakes_instant_plant.BoolValue)
+    if (!retakes_instant_plant.BoolValue)
     {
-        SetEntPropFloat(weapon_c4, Prop_Send, "m_fArmedTime", GetGameTime());
+        return;
+    }
+
+    SetEntPropFloat(weapon_c4, Prop_Send, "m_fArmedTime", GetGameTime());
+}
+
+void NotifyRoundFreezeEnd()
+{
+    Event event = CreateEvent("round_freeze_end");
+    if (event != null)
+    {
+        event.Fire();
+    }
+}
+
+void NotifyBombPlanted(int client, int bombsite_index)
+{
+    Event event = CreateEvent("bomb_planted");
+    if (event != null)
+    {
+        event.SetInt("userid", g_Players[client].user_id);
+        event.SetInt("site", bombsite_index);
+        event.Fire();
     }
 }

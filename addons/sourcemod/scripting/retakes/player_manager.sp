@@ -275,9 +275,10 @@ void ResetPlayersPoints()
     }
 }
 
-void DisableClientRetakeMode(int client)
+void DisableClientRetakeMode(int userid)
 {
-    if ((client = GetClientOfUserId(client)))
+    int client = GetClientOfUserId(userid);
+    if (client)
     {
         ReplicateRetakeMode(client, false);
     }
