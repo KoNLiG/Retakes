@@ -87,29 +87,10 @@ void InitializeBombsites()
 
 void SpawnManager_OnPlayerSpawn(int client)
 {
-#if defined DEBUG
-    static Profiler profiler;
-    if (!profiler)
-    {
-        profiler = new Profiler();
-    }
-
-    profiler.Start();
-#endif
-
-    // DO NOT change controlled bots position.
-    if (IsControllingBot(client))
-    {
-        return;
-    }
-
     float origin[3];
     NavArea nav_area;
     if (!GetRandomSpawnLocation(client, origin, nav_area))
     {
-    #if defined DEBUG
-        profiler.Stop();
-    #endif
         return;
     }
 
@@ -119,12 +100,7 @@ void SpawnManager_OnPlayerSpawn(int client)
         ComputeRandomSpawnAngles(origin, nav_area, angles);
     }
 
-    TeleportEntity(client, origin, angles);
-
-#if defined DEBUG
-    profiler.Stop();
-    PrintToServer("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
-#endif
+    TeleportEntity(client, origin, IsVectorZero(angles) ? NULL_VECTOR : angles);
 }
 
 bool GetRandomSpawnLocation(int client, float origin[3], NavArea &nav_area)

@@ -361,7 +361,7 @@ void DisarmClient(int client)
 
 bool IsVectorZero(float vec[3])
 {
-    return !FloatCompare(vec[0], 0.0) && !FloatCompare(vec[1], 0.0) && !FloatCompare(vec[2], 0.0);
+    return !vec[0] && !vec[1] && !vec[2];
 }
 
 int GetPlantedC4()

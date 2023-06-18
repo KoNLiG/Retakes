@@ -60,9 +60,45 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
+    // DO NOT notify about bots being controlled.
+    // Apparently, 'player_spawn' event is called after every player
+    // controlling a bot, which is a behavior we don't want.
+    if (IsControllingBot(client))
+    {
+        return;
+    }
+
+#if defined DEBUG
+    static Profiler profiler;
+    if (!profiler)
+    {
+        profiler = new Profiler();
+    }
+
+    profiler.Start();
+#endif
+
     PlayerManager_OnPlayerSpawn(client);
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[PlayerManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+
+    profiler.Start();
+#endif
+
     SpawnManager_OnPlayerSpawn(client);
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+
+    profiler.Start();
+#endif
+
     Distributer_OnPlayerSpawn(client);
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Distributer_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+#endif
 }
 
 void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
