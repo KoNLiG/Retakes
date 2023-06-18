@@ -7,15 +7,10 @@
 
 #define MAX_MAP_NAME_LENGTH 128
 
-// 'TheNavAreas' address.
-TheNavAreas g_TheNavAreas;
-
 char g_CurrentMapName[MAX_MAP_NAME_LENGTH];
 
 void Configuration_OnPluginStart()
 {
-    g_TheNavAreas = TheNavAreas();
-
     RegisterConVars();
     RegisterCommands();
 }
@@ -70,10 +65,6 @@ void OnConVarChanged(ConVar convar, const char[] old_value, const char[] new_val
 {
     if (convar == retakes_distributer_ammo_limit)
     {
-        // BUG: 'ammo_grenade_limit_total' won't be automatically set since this change hook
-        //      doesn't get called unless 'retakes_distributer_ammo_limit' is changed after the plugin is loaded.
-        //      I was thinking on just removing 'retakes_distributer_ammo_limit' and work around with
-        //      'ammo_grenade_limit_total'.
         FindConVar("ammo_grenade_limit_total").IntValue = StringToInt(new_value);
     }
 }
@@ -104,7 +95,7 @@ void Configuration_OnDatabaseConnection()
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_index` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL)", table_name, MAX_MAP_NAME_LENGTH);
+    g_Database.Format(query, sizeof(query), "CREATE TABLE IF NOT EXISTS `%s`(`map_name` VARCHAR(%d) NOT NULL, `nav_area_id` INT NOT NULL, `bombsite_index` INT NOT NULL, `nav_mesh_area_team` INT NOT NULL)", table_name, MAX_MAP_NAME_LENGTH);
     g_Database.Query(SQL_OnSpawnTableCreated, query);
 
     // Load all the spawn areas here, if couldn't on 'Configuration_OnMapStart'.
@@ -141,7 +132,7 @@ void LoadSpawnAreas()
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "SELECT `nav_area_index`, `bombsite_index`, `nav_mesh_area_team` FROM `%s` WHERE `map_name` = '%s'", table_name, g_CurrentMapName);
+    g_Database.Format(query, sizeof(query), "SELECT `nav_area_id`, `bombsite_index`, `nav_mesh_area_team` FROM `%s` WHERE `map_name` = '%s'", table_name, g_CurrentMapName);
     g_Database.Query(SQL_OnLoadSpawnAreas, query);
 }
 
@@ -162,47 +153,41 @@ void SQL_OnLoadSpawnAreas(Database db, DBResultSet results, const char[] error, 
     // Iterate through all the map spawn areas...
     do
     {
-        int nav_area_index = results.FetchInt(0);
-        if (!(0 <= nav_area_index < g_TheNavAreas.size))
+        int nav_area_id = results.FetchInt(0);
+        NavArea nav_area = TheNavMesh.GetNavAreaByID(nav_area_id);
+
+        if (nav_area == NULL_NAV_AREA)
         {
-            LogError("Invalid navigation area index. (%d)", nav_area_index);
+            LogError("Invalid navigation area id. (%d)", nav_area_id);
             continue;
         }
 
         int bombsite_index = results.FetchInt(1);
         if (!(Bombsite_None < bombsite_index < Bombsite_Max))
         {
-            LogError("Invalid bombsite index for navigation area #%d.", nav_area_index);
+            LogError("Invalid bombsite index for navigation area #%d.", nav_area_id);
             continue;
         }
 
         int nav_mesh_area_team = results.FetchInt(2);
         if (!(-1 < nav_mesh_area_team < NavMeshArea_Max))
         {
-            LogError("Invalid team index for navigation area #%d.", nav_area_index);
-            continue;
-        }
-
-        NavArea nav_area = g_TheNavAreas.Get(nav_area_index);
-        if (nav_area == NULL_NAV_AREA)
-        {
-            LogError("Failed to retrieve a CNavArea address for index #%d.", nav_area_index);
+            LogError("Invalid team index for navigation area #%d.", nav_area_id);
             continue;
         }
 
         g_BombsiteSpawns[bombsite_index][nav_mesh_area_team].Push(nav_area);
-
     } while (results.FetchRow());
 }
 
-void InsertSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_team)
+void InsertSpawnArea(int nav_area_id, int bombsite_index, int nav_mesh_area_team)
 {
     char query[256];
     char table_name[64];
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "INSERT INTO `%s` VALUES ('%s', %d, %d, %d)", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
+    g_Database.Format(query, sizeof(query), "INSERT INTO `%s` VALUES ('%s', %d, %d, %d)", table_name, g_CurrentMapName, nav_area_id, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnInsertSpawnArea, query);
 }
 
@@ -215,14 +200,14 @@ void SQL_OnInsertSpawnArea(Database db, DBResultSet results, const char[] error,
     }
 }
 
-void DeleteSpawnArea(int nav_area_index, int bombsite_index, int nav_mesh_area_team)
+void DeleteSpawnArea(int nav_area_id, int bombsite_index, int nav_mesh_area_team)
 {
     char query[256];
     char table_name[64];
 
     retakes_database_table_spawns.GetString(table_name, sizeof(table_name));
 
-    g_Database.Format(query, sizeof(query), "DELETE FROM `%s` WHERE `map_name` = '%s' AND `nav_area_index` = '%d' AND `bombsite_index` = '%d' AND `nav_mesh_area_team` = '%d'", table_name, g_CurrentMapName, nav_area_index, bombsite_index, nav_mesh_area_team);
+    g_Database.Format(query, sizeof(query), "DELETE FROM `%s` WHERE `map_name` = '%s' AND `nav_area_id` = '%d' AND `bombsite_index` = '%d' AND `nav_mesh_area_team` = '%d'", table_name, g_CurrentMapName, nav_area_id, bombsite_index, nav_mesh_area_team);
     g_Database.Query(SQL_OnDeleteSpawnArea, query);
 }
 
@@ -283,14 +268,14 @@ public void OnPlayerRunCmdPost(int client, int buttons, int impulse, const float
         // Must hold MOUSE1 + MOUSE2 for exactly a second.
         if (!(tickcount % RoundToFloor(g_ServerTickrate)) && (buttons & IN_ATTACK) && (buttons & IN_ATTACK2))
         {
-            int nav_area_index = g_TheNavAreas.Find(nav_area);
-            if (nav_area_index == -1)
+            int nav_area_id = nav_area.ID;
+            if (nav_area_id <= 0)
             {
                 PrintToChat(client, "%T%T", "MessagesPrefix", client, "Spawn Area Delete Error", client);
                 return;
             }
 
-            DeleteSpawnArea(nav_area_index, bombsite_index, nav_mesh_area_team);
+            DeleteSpawnArea(nav_area_id, bombsite_index, nav_mesh_area_team);
 
             g_BombsiteSpawns[bombsite_index][nav_mesh_area_team].Erase(array_idx);
 
@@ -611,14 +596,14 @@ int Handler_AddArea(Menu menu, MenuAction action, int param1, int param2)
                 return 0;
             }
 
-            int nav_area_index = g_TheNavAreas.Find(nav_area);
-            if (nav_area_index == -1)
+            int nav_area_id = nav_area.ID;
+            if (nav_area_id <= 0)
             {
                 PrintToChat(client, "%T%T.", "MessagesPrefix", client, "Spawn Area Add Error", client);
                 return 0;
             }
 
-            InsertSpawnArea(nav_area_index, g_Players[client].edit_mode.bombsite_index, nav_mesh_area_team);
+            InsertSpawnArea(nav_area_id, g_Players[client].edit_mode.bombsite_index, nav_mesh_area_team);
 
             g_BombsiteSpawns[g_Players[client].edit_mode.bombsite_index][nav_mesh_area_team].Push(nav_area);
 
