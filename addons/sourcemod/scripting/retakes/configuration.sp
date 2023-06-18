@@ -342,7 +342,18 @@ void HighlightSpawnArea(int client, NavArea nav_area, int color[4])
 void Laser(int client, const float start[3], const float end[3], int color[4] = { 255, 255, 255, 255 }, float time = 0.2)
 {
     TE_SetupBeamPoints(start, end, g_LaserIndex, 0, 0, 0, time, 1.5, 1.5, 0, 0.0, color, 0);
-    TE_SendToClient(client);
+    TE_SendToClientInRange(client, start, RangeType_Visibility);
+}
+
+void TE_SendToClientInRange(int client, const float origin[3], ClientRangeType rangeType, float delay = 0.0)
+{
+    int[] clients = new int[MaxClients];
+    int total = GetClientsInRange(origin, rangeType, clients, MaxClients);
+
+    if (IsValueInArray(client, clients, total) != -1)
+    {
+        TE_SendToClient(client, delay);
+    }
 }
 
 void ValidateLaserOrigin(float origin[3])

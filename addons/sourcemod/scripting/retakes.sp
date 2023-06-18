@@ -457,3 +457,16 @@ void Lateload()
 
     g_Lateload = false;
 }
+
+int IsValueInArray(int value, int[] arr, int size)
+{
+    for (int i; i < size; i++)
+    {
+        if (arr[i] == value)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
