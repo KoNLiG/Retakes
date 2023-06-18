@@ -23,5 +23,5 @@ void SQL_OnDatabaseConnected(Database db, const char[] error, any data)
     }
 
     Configuration_OnDatabaseConnection();
-    Distributer_OnDatabaseConnection();
+    Distributor_OnDatabaseConnection();
 }

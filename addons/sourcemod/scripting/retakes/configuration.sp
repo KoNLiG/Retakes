@@ -48,14 +48,14 @@ void RegisterConVars()
     // 'database.sp' cvars.
     retakes_database_entry = CreateConVar("retakes_database_entry", "modern_retakes", "Listed database entry in 'databases.cfg'.");
     retakes_database_table_spawns = CreateConVar("retakes_database_table_spawn_ares", "retakes_spawn_areas", "Database table name for spawn area locations.");
-    retakes_database_table_distributer = CreateConVar("retakes_database_table_distributer", "retakes_distributer", "Database table name for player weapons.");
+    retakes_database_table_distributor = CreateConVar("retakes_database_table_distributor", "retakes_distributor", "Database table name for player weapons.");
 
-    // 'distributer.sp' cvars.
-    retakes_distributer_enable = CreateConVar("retakes_distributer_enable", "0", "Enable or disable the weapons distributer.");
-    retakes_distributer_grace_period = CreateConVar("retakes_distributer_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
-    retakes_distributer_force_weapon = CreateConVar("retakes_distributer_force_weapon", "0", "Force weapons over default equipped weapons.");
-    retakes_distributer_ammo_limit = CreateConVar("retakes_distributer_ammo_limit", "4", "Grenade amount limit.");
-    retakes_distributer_ammo_limit.AddChangeHook(OnConVarChanged);
+    // 'distributor.sp' cvars.
+    retakes_distributor_enable = CreateConVar("retakes_distributor_enable", "0", "Enable or disable the weapons distributor.");
+    retakes_distributor_grace_period = CreateConVar("retakes_distributor_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
+    retakes_distributor_force_weapon = CreateConVar("retakes_distributor_force_weapon", "0", "Force weapons over default equipped weapons.");
+    retakes_distributor_ammo_limit = CreateConVar("retakes_distributor_ammo_limit", "4", "Grenade amount limit.");
+    retakes_distributor_ammo_limit.AddChangeHook(OnConVarChanged);
 
     AutoExecConfig(true, "retakes");
     AutoExecConfig_CleanFile();
@@ -63,7 +63,7 @@ void RegisterConVars()
 
 void OnConVarChanged(ConVar convar, const char[] old_value, const char[] new_value)
 {
-    if (convar == retakes_distributer_ammo_limit)
+    if (convar == retakes_distributor_ammo_limit)
     {
         FindConVar("ammo_grenade_limit_total").IntValue = StringToInt(new_value);
     }

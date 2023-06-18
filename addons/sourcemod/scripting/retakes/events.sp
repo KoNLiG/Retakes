@@ -29,7 +29,7 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
     PlayerManager_OnRoundPreStart();
     PlantLogic_OnRoundPreStart();
     DefuseLogic_OnRoundPreStart();
-    Distributer_OnRoundPreStart();
+    Distributor_OnRoundPreStart();
 }
 
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
@@ -42,7 +42,7 @@ void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
     PlantLogic_OnRoundFreezeEnd();
     PlayerManager_OnRoundFreezeEnd();
     Gameplay_OnRoundFreezeEnd();
-    Distributer_OnRoundFreezeEnd();
+    Distributor_OnRoundFreezeEnd();
 }
 
 void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -94,10 +94,10 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     profiler.Start();
 #endif
 
-    Distributer_OnPlayerSpawn(client);
+    Distributor_OnPlayerSpawn(client);
 #if defined DEBUG
     profiler.Stop();
-    PrintToConsoleAll("[Distributer_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+    PrintToConsoleAll("[Distributor_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
 #endif
 }
 

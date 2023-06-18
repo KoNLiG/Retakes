@@ -168,9 +168,9 @@
         "he"			".{1} הוכנסת לתור במקום "
     }
 
-    "Distributer"
+    "Distributor"
     {
-        "en"        "Distributer"
+        "en"        "Distributor"
     }
 
     "Primary Weapon"

@@ -196,11 +196,11 @@ ConVar retakes_instant_defuse;
 ConVar retakes_max_consecutive_rounds_same_target_site;
 ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
-ConVar retakes_database_table_distributer;
-ConVar retakes_distributer_enable;
-ConVar retakes_distributer_grace_period;
-ConVar retakes_distributer_force_weapon;
-ConVar retakes_distributer_ammo_limit;
+ConVar retakes_database_table_distributor;
+ConVar retakes_distributor_enable;
+ConVar retakes_distributor_grace_period;
+ConVar retakes_distributor_force_weapon;
+ConVar retakes_distributor_ammo_limit;
 ConVar retakes_explode_no_time;
 
 // Must be included after all definitions.
@@ -211,7 +211,7 @@ ConVar retakes_explode_no_time;
 #include "retakes/spawn_manager.sp"
 #include "retakes/player_manager.sp"
 #include "retakes/configuration.sp"
-#include "retakes/distributer.sp"
+#include "retakes/distributor.sp"
 #include "retakes/sdk.sp"
 #include "retakes/plant_logic.sp"
 #include "retakes/defuse_logic.sp"
@@ -253,7 +253,7 @@ public void OnPluginStart()
     LoadTranslations("localization.phrases");
 
     Configuration_OnPluginStart();
-    Distributer_OnPluginStart();
+    Distributor_OnPluginStart();
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
@@ -279,7 +279,7 @@ public void OnMapStart()
 
 public void OnConfigsExecuted()
 {
-    Distributer_OnConfigsExecuted();
+    Distributor_OnConfigsExecuted();
     SpawnManager_OnConfigsExecuted();
 
     // Late load support.
@@ -291,13 +291,13 @@ public void OnClientPutInServer(int client)
     g_Players[client].Initiate(client);
 
     PlayerManger_OnClientPutInServer();
-    Distributer_OnClientPutInServer(client);
+    Distributor_OnClientPutInServer(client);
 }
 
 public void OnClientDisconnect(int client)
 {
     PlantLogic_OnClientDisconnect(client);
-    Distributer_OnClientDisconnect(client);
+    Distributor_OnClientDisconnect(client);
 
     g_Players[client].Reset();
 }
