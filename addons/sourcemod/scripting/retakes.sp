@@ -416,6 +416,8 @@ void FixMenuGap(Menu menu)
     }
 }
 
+// Selects a random in-game client according to the given spawn role (SpawnRole_*).
+// If 'spawn_role' is -1 then ALL players are inserted into the selection pool.
 int SelectRandomClient(int spawn_role = -1)
 {
     int clients_count;
@@ -423,20 +425,14 @@ int SelectRandomClient(int spawn_role = -1)
 
     for (int current_client = 1; current_client <= MaxClients; current_client++)
     {
-        if (IsClientInGame(current_client))
+        if (!IsClientInGame(current_client))
         {
-            if (spawn_role >= SpawnRole_None)
-            {
-                if (g_Players[current_client].spawn_role == spawn_role)
-                {
-                    clients[clients_count++] = current_client;
-                }
-            }
+            continue;
+        }
 
-            else
-            {
-                clients[clients_count++] = current_client;
-            }
+        if (spawn_role == -1 || (spawn_role != -1 && g_Players[current_client].spawn_role == spawn_role))
+        {
+            clients[clients_count++] = current_client;
         }
     }
 
