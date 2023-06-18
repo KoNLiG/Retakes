@@ -304,7 +304,7 @@ NavArea GetSuitableNavArea(int client, NavArea filter = NULL_NAV_AREA)
 
     ArrayList suitable_areas = g_BombsiteSpawns[g_TargetSite][g_Players[client].spawn_role - (SpawnRole_Max - NavMeshArea_Max)].Clone();
 
-    // Atempt to erase the filtered nav area.
+    // Attempt to erase the filtered nav area.
     if (filter != NULL_NAV_AREA)
     {
         int idx = suitable_areas.FindValue(filter);
