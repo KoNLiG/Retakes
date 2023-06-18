@@ -218,6 +218,8 @@ ConVar retakes_explode_no_time;
 #include "retakes/api.sp"
 #undef COMPILING_FROM_MAIN
 
+bool g_Lateload;
+
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
@@ -235,6 +237,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
         strcopy(error, err_max, "This plugin was made for use with CS:GO only.");
         return APLRes_Failure;
     }
+
+    g_Lateload = late;
 
     // Initialzie API stuff.
     InitializeAPI();
@@ -279,13 +283,7 @@ public void OnConfigsExecuted()
     SpawnManager_OnConfigsExecuted();
 
     // Late load support.
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client))
-        {
-            OnClientPutInServer(current_client);
-        }
-    }
+    Lateload();
 }
 
 public void OnClientPutInServer(int client)
@@ -443,4 +441,23 @@ int SelectRandomClient(int spawn_role = -1)
     }
 
     return clients_count ? clients[GetURandomInt() % clients_count] : -1;
+}
+
+// Called after every map change. (OnConfigsExecuted)
+void Lateload()
+{
+    if (!g_Lateload)
+    {
+        return;
+    }
+
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            OnClientPutInServer(current_client);
+        }
+    }
+
+    g_Lateload = false;
 }
