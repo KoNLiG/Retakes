@@ -23,13 +23,29 @@ ConVar mp_friendlyfire;
 
 void DefuseLogic_OnPluginStart()
 {
-    inferno_max_range = FindConVar("inferno_max_range");
-    mp_round_restart_delay = FindConVar("mp_round_restart_delay");
-    mp_friendlyfire = FindConVar("mp_friendlyfire");
+    if (!(inferno_max_range = FindConVar("inferno_max_range")))
+    {
+        SetFailState("Failed to find convar 'inferno_max_range'");
+    }
+
+    if (!(mp_round_restart_delay = FindConVar("mp_round_restart_delay")))
+    {
+        SetFailState("Failed to find convar 'mp_round_restart_delay'");
+    }
+
+    if (!(mp_friendlyfire = FindConVar("mp_friendlyfire")))
+    {
+        SetFailState("Failed to find convar 'mp_friendlyfire'");
+    }
 }
 
 void DefuseLogic_OnBeginDefuse(int client, int planted_c4)
 {
+    if (!retakes_instant_defuse.BoolValue)
+    {
+        return;
+    }
+
     InstaDefuseAttemptEx(client, planted_c4);
 }
 
@@ -40,6 +56,11 @@ void DefuseLogic_OnBombDefused()
 
 void DefuseLogic_OnPlayerDeath(int client)
 {
+    if (!retakes_instant_defuse.BoolValue)
+    {
+        return;
+    }
+
     if (GetClientTeam(client) != CS_TEAM_T)
     {
         return;
@@ -62,6 +83,11 @@ void DefuseLogic_OnPlayerDeath(int client)
 
 void DefuseLogic_OnInfernoExpire()
 {
+    if (!retakes_instant_defuse.BoolValue)
+    {
+        return;
+    }
+
     int defuser = FindDefuser();
     if (defuser == -1)
     {
@@ -85,11 +111,6 @@ void DefuseLogic_OnRoundPreStart()
 // 'InstaDefuseAttempt' wrapper.
 void InstaDefuseAttemptEx(int client, int planted_c4)
 {
-    if (!retakes_instant_defuse.BoolValue)
-    {
-        return;
-    }
-
     DataPack dp = new DataPack();
     dp.WriteCell(g_Players[client].user_id);
     dp.WriteCell(EntIndexToEntRef(planted_c4));
@@ -154,6 +175,7 @@ void InstaDefuseAttempt(DataPack dp)
                 SetEntPropFloat(planted_c4, Prop_Send, "m_flC4Blow", 1.0);
             }
 
+            // TODO: Check if round termination is needed even if 'retakes_explode_no_time' is enabled.
             CS_TerminateRound(mp_round_restart_delay.FloatValue - 1.0, CSRoundEnd_TerroristsPlanted);
 
             g_SentNotification = true;
@@ -195,6 +217,8 @@ bool IsInfernoNearC4(int planted_c4, int defuser)
     while ((ent = FindEntityByClassname(ent, "inferno")) != -1)
     {
         // Exclude friendly inferno.
+        // TODO: Check behavior when thrower leaves the game, is 'm_hOwnerEntity'
+        // gonna be -1 and will fail due to invalid client index?
         int inferno_owner = GetEntPropEnt(ent, Prop_Send, "m_hOwnerEntity");
         if (defuser != inferno_owner && (!mp_friendlyfire.BoolValue && GetClientTeam(inferno_owner) == CS_TEAM_CT))
         {

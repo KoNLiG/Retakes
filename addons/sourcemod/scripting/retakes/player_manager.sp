@@ -91,7 +91,8 @@ void PlayerManager_OnPlayerSpawn(int client)
 {
     // Too early here.
     RequestFrame(DisableClientRetakeMode, g_Players[client].user_id);
-    RequestFrame(DisarmClientFirearms, g_Players[client].user_id);
+
+    DisarmClient(client);
 }
 
 void PlayerManager_OnPlayerConnectFull(int client)
@@ -274,9 +275,10 @@ void ResetPlayersPoints()
     }
 }
 
-void DisableClientRetakeMode(int client)
+void DisableClientRetakeMode(int userid)
 {
-    if ((client = GetClientOfUserId(client)))
+    int client = GetClientOfUserId(userid);
+    if (client)
     {
         ReplicateRetakeMode(client, false);
     }

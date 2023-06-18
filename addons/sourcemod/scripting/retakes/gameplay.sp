@@ -7,9 +7,9 @@
 int g_TargetSite;
 int g_ConsecutiveRounds[Bombsite_Max];
 
-// The plugin mind about whether are we waiting for players.
-// 'ShouldWaitForPlayers()' function will tell whether
-// we actually need to wait for more players.
+// 'g_IsWaitingForPlayers' determines if we're currently in the 'waiting for players' state.
+// 'ShouldWaitForPlayers()' function determines whether we should wait for players,
+// but it doesn't necessarily mean it's equal to 'g_IsWaitingForPlayers'.
 bool g_IsWaitingForPlayers;
 
 ConVar mp_ignore_round_win_conditions;
@@ -48,32 +48,7 @@ void Gameplay_OnRoundPreStart()
 
 void Gameplay_OnRoundStart()
 {
-    Event show_survival_respawn_status = CreateEvent("show_survival_respawn_status");
-
-    if (show_survival_respawn_status == INVALID_HANDLE)
-    {
-        return;
-    }
-
-    char message[128];
-
-    show_survival_respawn_status.SetInt("duration", mp_freezetime.IntValue);
-
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (!IsClientInGame(current_client) || IsFakeClient(current_client) || g_Players[current_client].spawn_role < SpawnRole_Attacker)
-        {
-            continue;
-        }
-
-        FormatEx(message, sizeof(message), "%T", "Bombsite HTML", current_client, g_TargetSite == Bombsite_A ? "Bombsite A" : "Bombsite B");
-
-        show_survival_respawn_status.SetString("loc_token", message);
-        show_survival_respawn_status.SetInt("userid", g_Players[current_client].user_id);
-        show_survival_respawn_status.FireToClient(current_client);
-    }
-
-    delete show_survival_respawn_status;
+    DisplayTargetSite();
 }
 
 void Gameplay_OnRoundFreezeEnd()
@@ -157,35 +132,63 @@ void Frame_DisplayRequiredPlayers()
 
 void GetNextFadeColor(int color[3])
 {
-	static int fade_color[3] = { 255, 0, 0 };
+    static int fade_color[3] = { 255, 0, 0 };
 
-	if (fade_color[0] > 0 && !fade_color[2])
-	{
-		fade_color[0]--;
-		fade_color[1]++;
-	}
+    if (fade_color[0] > 0 && !fade_color[2])
+    {
+        fade_color[0]--;
+        fade_color[1]++;
+    }
 
-	if (fade_color[1] > 0 && !fade_color[0])
-	{
-		fade_color[1]--;
-		fade_color[2]++;
-	}
+    if (fade_color[1] > 0 && !fade_color[0])
+    {
+        fade_color[1]--;
+        fade_color[2]++;
+    }
 
-	if (fade_color[2] > 0 && !fade_color[1])
-	{
-		fade_color[2]--;
-		fade_color[0]++;
-	}
+    if (fade_color[2] > 0 && !fade_color[1])
+    {
+        fade_color[2]--;
+        fade_color[0]++;
+    }
 
-	color = fade_color;
+    color = fade_color;
 }
 
 int RGBToHex(int color[3])
 {
-	int hex;
-	hex |= ((color[0] & 0xFF) << 16);
-	hex |= ((color[1] & 0xFF) << 8);
-	hex |= ((color[2] & 0xFF) << 0);
+    int hex;
+    hex |= ((color[0] & 0xFF) << 16);
+    hex |= ((color[1] & 0xFF) << 8);
+    hex |= ((color[2] & 0xFF) << 0);
 
-	return hex;
+    return hex;
+}
+
+void DisplayTargetSite()
+{
+    Event show_survival_respawn_status = CreateEvent("show_survival_respawn_status");
+    if (!show_survival_respawn_status)
+    {
+        return;
+    }
+
+    show_survival_respawn_status.SetInt("duration", mp_freezetime.IntValue);
+
+    char message[128];
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (!IsClientInGame(current_client) || IsFakeClient(current_client) || g_Players[current_client].spawn_role != SpawnRole_Attacker)
+        {
+            continue;
+        }
+
+        // Format the buffer for each individual language.
+        FormatEx(message, sizeof(message), "%T", "Bombsite HTML", current_client, g_TargetSite == Bombsite_A ? "Bombsite A" : "Bombsite B");
+        show_survival_respawn_status.SetString("loc_token", message);
+
+        show_survival_respawn_status.FireToClient(current_client);
+    }
+
+    show_survival_respawn_status.Cancel();
 }

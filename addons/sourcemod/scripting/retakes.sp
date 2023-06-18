@@ -1,5 +1,6 @@
 #include <sourcemod>
 #include <sdktools>
+#include <sdkhooks>
 #include <dhooks>
 #include <cstrike>
 #include <retakes>
@@ -217,6 +218,8 @@ ConVar retakes_explode_no_time;
 #include "retakes/api.sp"
 #undef COMPILING_FROM_MAIN
 
+bool g_Lateload;
+
 public Plugin myinfo =
 {
     name = "[CS:GO] Retakes",
@@ -234,6 +237,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
         strcopy(error, err_max, "This plugin was made for use with CS:GO only.");
         return APLRes_Failure;
     }
+
+    g_Lateload = late;
 
     // Initialzie API stuff.
     InitializeAPI();
@@ -278,13 +283,7 @@ public void OnConfigsExecuted()
     SpawnManager_OnConfigsExecuted();
 
     // Late load support.
-    for (int current_client = 1; current_client <= MaxClients; current_client++)
-    {
-        if (IsClientInGame(current_client))
-        {
-           OnClientPutInServer(current_client);
-        }
-    }
+    Lateload();
 }
 
 public void OnClientPutInServer(int client)
@@ -305,7 +304,7 @@ public void OnClientDisconnect(int client)
 
 public void OnClientDisconnect_Post(int client)
 {
-	Gameplay_OnClientDisconnectPost();
+    Gameplay_OnClientDisconnectPost();
 }
 
 void GetClientAimPosition(int client, float result[3])
@@ -331,39 +330,36 @@ void StringToLower(char[] str)
     }
 }
 
-void DisarmClientFirearms(int userid)
+void DisarmClient(int client)
 {
-    int client = GetClientOfUserId(userid);
-
-    if (!client)
+    static int m_hMyWeaponsOffset;
+    if (!m_hMyWeaponsOffset)
     {
-        return;
+        m_hMyWeaponsOffset = FindSendPropInfo("CCSPlayer", "m_hMyWeapons");
     }
 
-    char classname[32];
-    int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+    static int max_weapons;
+    if (!max_weapons)
+    {
+        // Always 64.
+        max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+    }
 
     for (int weapon, ent; weapon < max_weapons; weapon++)
     {
-        if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", weapon)) == -1
-         || (GetEntityClassname(ent, classname, sizeof(classname)) && IsKnifeClassname(classname)))
+        if ((ent = GetEntDataEnt2(client, m_hMyWeaponsOffset + weapon * 4)) == -1)
         {
             continue;
         }
 
-        RemovePlayerItem(client, ent);
+        SDKHooks_DropWeapon(client, ent);
         RemoveEntity(ent);
     }
 }
 
-bool IsKnifeClassname(const char[] classname)
-{
-    return (StrContains(classname, "knife") != -1 || StrContains(classname, "bayonet") != -1);
-}
-
 bool IsVectorZero(float vec[3])
 {
-    return !FloatCompare(vec[0], 0.0) && !FloatCompare(vec[1], 0.0) && !FloatCompare(vec[2], 0.0);
+    return !vec[0] && !vec[1] && !vec[2];
 }
 
 int GetPlantedC4()
@@ -408,7 +404,7 @@ int GetTeamSpawnRole(int team)
 // Doesn't include spectator slots.
 int GetRetakeMaxHumanPlayers()
 {
-	return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
+    return retakes_max_attackers.IntValue + retakes_max_defenders.IntValue;
 }
 
 void FixMenuGap(Menu menu)
@@ -420,6 +416,8 @@ void FixMenuGap(Menu menu)
     }
 }
 
+// Selects a random in-game client according to the given spawn role (SpawnRole_*).
+// If 'spawn_role' is -1 then ALL players are inserted into the selection pool.
 int SelectRandomClient(int spawn_role = -1)
 {
     int clients_count;
@@ -427,22 +425,48 @@ int SelectRandomClient(int spawn_role = -1)
 
     for (int current_client = 1; current_client <= MaxClients; current_client++)
     {
-        if (IsClientInGame(current_client))
+        if (!IsClientInGame(current_client))
         {
-            if (spawn_role >= SpawnRole_None)
-            {
-                if (g_Players[current_client].spawn_role == spawn_role)
-                {
-                    clients[clients_count++] = current_client;
-                }
-            }
+            continue;
+        }
 
-            else
-            {
-                clients[clients_count++] = current_client;
-            }
+        if (spawn_role == -1 || (spawn_role != -1 && g_Players[current_client].spawn_role == spawn_role))
+        {
+            clients[clients_count++] = current_client;
         }
     }
 
     return clients_count ? clients[GetURandomInt() % clients_count] : -1;
+}
+
+// Called after every map change. (OnConfigsExecuted)
+void Lateload()
+{
+    if (!g_Lateload)
+    {
+        return;
+    }
+
+    for (int current_client = 1; current_client <= MaxClients; current_client++)
+    {
+        if (IsClientInGame(current_client))
+        {
+            OnClientPutInServer(current_client);
+        }
+    }
+
+    g_Lateload = false;
+}
+
+int IsValueInArray(int value, int[] arr, int size)
+{
+    for (int i; i < size; i++)
+    {
+        if (arr[i] == value)
+        {
+            return i;
+        }
+    }
+
+    return -1;
 }
