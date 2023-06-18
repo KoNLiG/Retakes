@@ -30,7 +30,11 @@ void RegisterConVars()
     retakes_max_defenders = CreateConVar("retakes_max_defenders", "4", "Max players allowed in the Terrorist team.", _, true, 1.0, true, 5.0);
     // retakes_max_wins_scramble = CreateConVar("sm_retakes_rounds_scramble", "8", "Scramble teams after every x amount of rounds.");
 
-    retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5", "Amount of layers for navigation area adjacent trees. Used for angles computation.", .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
+    retakes_adjacent_tree_layers = CreateConVar("retakes_adjacent_tree_layers", "5",
+                                                "Amount of layers for navigation area adjacent trees. Used for angles computation. \n \
+                                                The lower this value is, the result of random angles computation will be less percise. \n \
+                                                The higher this value, means there will be more a lot more angles to choose from, combined with an expensive performance cost.",
+                                                .hasMin = true, .min = 1.0, .hasMax = true, .max = 7.0);
 
     // 'plant_logic.sp' cvars.
     retakes_auto_plant = CreateConVar("retakes_auto_plant", "1", "Whether to automatically plant a c4 if not planted after freeze time/planter has disconnected.", .hasMin = true, .hasMax = true, .max = 1.0);
