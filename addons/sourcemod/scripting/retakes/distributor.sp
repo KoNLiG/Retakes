@@ -774,24 +774,24 @@ void Distributor_OnRoundPreStart()
         int   maximum;
         float chance;
 
-        for (int current_loadout_index; current_loadout_index <= LOADOUT_WEAPON_ITEM; current_loadout_index++)
+        for (int current_loadout; current_loadout <= LOADOUT_WEAPON_ITEM; current_loadout++)
         {
-            if (g_Players[current_client].weapons_id[current_loadout_index])
+            if (g_Players[current_client].weapons_id[current_loadout])
             {
                 continue;
             }
 
-            switch (current_loadout_index)
+            switch (current_loadout)
             {
                 case LOADOUT_WEAPON_PRIMARY, LOADOUT_WEAPON_SECONDARY:
                 {
                     int item_position;
 
-                    filtered_items[current_team][current_loadout_index].Sort(Sort_Random, Sort_Integer);
+                    filtered_items[current_team][current_loadout].Sort(Sort_Random, Sort_Integer);
 
-                    for (int current_weapon = filtered_items[current_team][current_loadout_index].Length - 1; current_weapon >= 0; current_weapon--)
+                    for (int current_weapon = filtered_items[current_team][current_loadout].Length - 1; current_weapon >= 0; current_weapon--)
                     {
-                        item_position = filtered_items[current_team][current_loadout_index].Get(current_weapon);
+                        item_position = filtered_items[current_team][current_loadout].Get(current_weapon);
 
                         if (!loadout_data.items[current_team].GetArray(item_position, item_data, sizeof(item_data)))
                         {
@@ -807,9 +807,9 @@ void Distributor_OnRoundPreStart()
 
                         chance = item_data.chance ? item_data.chance : 1.0;
 
-                        if (current_weapon == filtered_items[current_team][current_loadout_index].Length || GetURandomFloat() < chance)
+                        if (current_weapon == filtered_items[current_team][current_loadout].Length || GetURandomFloat() < chance)
                         {
-                            g_Players[current_client].weapons_id[current_loadout_index] = item_data.item_id;
+                            g_Players[current_client].weapons_id[current_loadout] = item_data.item_id;
 
                             weapon_id_max[item_data.item_id]++;
 
@@ -896,7 +896,7 @@ void Distributor_OnRoundPreStart()
                                 g_Players[current_client].assult_suit = true;
                             }
 
-                            weapon_id_max[item_data.item_id]++;
+                            // weapon_id_max[item_data.item_id]++;
                         }
                     }
                 }
