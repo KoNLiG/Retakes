@@ -59,6 +59,14 @@ enum struct EditMode
 
     NavArea nav_area;
 
+    //============================================//
+    void Close()
+    {
+        this.in_edit_mode = false;
+        this.bombsite_index = 0;
+        this.nav_area = NULL_NAV_AREA;
+    }
+
     void Enter()
     {
         this.in_edit_mode = true;
@@ -67,13 +75,6 @@ enum struct EditMode
     void Exit()
     {
         this.Reset();
-    }
-
-    void Reset()
-    {
-        this.in_edit_mode = false;
-        this.bombsite_index = 0;
-        this.nav_area = NULL_NAV_AREA;
     }
 
     void NextBombsite()
@@ -96,16 +97,8 @@ enum struct EditMode
     }
 }
 
-enum struct Player
+enum struct Distributor
 {
-    int index;
-
-    int user_id;
-
-    int account_id;
-
-    EditMode edit_mode;
-
     StringMap weapons_map;
 
     CSWeaponID weapons_id[9];
@@ -122,49 +115,87 @@ enum struct Player
 
     bool close_menu;
 
-    int old_team;
+    //============================================//
+    void Init()
+    {
+        this.weapons_map = new StringMap();
+        this.weapons_id[8] = CSWeapon_KNIFE;
+    }
+
+    // Resets all unrelevant data on player disconnect.
+    void Close()
+    {
+        delete this.weapons_map;
+
+        for (int current_index; current_index < sizeof(this.weapons_id); current_index++)
+        {
+            this.weapons_id[i] = CSWeapon_NONE;
+        }
+
+        this.kit = false;
+        this.assult_suit = false;
+        this.kevlar = false;
+        this.current_loadout_name[0] = '\0';
+        this.current_loadout_view = 0;
+        this.close_menu = false;
+    }
+
+    void ClearLoadout()
+    {
+        // 'sizeof(this.weapons_id) - 1' to exclude the knife index.
+        for (int current_index; current_index < sizeof(this.weapons_id) - 1; current_index++)
+        {
+            this.weapons_id[i] = CSWeapon_NONE;
+        }
+
+        this.kit = false;
+        this.assult_suit = false;
+        this.kevlar = false;
+    }
+}
+
+enum struct Player
+{
+    // Player slot index.
+    int index;
+
+    // Unique session user id.
+    int user_id;
+
+    // Player steam account id. (GetSteamAccountID - steamid3)
+    int account_id;
+
+    // All data related to spawns edit mode - implemented in configuration.sp.
+    EditMode edit_mode;
+
+    // All data related to the weapon distributor - implemented in distributor.sp.
+    Distributor distributor;
 
     int spawn_role;
 
     int points;
 
     //============================================//
-    void Initiate(int client)
+    void Init(int client)
     {
         this.index = client;
-
         this.user_id = GetClientUserId(this.index);
-
         this.account_id = GetSteamAccountID(this.index);
 
-        this.weapons_map = new StringMap();
-
-        this.weapons_id[8] = CSWeapon_KNIFE;
-
-        this.current_loadout_name[0] = '\0';
-
-        this.close_menu = false;
-
-        this.points = 0;
+        this.distributor.Init();
     }
 
-    void ClearLoadout()
+    void Close()
     {
-        for (int i; i < 8; i++)
-        {
-            this.weapons_id[i] = CSWeapon_NONE;
-        }
+        this.index = 0;
+        this.user_id = 0;
+        this.account_id = 0;
 
-        this.kit = false;
-        this.kevlar = false;
-        this.assult_suit = false;
-    }
-
-    void Reset()
-    {
-        this.edit_mode.Reset();
+        this.edit_mode.Close();
+        this.distributor.Close();
 
         this.spawn_role = SpawnRole_None;
+        this.points = 0;
     }
 
     bool InEditMode()
@@ -290,7 +321,7 @@ public void OnConfigsExecuted()
 
 public void OnClientPutInServer(int client)
 {
-    g_Players[client].Initiate(client);
+    g_Players[client].Init(client);
 
     PlayerManger_OnClientPutInServer();
     Distributor_OnClientPutInServer(client);
@@ -301,7 +332,7 @@ public void OnClientDisconnect(int client)
     PlantLogic_OnClientDisconnect(client);
     Distributor_OnClientDisconnect(client);
 
-    g_Players[client].Reset();
+    g_Players[client].Close();
 }
 
 public void OnClientDisconnect_Post(int client)

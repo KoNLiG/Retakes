@@ -118,7 +118,6 @@ void PlayerManager_OnPlayerTeam(int client, int team, int old_team, bool disconn
 {
     if (!disconnect)
     {
-        g_Players[client].old_team = old_team;
         g_Players[client].spawn_role = GetTeamSpawnRole(team);
     }
 }
