@@ -95,6 +95,11 @@
         "en"        "AWP"
     }
 
+    "weapon_ssg08"
+    {
+        "en"        "SCOUT"
+    }
+
     "weapon_bizon"
     {
         "en"        "Bizon"
@@ -125,6 +130,11 @@
         "en"        "Smoke Grenade"
     }
 
+    "weapon_hegrenade"
+    {
+        "en"        "HE Grenade"
+    }
+
     "weapon_flashbang"
     {
         "en"        "Flashbang"
@@ -133,6 +143,11 @@
     "weapon_incgrenade"
     {
         "en"        "Incendiary"
+    }
+
+    "weapon_decoy"
+    {
+        "en"        "Decoy"
     }
 
     "item_assultsuit"

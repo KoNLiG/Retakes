@@ -108,7 +108,7 @@ enum struct Player
 
     StringMap weapons_map;
 
-    CSWeaponID weapons_id[8];
+    CSWeaponID weapons_id[9];
 
     bool kit;
 
@@ -139,7 +139,9 @@ enum struct Player
 
         this.weapons_map = new StringMap();
 
-        this.current_loadout_name[0] = '\n';
+        this.weapons_id[8] = CSWeapon_KNIFE;
+
+        this.current_loadout_name[0] = '\0';
 
         this.close_menu = false;
 

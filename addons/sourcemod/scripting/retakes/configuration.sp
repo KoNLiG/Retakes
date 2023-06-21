@@ -51,7 +51,7 @@ void RegisterConVars()
     retakes_database_table_distributor = CreateConVar("retakes_database_table_distributor", "retakes_distributor", "Database table name for player weapons.");
 
     // 'distributor.sp' cvars.
-    retakes_distributor_enable = CreateConVar("retakes_distributor_enable", "0", "Enable or disable the weapons distributor.");
+    retakes_distributor_enable = CreateConVar("retakes_distributor_enable", "1", "Enable or disable the weapons distributor.");
     retakes_distributor_grace_period = CreateConVar("retakes_distributor_grace_period", "6.0", "Grace period for allowing players to receive weapons.");
     retakes_distributor_force_weapon = CreateConVar("retakes_distributor_force_weapon", "0", "Force weapons over default equipped weapons.");
     retakes_distributor_ammo_limit = CreateConVar("retakes_distributor_ammo_limit", "4", "Grenade amount limit.");
