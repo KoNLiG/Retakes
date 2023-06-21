@@ -114,7 +114,7 @@ void PlayerManager_OnPlayerConnectFull(int client)
     PrintToChat(client, "%T%T", "MessagesPrefix", client, "Placed In Queue", client, place);
 }
 
-void PlayerManager_OnPlayerTeam(int client, int team, int old_team, bool disconnect)
+void PlayerManager_OnPlayerTeam(int client, int team, bool disconnect)
 {
     if (!disconnect)
     {

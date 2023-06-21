@@ -74,7 +74,7 @@ enum struct EditMode
 
     void Exit()
     {
-        this.Reset();
+        this.Close();
     }
 
     void NextBombsite()
@@ -129,7 +129,7 @@ enum struct Distributor
 
         for (int current_index; current_index < sizeof(this.weapons_id); current_index++)
         {
-            this.weapons_id[i] = CSWeapon_NONE;
+            this.weapons_id[current_index] = CSWeapon_NONE;
         }
 
         this.kit = false;
@@ -145,7 +145,7 @@ enum struct Distributor
         // 'sizeof(this.weapons_id) - 1' to exclude the knife index.
         for (int current_index; current_index < sizeof(this.weapons_id) - 1; current_index++)
         {
-            this.weapons_id[i] = CSWeapon_NONE;
+            this.weapons_id[current_index] = CSWeapon_NONE;
         }
 
         this.kit = false;
