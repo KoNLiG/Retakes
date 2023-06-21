@@ -109,7 +109,8 @@ char      g_CurrentWeaponClassName[sizeof(LoadoutItem::classname)];
 
 void Distributor_OnConfigsExecuted()
 {
-    if (!retakes_distributor_enable.BoolValue || g_Loadouts)
+    // Don't cache if we already got our data.
+    if (g_Loadouts)
     {
         return;
     }
@@ -165,11 +166,6 @@ public void Distributor_OnPluginStart()
 
 void Distributor_OnDatabaseConnection()
 {
-    if (!retakes_distributor_enable.BoolValue)
-    {
-        return;
-    }
-
     char query[512];
     char table_name[32];
 
@@ -190,11 +186,6 @@ void SQL_OnDistributorTableCreated(Database database, DBResultSet results, const
 
 void Distributor_OnClientPutInServer(int client)
 {
-    if (!retakes_distributor_enable.BoolValue || !client)
-    {
-        return;
-    }
-
     Loadout loadout_data;
 
     for (int current_loadouts = g_Loadouts.Length - 1; current_loadouts >= 0; current_loadouts--)
@@ -231,7 +222,7 @@ void Distributor_OnClientPutInServer(int client)
 
 void Distributor_OnClientDisconnect(int client)
 {
-    if (!retakes_distributor_enable.BoolValue || !client || IsFakeClient(client))
+    if (IsFakeClient(client))
     {
         return;
     }
@@ -639,11 +630,6 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
 void Distributor_OnRoundPreStart()
 {
-    if (!retakes_distributor_enable.BoolValue)
-    {
-        return;
-    }
-
     LoadoutItem item_data;
     Loadout     loadout_data;
     PlayerLoadout   player_loadout_data;
@@ -924,7 +910,7 @@ void Distributor_OnRoundFreezeEnd()
 
 void Distributor_OnPlayerSpawn(int client)
 {
-    if (!retakes_distributor_enable.BoolValue || GetPlanter() == client)
+    if (GetPlanter() == client)
     {
         return;
     }
