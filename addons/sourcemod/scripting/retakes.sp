@@ -230,7 +230,6 @@ ConVar retakes_max_consecutive_rounds_same_target_site;
 ConVar retakes_database_entry;
 ConVar retakes_database_table_spawns;
 ConVar retakes_database_table_distributor;
-ConVar retakes_distributor_enable;
 ConVar retakes_distributor_grace_period;
 ConVar retakes_distributor_force_weapon;
 ConVar retakes_distributor_ammo_limit;
