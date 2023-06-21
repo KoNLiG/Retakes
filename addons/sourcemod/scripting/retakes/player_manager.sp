@@ -4,15 +4,6 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define RETAKES_KILL_POINTS 25
-#define RETAKES_HEADSHOT_POINTS 3
-#define RETAKES_ASSIST_POINTS 8
-#define RETAKES_DAMAGE_POINTS 5
-#define RETAKES_LOSS_POINTS 1000
-
-#define POINTS 0
-#define CLIENT_USERID 1
-
 #define DEFAULT_SKIRMISH_ID "0"
 #define RETAKES_SKIRMISH_ID "12"
 
@@ -62,7 +53,7 @@ void PlayerManager_OnRoundPreStart()
         return;
     }
 
-    BalanceTeams();
+    HandleClientTeams();
 
     ResetPlayersPoints();
 }
@@ -136,6 +127,11 @@ void SwapArrayData(ArrayList source, int size, int idx, ArrayList dest)
     dest.PushArray(data);
 }
 
+void HandleClientTeams()
+{
+
+}
+
 void BalanceTeams()
 {
     if (g_LastWinnerTeam != CS_TEAM_CT)
@@ -163,7 +159,7 @@ void BalanceTeams()
         attackers.Erase(attackers.Length - 1);
     }
 
-    // Initialize attackers. (who does not appear in 'attackers')
+    // Initialize defenders. (who does not appear in 'attackers')
     ArrayList defenders = new ArrayList(sizeof(Player));
 
     for (int current_client = 1; current_client <= MaxClients; current_client++)
@@ -174,7 +170,7 @@ void BalanceTeams()
         }
     }
 
-    // Initialize attackers. (excesses from 'defenders')
+    // Initialize spectators. (excesses from 'defenders')
     ArrayList spectators = new ArrayList(sizeof(Player));
 
     while (defenders.Length > retakes_max_defenders.IntValue)
