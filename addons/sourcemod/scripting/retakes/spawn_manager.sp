@@ -344,6 +344,13 @@ void GenerateSpawnLocation(int client, float mins[3], float maxs[3], float resul
 
 bool ValidateSpawn(int client, float origin[3], float ent_mins[3], float ent_maxs[3], float mins[3] = NULL_VECTOR, float maxs[3] = NULL_VECTOR, bool &player_collision = false)
 {
+    // If no navigation area was found for the given origin (with LOS flag included),
+    // the origin is probably outside of the world which may occur in map such as de_dust2.
+    if (TheNavMesh.GetNearestNavArea(origin, .checkLOS = true) == NULL_NAV_AREA)
+    {
+        return false;
+    }
+
     origin[2] += PLAYER_MODEL_HEIGHT;
 
     TR_TraceRayFilter(origin, { 90.0, 0.0, 0.0 }, MASK_ALL, RayType_Infinite, Filter_ValidateSpawnTrace, client);
