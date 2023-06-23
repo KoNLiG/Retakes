@@ -141,7 +141,7 @@ void Distributor_OnConfigsExecuted()
     {
         parser.GetErrorString(error, buffer, sizeof(buffer));
 
-        SetFailState("%s : %s", PLUGIN_TAG, buffer);
+        SetFailState("%s", buffer);
 
         delete parser;
 
@@ -683,7 +683,7 @@ void Distributor_OnRoundPreStart()
             }
         }
     }
-    
+
     g_Loadouts.GetArray(GetURandomInt() % g_Loadouts.Length, loadout, sizeof(loadout));
 
     strcopy(g_CurrentLoadout, sizeof(g_CurrentLoadout), loadout.name);
