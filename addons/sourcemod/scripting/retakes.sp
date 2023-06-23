@@ -362,7 +362,7 @@ void StringToLower(char[] str)
     }
 }
 
-void DisarmClient(int client)
+void DisarmClient(int client, int slot_index = -1)
 {
     static int m_hMyWeaponsOffset;
     if (!m_hMyWeaponsOffset)
@@ -384,8 +384,11 @@ void DisarmClient(int client)
             continue;
         }
 
-        SDKHooks_DropWeapon(client, ent);
-        RemoveEntity(ent);
+        if (slot_index == -1 || GetPlayerWeaponSlot(client, slot_index) == ent)
+        {
+            SDKHooks_DropWeapon(client, ent);
+            RemoveEntity(ent);
+        }
     }
 }
 

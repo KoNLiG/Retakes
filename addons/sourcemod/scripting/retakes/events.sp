@@ -35,6 +35,7 @@ void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
     Gameplay_OnRoundStart();
+    Distributor_OnRoundStart();
 }
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
