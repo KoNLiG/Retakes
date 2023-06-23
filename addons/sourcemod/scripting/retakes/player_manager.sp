@@ -4,15 +4,6 @@
 
 #assert defined COMPILING_FROM_MAIN
 
-#define RETAKES_KILL_POINTS 25
-#define RETAKES_HEADSHOT_POINTS 3
-#define RETAKES_ASSIST_POINTS 8
-#define RETAKES_DAMAGE_POINTS 5
-#define RETAKES_LOSS_POINTS 1000
-
-#define POINTS 0
-#define CLIENT_USERID 1
-
 #define DEFAULT_SKIRMISH_ID "0"
 #define RETAKES_SKIRMISH_ID "12"
 
@@ -62,7 +53,7 @@ void PlayerManager_OnRoundPreStart()
         return;
     }
 
-    BalanceTeams();
+    HandleClientTeams();
 
     ResetPlayersPoints();
 }
@@ -127,22 +118,31 @@ void PlayerManager_OnPlayerHurt(int attacker, int dmg_health)
     g_Players[attacker].points += dmg_health;
 }
 
-void SwapArrayData(ArrayList source, int size, int idx, ArrayList dest)
+void HandleClientTeams()
 {
-    any[] data = new any[size];
-    source.GetArray(idx, data, size);
-    source.Erase(idx);
+    switch (g_LastWinnerTeam)
+    {
+        case CS_TEAM_T:
+        {
+            // Reset a planter's spawn role, in order to generate a new random planter.
+            int planter = GetPlanter();
+            if (planter != -1)
+            {
+                g_Players[planter].spawn_role = SpawnRole_Defender;
+            }
 
-    dest.PushArray(data);
+            BalanceTeams();
+        }
+        case CS_TEAM_CT:
+        {
+            BalanceTeams(true);
+        }
+    }
 }
 
-void BalanceTeams()
+// Balances (or swaps) teams.
+void BalanceTeams(bool swap = false)
 {
-    if (g_LastWinnerTeam != CS_TEAM_CT)
-    {
-        return;
-    }
-
     // Initialize attackers.
     ArrayList attackers = new ArrayList(sizeof(Player));
 
@@ -163,7 +163,7 @@ void BalanceTeams()
         attackers.Erase(attackers.Length - 1);
     }
 
-    // Initialize attackers. (who does not appear in 'attackers')
+    // Initialize defenders. (who does not appear in 'attackers')
     ArrayList defenders = new ArrayList(sizeof(Player));
 
     for (int current_client = 1; current_client <= MaxClients; current_client++)
@@ -174,12 +174,15 @@ void BalanceTeams()
         }
     }
 
-    // Initialize attackers. (excesses from 'defenders')
+    // Sort the defenders arraylist by their points.
+    defenders.SortCustom(ADTSortByPoints);
+
+    // Initialize spectators. (excesses from 'defenders')
     ArrayList spectators = new ArrayList(sizeof(Player));
 
     while (defenders.Length > retakes_max_defenders.IntValue)
     {
-        SwapArrayData(defenders, sizeof(Player), defenders.Length - 1, spectators);
+        SwapArrayData(defenders, defenders.Length - 1, spectators);
     }
 
     // Balance teams.
@@ -188,25 +191,35 @@ void BalanceTeams()
     // (retakes_preferred_team.IntValue == -1), or both teams have an equal amount of players.
     if (retakes_preferred_team.IntValue != -1 && defenders.Length != attackers.Length)
     {
-        // 'iterations' = amount of team moves necessary in order to properly balance both teams.
+        // 'iterations' = amount of potential team moves necessary in order to properly balance both teams.
         for (int iterations = IntAbs(defenders.Length - attackers.Length); iterations > 0; iterations--)
         {
-            // Move from attackers to defenders.
-            if (defenders.Length < attackers.Length && retakes_preferred_team.IntValue != CS_TEAM_T)
+            // More CTs than Ts, and preferred team is CT.
+            if (attackers.Length > defenders.Length)
             {
-                SwapArrayData(attackers, sizeof(Player), attackers.Length - 1, defenders);
-            }
+                if (!swap && iterations == 1 && retakes_preferred_team.IntValue != CS_TEAM_T)
+                {
+                    break;
+                }
 
-            // Move from defenders to attackers.
-            else if (defenders.Length > attackers.Length && retakes_preferred_team.IntValue != CS_TEAM_CT)
+                SwapArrayData(attackers, swap ? attackers.Length - 1 : 0, defenders);
+            }
+            // More Ts than CTs, and preferred team is T.
+            else if (defenders.Length > attackers.Length)
             {
-                SwapArrayData(defenders, sizeof(Player), defenders.Length - 1, attackers);
+                if (!swap && iterations ==  1&& retakes_preferred_team.IntValue != CS_TEAM_CT)
+                {
+                    break;
+                }
+
+                SwapArrayData(defenders, swap ? defenders.Length - 1 : 0, attackers);
             }
         }
     }
 
-    MovePlayersArray(attackers, CS_TEAM_T); // Move old attackers to their new team - Defenders/T.
-    MovePlayersArray(defenders, CS_TEAM_CT); // Move old defenders to their new team - Attackers/CT.
+    // Assign new teams.
+    MovePlayersArray(attackers, swap ? CS_TEAM_T : CS_TEAM_CT);
+    MovePlayersArray(defenders, swap ? CS_TEAM_CT : CS_TEAM_T);
     MovePlayersArray(spectators, CS_TEAM_SPECTATOR); // Move exceeding players to their new team - Spectators.
 
     delete attackers;
@@ -221,18 +234,21 @@ void BalanceTeams()
  */
 int ADTSortByPoints(int index1, int index2, Handle array, Handle hndl)
 {
-    ArrayList al = view_as<ArrayList>(array);
+    ArrayList arr = view_as<ArrayList>(array);
 
-    Player player1, player2;
-    al.GetArray(index1, player1);
-    al.GetArray(index2, player2);
+    Player player1; arr.GetArray(index1, player1);
+    Player player2; arr.GetArray(index2, player2);
 
-    if (player1.points != player2.points)
-    {
-        return player1.points > player2.points ? -1 : 1;
-    }
+    return FloatCompare(float(player2.points), float(player1.points));
+}
 
-    return 0;
+void SwapArrayData(ArrayList source, int idx, ArrayList dest)
+{
+    any[] data = new any[source.BlockSize];
+    source.GetArray(idx, data);
+    source.Erase(idx);
+
+    dest.PushArray(data);
 }
 
 void HandleQueuedClients()
@@ -313,7 +329,7 @@ int IntAbs(int val)
 
 void OrdinalSuffix(int number, char[] buffer, int maxlen)
 {
-    static const char InternalPrefix[][] = { "", "st", "nd", "rd", "th"};
+    static const char InternalPrefix[][] = { "", "st", "nd", "rd", "th" };
 
     int idx = (number % 10);
     if (idx > 3)

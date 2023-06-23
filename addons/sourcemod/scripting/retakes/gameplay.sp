@@ -174,6 +174,7 @@ void DisplayTargetSite()
     }
 
     show_survival_respawn_status.SetInt("duration", mp_freezetime.IntValue);
+    show_survival_respawn_status.SetInt("userid", -1);
 
     char message[128];
     for (int current_client = 1; current_client <= MaxClients; current_client++)
