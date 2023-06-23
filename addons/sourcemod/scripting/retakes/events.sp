@@ -122,6 +122,7 @@ void Event_PlayerConnectFull(Event event, const char[] name, bool dontBroadcast)
     }
 
     PlayerManager_OnPlayerConnectFull(client);
+    Distributor_OnPlayerConnectFull(client);
 }
 
 void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)

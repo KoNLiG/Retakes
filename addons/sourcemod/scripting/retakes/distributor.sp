@@ -8,27 +8,28 @@
 #define LOADOUT_TEAM_CT  1
 #define LOADOUT_TEAM_MAX 2
 
-#define LOADOUT_WEAPON_PRIMARY       0
-#define LOADOUT_WEAPON_SECONDARY     1
-#define LOADOUT_WEAPON_GRENADE       2
-#define LOADOUT_WEAPON_ITEM          3
-#define LOADOUT_WEAPON_GRENADE_ONE   4
-#define LOADOUT_WEAPON_GRENADE_TWO   5
-#define LOADOUT_WEAPON_GRENADE_THREE 6
-#define LOADOUT_WEAPON_GRENADE_FOUR  7
-#define LOADOUT_WEAPON_KNIFE         8
-#define LOADOUT_WEAPON_MAX           9
-
-#define LOADOUT_GRENADE_OFFSET (LOADOUT_WEAPON_SECONDARY + 2)
-
-#define MAX_SLOT_FIREGRENADE  0
-#define MAX_SLOT_SMOKEGRENADE 1
-#define MAX_SLOT_MAX          2
-
 #define WEAPON_TYPE_PRIMARY   (1 << 0)
 #define WEAPON_TYPE_SECONDARY (1 << 1)
 #define WEAPON_TYPE_UTILITY   (1 << 2)
 #define WEAPON_TYPE_ITEM      (1 << 3)
+
+#define LOADOUT_WEAPON_PRIMARY        0
+#define LOADOUT_WEAPON_SECONDARY      1
+#define LOADOUT_WEAPON_GRENADE        2
+#define LOADOUT_WEAPON_GRENADE_OFFSET (LOADOUT_WEAPON_SECONDARY + 2)
+#define LOADOUT_WEAPON_ITEM           3
+#define LOADOUT_WEAPON_KNIFE          8
+#define LOADOUT_WEAPON_MAX            9
+
+#define LOADOUT_POSITION_RIFLE1     15
+#define LOADOUT_POSITION_SECONDARY0 2
+#define LOADOUT_POSITION_SECONDARY3 5
+#define LOADOUT_POSITION_SECONDARY4 6
+#define LOADOUT_POSITION_SMG1       9
+
+#define MAX_SLOT_FIREGRENADE  0
+#define MAX_SLOT_SMOKEGRENADE 1
+#define MAX_SLOT_MAX          2
 
 enum struct PlayerLoadout
 {
@@ -66,10 +67,6 @@ enum struct Loadout
 
     int item_secondary_count[LOADOUT_TEAM_MAX];
 
-    // int       item_grenade_count[LOADOUT_TEAM_MAX];
-
-    // int       item_item_count[LOADOUT_TEAM_MAX];
-
     void Initialize(const char[] name)
     {
         strcopy(this.name, sizeof(Loadout::name), name);
@@ -78,23 +75,6 @@ enum struct Loadout
         {
             this.items[i] = new ArrayList(sizeof(LoadoutItem));
         }
-    }
-
-    int FindItemByCSWeaponID(int team, CSWeaponID weapon_id)
-    {
-        LoadoutItem loadout_item;
-
-        for (int i; i < this.items[team].Length; i++)
-        {
-            this.items[team].GetArray(i, loadout_item, sizeof(loadout_item));
-
-            if (loadout_item.item.id == weapon_id)
-            {
-                return i;
-            }
-        }
-
-        return -1;
     }
 
     void Clear()
@@ -112,7 +92,7 @@ float     g_GracePeriod;
 int       g_LineCount = -1;
 int       g_SMCParserDepth;
 int       g_SMCParserCount;
-int       g_CurrentLoadoutType;
+int       g_CurrentLoadoutTeam;
 ConVar    ammo_grenade_limit_total;
 char      g_CurrentLoadout[sizeof(Loadout::name)];
 char      g_CurrentWeaponClassName[sizeof(Item::classname)];
@@ -138,7 +118,7 @@ void Distributor_OnConfigsExecuted()
 
     if (!file_exists)
     {
-        SetFailState("%s : Unable to find \"data/retakes/distributor.cfg\" file", PLUGIN_TAG);
+        SetFailState("Unable to find \"data/retakes/distributor.cfg\" file");
 
         return;
     }
@@ -175,6 +155,11 @@ public void Distributor_OnPluginStart()
 {
 }
 
+public void PTaH_OnInventoryUpdatePost(int client, CCSPlayerInventory inventory)
+{
+    g_Players[client].distributor.inventory = inventory;
+}
+
 void Distributor_OnDatabaseConnection()
 {
     char query[512];
@@ -190,7 +175,8 @@ void SQL_OnDistributorTableCreated(Database database, DBResultSet results, const
 {
     if (!database || !results)
     {
-        LogError("%s There was an error creating the distributor table \n\n%s", PLUGIN_TAG, error);
+        LogError("There was an error creating the distributor loadout table! (%s)", error);
+
         return;
     }
 }
@@ -231,6 +217,25 @@ void Distributor_OnClientPutInServer(int client)
     g_Database.Query(SQL_OnClientInfoFetched, query, g_Players[client].user_id, DBPrio_High);
 }
 
+void Distributor_OnPlayerConnectFull(int client)
+{
+    if (IsFakeClient(client))
+    {
+        return;
+    }
+
+    CCSPlayerInventory inventory = PTaH_GetPlayerInventory(client);
+
+    if (inventory == CCSPlayerInventory_NULL)
+    {
+        LogError("There was an error getting a players inventory pointer! (%d)", client);
+
+        return;
+    }
+
+    g_Players[client].distributor.inventory = inventory;
+}
+
 void Distributor_OnClientDisconnect(int client)
 {
     if (IsFakeClient(client))
@@ -238,9 +243,9 @@ void Distributor_OnClientDisconnect(int client)
         return;
     }
 
-    char buffer[32];
     char query[256];
     char table_name[32];
+    char loadout_name[sizeof(Loadout::name)];
 
     PlayerLoadout player_loadout;
 
@@ -252,9 +257,9 @@ void Distributor_OnClientDisconnect(int client)
 
     for (int i = loadout_snapshot.Length - 1; i >= 0; i--)
     {
-        loadout_snapshot.GetKey(i, buffer, sizeof(buffer));
+        loadout_snapshot.GetKey(i, loadout_name, sizeof(loadout_name));
 
-        if (!g_Players[client].distributor.weapons_map.GetArray(buffer, player_loadout, sizeof(player_loadout)))
+        if (!g_Players[client].distributor.weapons_map.GetArray(loadout_name, player_loadout, sizeof(player_loadout)))
         {
             continue;
         }
@@ -262,12 +267,12 @@ void Distributor_OnClientDisconnect(int client)
         FormatEx(query, sizeof(query), "INSERT INTO `%s_players` VALUES (%d, '%s', %d, %d, %d, %d) ON DUPLICATE KEY UPDATE `loadout_name` = '%s', `primary_wep_id_t` = %d, `primary_wep_id_ct` = %d, `secondary_wep_id_t` = %d, `secondary_wep_id_ct` = %d;",
                  table_name,
                  g_Players[client].account_id,
-                 buffer,
+                 loadout_name,
                  player_loadout.primary_weapon_id[LOADOUT_TEAM_T],
                  player_loadout.primary_weapon_id[LOADOUT_TEAM_CT],
                  player_loadout.secondary_weapon_id[LOADOUT_TEAM_T],
                  player_loadout.secondary_weapon_id[LOADOUT_TEAM_CT],
-                 buffer,
+                 loadout_name,
                  player_loadout.primary_weapon_id[LOADOUT_TEAM_T],
                  player_loadout.primary_weapon_id[LOADOUT_TEAM_CT],
                  player_loadout.secondary_weapon_id[LOADOUT_TEAM_T],
@@ -286,9 +291,9 @@ void Distributor_OnClientDisconnect(int client)
 }
 
 #if defined DEBUG
-void        SQL_OnClientInfoSaved(Database db, any data, int numQueries, Handle[] results, any[] queryData)
+void SQL_OnClientInfoSaved(Database db, any data, int numQueries, Handle[] results, any[] queryData)
 {
-    LogMessage("Player data transaction completed successfully (%d queries)", numQueries);
+    LogMessage("Player loadout data transaction completed successfully. (%d queries)", numQueries);
 }
 #endif
 
@@ -296,7 +301,8 @@ void SQL_OnClientInfoSavedError(Database database, any data, int numQueries, con
 {
     if (!database || error[0])
     {
-        LogError("%s There was an error saving player data (%s)", PLUGIN_TAG, error);
+        LogError("There was an error saving player loadout data! (%s)", error);
+
         return;
     }
 }
@@ -305,7 +311,8 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
 {
     if (error[0])
     {
-        LogError("%s There was an error fetching player weapon data! (%s)", PLUGIN_TAG, error);
+        LogError("There was an error fetching player loadout data! (%s)", error);
+
         return;
     }
 
@@ -326,8 +333,8 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
     results.FieldNameToNum("secondary_wep_id_t", secondary_weapon[LOADOUT_TEAM_T]);
     results.FieldNameToNum("secondary_wep_id_ct", secondary_weapon[LOADOUT_TEAM_CT]);
 
-    char          buffer[64];
     PlayerLoadout player_loadout;
+    char          buffer[sizeof(Loadout::name)];
 
     while (results.FetchRow())
     {
@@ -380,17 +387,17 @@ SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt
     {
         if (!strcmp(name, "Counter Terrorist"))
         {
-            g_CurrentLoadoutType = LOADOUT_TEAM_CT;
+            g_CurrentLoadoutTeam = LOADOUT_TEAM_CT;
         }
 
         else if (!strcmp(name, "Terrorist"))
         {
-            g_CurrentLoadoutType = LOADOUT_TEAM_T;
+            g_CurrentLoadoutTeam = LOADOUT_TEAM_T;
         }
 
         else
         {
-            g_CurrentLoadoutType = -1;
+            g_CurrentLoadoutTeam = -1;
         }
     }
 
@@ -478,7 +485,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
             g_Loadouts.GetArray(g_Loadouts.Length - 1, loadout, sizeof(loadout));
 
-            switch (g_CurrentLoadoutType)
+            switch (g_CurrentLoadoutTeam)
             {
                 case LOADOUT_TEAM_CT: loadout.items[LOADOUT_TEAM_CT].PushArray(loadout_item, sizeof(loadout_item));
                 case LOADOUT_TEAM_T: loadout.items[LOADOUT_TEAM_T].PushArray(loadout_item, sizeof(loadout_item));
@@ -525,13 +532,19 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
         for (int i; i < g_Loadouts.Length; i++)
         {
-            g_Loadouts.GetArray(i, loadout, sizeof(loadout));
+            if (!g_Loadouts.GetArray(i, loadout, sizeof(loadout)))
+            {
+                continue;
+            }
 
             for (int j; j < LOADOUT_TEAM_MAX; j++)
             {
                 for (int k; k < loadout.items[j].Length; k++)
                 {
-                    loadout.items[j].GetArray(k, loadout_item, sizeof(loadout_item));
+                    if (!loadout.items[j].GetArray(k, loadout_item, sizeof(loadout_item)))
+                    {
+                        continue;
+                    }
 
                     if (!strcmp(buffer, loadout_item.item.classname))
                     {
@@ -592,7 +605,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         {
             fail_state = true;
 
-            LogError("Translation for \"%s\" weapon key not found", item.classname);
+            LogError("Translation key \"%s\" for weapon not found!", item.classname);
         }
     }
 
@@ -607,7 +620,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         {
             fail_state = true;
 
-            LogError("Translation for \"%s\" loadout key not found", loadout.name);
+            LogError("Translation key \"%s\" for loadout not found!", loadout.name);
         }
 
         for (int current_team; current_team < LOADOUT_TEAM_MAX; current_team++)
@@ -621,13 +634,6 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
                 g_Items.PushArray(loadout_item.item, sizeof(loadout_item.item));
 
-                if (!TranslationPhraseExists(loadout_item.item.classname))
-                {
-                    fail_state = true;
-
-                    LogError("Translation for \"%s\" weapon key not found", loadout_item.item.classname);
-                }
-
                 if (loadout_item.flags & WEAPON_TYPE_PRIMARY)
                 {
                     item_count[current_team][LOADOUT_WEAPON_PRIMARY]++;
@@ -637,16 +643,6 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
                 {
                     item_count[current_team][LOADOUT_WEAPON_SECONDARY]++;
                 }
-
-                // else if (loadout_item.flags & WEAPON_TYPE_UTILITY)
-                // {
-                //     item_count[current_team][LOADOUT_WEAPON_GRENADE]++;
-                // }
-
-                // else if (loadout_item.flags & WEAPON_TYPE_ITEM)
-                // {
-                //     item_count[current_team][LOADOUT_WEAPON_ITEM]++;
-                // }
             }
         }
 
@@ -654,8 +650,6 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         {
             loadout.item_primary_count[i]   = item_count[i][LOADOUT_WEAPON_PRIMARY];
             loadout.item_secondary_count[i] = item_count[i][LOADOUT_WEAPON_SECONDARY];
-            // loadout_item.item_grenade_count[i]   = item_count[i][LOADOUT_WEAPON_GRENADE];
-            // loadout_item.item_item_count[i] = item_count[i][LOADOUT_WEAPON_ITEM];
         }
 
         g_Loadouts.SetArray(current_loadout, loadout, sizeof(loadout));
@@ -663,7 +657,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (fail_state)
     {
-        SetFailState("%s : There are missing translations for the distributor part of the retakes plugin", PLUGIN_TAG);
+        SetFailState("There are translation keys missing for the distributor part of this retakes plugin!");
     }
 }
 
@@ -677,11 +671,11 @@ void Distributor_OnRoundPreStart()
     int   maximum;
     int   weapon_id_max[CSWeapon_MAX_WEAPONS];
 
-    static ArrayList filtered_items[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX - LOADOUT_GRENADE_OFFSET];
+    static ArrayList filtered_items[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET];
 
     for (int i = LOADOUT_TEAM_MAX - 1; i >= 0; i--)
     {
-        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_GRENADE_OFFSET - 1; j >= 0; j--)
+        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET - 1; j >= 0; j--)
         {
             if (!filtered_items[i][j])
             {
@@ -689,11 +683,7 @@ void Distributor_OnRoundPreStart()
             }
         }
     }
-
-#if defined DEBUG
-    PrintToChatAll("loadouts.Length: %d", g_Loadouts.Length);
-#endif
-
+    
     g_Loadouts.GetArray(GetURandomInt() % g_Loadouts.Length, loadout, sizeof(loadout));
 
     strcopy(g_CurrentLoadout, sizeof(g_CurrentLoadout), loadout.name);
@@ -702,7 +692,10 @@ void Distributor_OnRoundPreStart()
     {
         for (int j = loadout.items[i].Length - 1; j >= 0; j--)
         {
-            loadout.items[i].GetArray(j, loadout_item, sizeof(loadout_item));
+            if (!loadout.items[i].GetArray(j, loadout_item, sizeof(loadout_item)))
+            {
+                continue;
+            }
 
             switch (loadout_item.flags)
             {
@@ -732,59 +725,62 @@ void Distributor_OnRoundPreStart()
 
         if (!IsFakeClient(current_client))
         {
-            g_Players[current_client].distributor.weapons_map.GetArray(loadout.name, player_loadout, sizeof(player_loadout));
-
-            CSWeaponID primary_weapon_id = player_loadout.primary_weapon_id[current_team];
-
-            CSWeaponID secondary_weapon_id = player_loadout.secondary_weapon_id[current_team];
-
-            if (primary_weapon_id > CSWeapon_NONE)
+            if (g_Players[current_client].distributor.weapons_map.GetArray(loadout.name, player_loadout, sizeof(player_loadout)))
             {
-                loadout.items[current_team].GetArray(loadout.items[current_team].FindValue(primary_weapon_id), loadout_item, sizeof(loadout_item));
+                CSWeaponID primary_weapon_id = player_loadout.primary_weapon_id[current_team];
 
-                if (loadout_item.max)
+                CSWeaponID secondary_weapon_id = player_loadout.secondary_weapon_id[current_team];
+
+                if (primary_weapon_id > CSWeapon_NONE)
                 {
-                    if (weapon_id_max[primary_weapon_id] < loadout_item.max)
+                    if (loadout.items[current_team].GetArray(loadout.items[current_team].FindValue(primary_weapon_id), loadout_item, sizeof(loadout_item)))
                     {
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = primary_weapon_id;
+                        if (loadout_item.max)
+                        {
+                            if (weapon_id_max[primary_weapon_id] < loadout_item.max)
+                            {
+                                g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = primary_weapon_id;
 
-                        weapon_id_max[primary_weapon_id]++;
-                    }
+                                weapon_id_max[primary_weapon_id]++;
+                            }
 
-                    else
-                    {
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = CSWeapon_NONE;
-                    }
-                }
+                            else
+                            {
+                                g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = CSWeapon_NONE;
+                            }
+                        }
 
-                else
-                {
-                    g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = primary_weapon_id;
-                }
-            }
-
-            if (secondary_weapon_id > CSWeapon_NONE)
-            {
-                loadout.items[current_team].GetArray(loadout.items[current_team].FindValue(secondary_weapon_id), loadout_item, sizeof(loadout_item));
-
-                if (loadout_item.max)
-                {
-                    if (weapon_id_max[secondary_weapon_id] < loadout_item.max)
-                    {
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = secondary_weapon_id;
-
-                        weapon_id_max[secondary_weapon_id]++;
-                    }
-
-                    else
-                    {
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = CSWeapon_NONE;
+                        else
+                        {
+                            g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = primary_weapon_id;
+                        }
                     }
                 }
 
-                else
+                if (secondary_weapon_id > CSWeapon_NONE)
                 {
-                    g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = secondary_weapon_id;
+                    if (loadout.items[current_team].GetArray(loadout.items[current_team].FindValue(secondary_weapon_id), loadout_item, sizeof(loadout_item)))
+                    {
+                        if (loadout_item.max)
+                        {
+                            if (weapon_id_max[secondary_weapon_id] < loadout_item.max)
+                            {
+                                g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = secondary_weapon_id;
+
+                                weapon_id_max[secondary_weapon_id]++;
+                            }
+
+                            else
+                            {
+                                g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = CSWeapon_NONE;
+                            }
+                        }
+
+                        else
+                        {
+                            g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = secondary_weapon_id;
+                        }
+                    }
                 }
             }
         }
@@ -865,7 +861,7 @@ void Distributor_OnRoundPreStart()
 
                             weapon_id_max[loadout_item.item.id]++;
 
-                            g_Players[current_client].distributor.weapons_id[nade_output + LOADOUT_GRENADE_OFFSET] = loadout_item.item.id;
+                            g_Players[current_client].distributor.weapons_id[nade_output + LOADOUT_WEAPON_GRENADE_OFFSET] = loadout_item.item.id;
                         }
                     }
                 }
@@ -880,13 +876,6 @@ void Distributor_OnRoundPreStart()
                         {
                             continue;
                         }
-
-                        // maximum = loadout_item.max ? loadout_item.max : -1;
-
-                        // if (maximum != -1 && weapon_id_max[loadout_item.item.id] >= maximum)
-                        // {
-                        //     continue;
-                        // }
 
                         chance = loadout_item.chance ? loadout_item.chance : 1.0;
 
@@ -906,8 +895,6 @@ void Distributor_OnRoundPreStart()
                             {
                                 g_Players[current_client].distributor.assult_suit = true;
                             }
-
-                            // weapon_id_max[item_data.item_id]++;
                         }
                     }
                 }
@@ -917,7 +904,7 @@ void Distributor_OnRoundPreStart()
 
     for (int i = LOADOUT_TEAM_MAX - 1; i >= 0; i--)
     {
-        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_GRENADE_OFFSET - 1; j >= 0; j--)
+        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET - 1; j >= 0; j--)
         {
             filtered_items[i][j].Clear();
         }
@@ -932,6 +919,7 @@ void Distributor_OnRoundStart()
 void Distributor_OnRoundFreezeEnd()
 {
     int planter = GetPlanter();
+
     if (planter != -1)
     {
         Frame_DistributeWeapons(g_Players[planter].user_id);
@@ -1057,6 +1045,8 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 {
     char buffer[64];
 
+    CSWeaponID weapon_id;
+
     Loadout loadout;
 
     LoadoutItem loadout_item;
@@ -1097,20 +1087,13 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 
             if (!retakes_distributor_force_weapon.BoolValue)
             {
-                if (loadout_item.item.id == CSWeapon_M4A1 || loadout_item.item.id == CSWeapon_M4A1_SILENCER)
-                {
-                    if (!CS_FindEquippedInventoryItem(client, loadout_item.item.id))
-                    {
-                        loadout_item.item.classname = loadout_item.item.id != CSWeapon_M4A1 ? "weapon_m4a1" : "weapon_m4a1_silencer";
-                    }
-                }
+                weapon_id = GetEquippedInventoryItemByID(client, team + LOADOUT_TEAM_MAX, loadout_item.item.id);
 
-                if (loadout_item.item.id == CSWeapon_USP_SILENCER || loadout_item.item.id == CSWeapon_HKP2000)
+                if (weapon_id != loadout_item.item.id)
                 {
-                    if (!CS_FindEquippedInventoryItem(client, loadout_item.item.id))
-                    {
-                        loadout_item.item.classname = loadout_item.item.id != CSWeapon_USP_SILENCER ? "weapon_usp_silencer" : "weapon_hkp2000";
-                    }
+                    CS_WeaponIDToAlias(weapon_id, buffer, sizeof(buffer));
+
+                    FormatEx(loadout_item.item.classname, sizeof(Item::classname), "weapon_%s", buffer);
                 }
             }
 
@@ -1121,11 +1104,17 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 
     if (menu.ItemCount <= 0)
     {
-        if (!g_Players[client].distributor.close_menu)
+        if ((view & WEAPON_TYPE_PRIMARY ? loadout.item_primary_count[team] : loadout.item_primary_count[team]) > 0)
         {
-            DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, view & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
+            // If there are items, but the menu is not supposed to be closed,
+            // recursively open the loadout menu with the opposite view type.
+            if (!g_Players[client].distributor.close_menu)
+            {
+                DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, view & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
+            }
         }
 
+        // Set the close_menu flag to true, indicating that the menu should be closed
         g_Players[client].distributor.close_menu = true;
 
         delete menu;
@@ -1168,26 +1157,27 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                 }
             }
 
-            char          loadout_name[48];
             PlayerLoadout player_loadout;
+            char          loadout_name[48];
             int           view = g_Players[client].distributor.current_loadout_view;
             int           team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
             strcopy(loadout_name, sizeof(loadout_name), g_Players[client].distributor.current_loadout_name);
 
-            g_Players[client].distributor.weapons_map.GetArray(loadout_name, player_loadout, sizeof(player_loadout));
-
-            if (view & WEAPON_TYPE_PRIMARY)
+            if (g_Players[client].distributor.weapons_map.GetArray(loadout_name, player_loadout, sizeof(player_loadout)))
             {
-                player_loadout.primary_weapon_id[team] = weapon_id;
-            }
+                if (view & WEAPON_TYPE_PRIMARY)
+                {
+                    player_loadout.primary_weapon_id[team] = weapon_id;
+                }
 
-            else if (view & WEAPON_TYPE_SECONDARY)
-            {
-                player_loadout.secondary_weapon_id[team] = weapon_id;
-            }
+                else if (view & WEAPON_TYPE_SECONDARY)
+                {
+                    player_loadout.secondary_weapon_id[team] = weapon_id;
+                }
 
-            g_Players[client].distributor.weapons_map.SetArray(loadout_name, player_loadout, sizeof(player_loadout));
+                g_Players[client].distributor.weapons_map.SetArray(loadout_name, player_loadout, sizeof(player_loadout));
+            }
 
             if (!g_Players[client].distributor.close_menu)
             {
@@ -1205,20 +1195,25 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
             {
                 int view = g_Players[client].distributor.current_loadout_view;
 
+                // Check if the current view is WEAPON_TYPE_SECONDARY and the menu should be closed
                 if (view & WEAPON_TYPE_SECONDARY && g_Players[client].distributor.close_menu)
                 {
+                    // If the menu is supposed to be closed, return to the main distributor menu
                     DisplayDistributorMenu(client);
                 }
 
                 if (view & WEAPON_TYPE_SECONDARY)
                 {
+                    // Return to the primary loadout menu
                     DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, WEAPON_TYPE_PRIMARY);
 
+                    // Reset the close_menu flag to false, indicating that the menu should not be closed
                     g_Players[client].distributor.close_menu = false;
                 }
 
                 if (view & WEAPON_TYPE_PRIMARY)
                 {
+                    // Return to the main distributor menu
                     DisplayDistributorMenu(client);
                 }
             }
@@ -1231,19 +1226,6 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
     }
 
     return 0;
-}
-
-bool CS_FindEquippedInventoryItem(int client, CSWeaponID weapon_id)
-{
-    for (int i = GetEntPropArraySize(client, Prop_Send, "m_EquippedLoadoutItemDefIndices") - 1; i >= 0; i--)
-    {
-        if (CS_WeaponIDToItemDefIndex(weapon_id) == GetEntProp(client, Prop_Send, "m_EquippedLoadoutItemDefIndices", .element = i))
-        {
-            return true;
-        }
-    }
-
-    return false;
 }
 
 int GetWeaponSlotIndexByCSWeaponID(CSWeaponID weapon_id)
@@ -1261,4 +1243,70 @@ int GetWeaponSlotIndexByCSWeaponID(CSWeaponID weapon_id)
     }
 
     return -1;
+}
+
+CSWeaponID GetEquippedInventoryItemByID(int client, int team, CSWeaponID weapon_id)
+{
+    if (!g_Players[client].distributor.inventory)
+    {
+        return CSWeapon_NONE;
+    }
+
+    int weapon_definition_index;
+
+    CEconItemView       item_view;
+    CEconItemDefinition item_definition;
+
+    switch (weapon_id)
+    {
+        case CSWeapon_M4A1, CSWeapon_M4A1_SILENCER: item_view = g_Players[client].distributor.inventory.GetItemInLoadout(CS_TEAM_CT, LOADOUT_POSITION_RIFLE1);
+        case CSWeapon_USP_SILENCER, CSWeapon_HKP2000: item_view = g_Players[client].distributor.inventory.GetItemInLoadout(CS_TEAM_CT, LOADOUT_POSITION_SECONDARY0);
+
+        case CSWeapon_TEC9, CSWeapon_FIVESEVEN, CSWeapon_CZ75A:
+        {
+            if (weapon_id == CSWeapon_TEC9)
+            {
+                team = CS_TEAM_T;
+            }
+
+            else if (weapon_id == CSWeapon_FIVESEVEN)
+            {
+                team = CS_TEAM_CT;
+            }
+
+            else
+            {
+                team = GetClientTeam(client);
+
+                if (team <= CS_TEAM_SPECTATOR)
+                {
+                    team = CS_TEAM_CT;
+                }
+            }
+
+            item_view = g_Players[client].distributor.inventory.GetItemInLoadout(team, LOADOUT_POSITION_SECONDARY3);
+        }
+
+        case CSWeapon_DEAGLE, CSWeapon_REVOLVER: item_view = g_Players[client].distributor.inventory.GetItemInLoadout(team, LOADOUT_POSITION_SECONDARY4);
+        case CSWeapon_MP7, CSWeapon_MP5NAVY: item_view = g_Players[client].distributor.inventory.GetItemInLoadout(team, LOADOUT_POSITION_SMG1);
+
+        default: return weapon_id;
+    }
+
+    if (!item_view)
+    {
+        return CSWeapon_NONE;
+    }
+
+    item_definition = item_view.GetItemDefinition();
+
+    if (!item_definition)
+    {
+        return CSWeapon_NONE;
+    }
+
+    weapon_definition_index = item_definition.GetDefinitionIndex();
+
+    // Return the weapon ID based on whether it matches the specified weapon ID or the other weapon ID
+    return weapon_definition_index == CS_WeaponIDToItemDefIndex(weapon_id) ? weapon_id : CS_ItemDefIndexToID(weapon_definition_index);
 }

@@ -7,6 +7,7 @@
 #include <nav_mesh>
 #include <autoexecconfig>
 #include <queue>
+#include <PTaH>
 
 #pragma newdecls required
 #pragma semicolon 1
@@ -103,6 +104,8 @@ enum struct Distributor
 
     CSWeaponID weapons_id[9];
 
+    CCSPlayerInventory inventory;
+
     bool kit;
 
     bool assult_suit;
@@ -132,6 +135,7 @@ enum struct Distributor
             this.weapons_id[current_index] = CSWeapon_NONE;
         }
 
+        this.inventory = CCSPlayerInventory_NULL;
         this.kit = false;
         this.assult_suit = false;
         this.kevlar = false;
@@ -285,7 +289,6 @@ public void OnPluginStart()
     LoadTranslations("localization.phrases");
 
     Configuration_OnPluginStart();
-    Distributor_OnPluginStart();
     Gameplay_OnPluginStart();
     Database_OnPluginStart();
     SpawnManager_OnPluginStart();
