@@ -477,7 +477,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
     else if (g_SMCParserDepth == 2 && g_SMCParserCount == 2)
     {
-        if (!strcmp(key, "loadout_commands"))
+        if (!strcmp(key, "Loadout Commands"))
         {
             char value_str[64];
             char buffer[24][24];
