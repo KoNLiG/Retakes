@@ -560,7 +560,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 {
 #if defined DEBUG
     LogMessage("SMCParser finished parsing: %d loadouts", g_Loadouts.Length);
-    LogMessage("Distributor configuration file loaded!");
+    LogMessage("Distributor configuration file successfully loaded!");
 #endif
 
     if (failed)
@@ -634,7 +634,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (fail_state)
     {
-        SetFailState("There are translation keys missing for the distributor part of this retakes plugin!");
+        SetFailState("There are missing translation keys for the distributor part of this retakes plugin!");
     }
 }
 
