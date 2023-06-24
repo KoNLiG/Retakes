@@ -350,14 +350,14 @@ public Action Command_Distributor(int client, int args)
 void SMCParser_OnStart(SMCParser parser)
 {
 #if defined DEBUG
-    LogMessage("Loading distributor configuration file");
+    LogMessage("Loading distributor configuration file.");
 #endif
 }
 
 SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt_quotes)
 {
 #if defined DEBUG
-    LogMessage("Distributor Section Parse: %s", name);
+    LogMessage("SMCParser section parse: %s", name);
 #endif
 
     if (g_SMCParserDepth == 1)
@@ -412,14 +412,14 @@ SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
 #if defined DEBUG
-    LogMessage("Distributor Key Parse: [%s] %s", key, value);
+    LogMessage("SMCParser key parse: [%s] %s", key, value);
 #endif
 
     if (g_SMCParserDepth == 4 && g_SMCParserCount == 1)
     {
         static LoadoutItem loadout_item;
 
-        if (StrContains(key, "weapon") != -1 || !strcmp(key, "utility") || !strcmp(key, "item"))
+        if (StrContains(key, "Weapon") != -1 || !strcmp(key, "Utility") || !strcmp(key, "Item"))
         {
             int flags;
 
@@ -438,22 +438,22 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
             strcopy(loadout_item.classname, sizeof(LoadoutItem::classname), buffer);
 
-            if (!strncmp(key, "primary_weapon", 9))
+            if (!strncmp(key, "Primary Weapon", 9))
             {
                 flags |= WEAPON_TYPE_PRIMARY;
             }
 
-            if (!strncmp(key, "secondary_weapon", 9))
+            if (!strncmp(key, "Secondary Weapon", 9))
             {
                 flags |= WEAPON_TYPE_SECONDARY;
             }
 
-            if (!strncmp(key, "utility", 7))
+            if (!strncmp(key, "Utility", 7))
             {
                 flags |= WEAPON_TYPE_UTILITY;
             }
 
-            if (!strncmp(key, "item", 4))
+            if (!strncmp(key, "Item", 4))
             {
                 flags |= WEAPON_TYPE_ITEM;
 
@@ -559,7 +559,8 @@ SMCResult SMCParser_OnRawLine(SMCParser parser, const char[] line, int line_num)
 void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 {
 #if defined DEBUG
-    LogMessage("Distributor Finished Parsing: %d loadouts", g_Loadouts.Length);
+    LogMessage("SMCParser finished parsing: %d loadouts", g_Loadouts.Length);
+    LogMessage("Distributor configuration file loaded!");
 #endif
 
     if (failed)
@@ -986,6 +987,7 @@ void DisplayDistributorMenu(int client)
     if (menu.ItemCount <= 0)
     {
         delete menu;
+
         return;
     }
 
@@ -1174,7 +1176,7 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
             {
                 int view = g_Players[client].distributor.current_loadout_view;
 
-                // Check if the current view is WEAPON_TYPE_SECONDARY and the menu should be closed
+                // Check if the current view has the WEAPON_TYPE_SECONDARY flag and the menu should be closed
                 if (view & WEAPON_TYPE_SECONDARY && g_Players[client].distributor.close_menu)
                 {
                     // If the menu is supposed to be closed, return to the main distributor menu
@@ -1186,7 +1188,6 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                     // Return to the primary loadout menu
                     DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, WEAPON_TYPE_PRIMARY);
 
-                    // Reset the close_menu flag to false, indicating that the menu should not be closed
                     g_Players[client].distributor.close_menu = false;
                 }
 
