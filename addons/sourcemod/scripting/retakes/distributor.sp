@@ -429,7 +429,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
 
             CSWeaponID weapon_id = CS_AliasToWeaponID(buffer);
 
-            if (!weapon_id && strcmp(key, "item"))
+            if (!weapon_id && strcmp(key, "Item"))
             {
                 return SMCParse_Continue;
             }
