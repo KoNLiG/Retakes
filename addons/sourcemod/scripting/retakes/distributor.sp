@@ -570,6 +570,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
     }
 
     bool fail_state;
+    int item_failed[CSWeapon_MAX_WEAPONS];
 
     Loadout     loadout;
     LoadoutItem loadout_item;
@@ -601,7 +602,12 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
                 {
                     fail_state = true;
 
-                    LogError("Translation key \"%s\" for weapon not found!", loadout_item.classname);
+                    if (!item_failed[loadout_item.id])
+                    {
+                        LogError("Translation key \"%s\" for weapon not found!", loadout_item.classname);
+
+                        item_failed[loadout_item.id]++;
+                    }
                 }
 
                 if (loadout_item.flags & WEAPON_TYPE_PRIMARY)
