@@ -56,6 +56,7 @@ void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
     int client = GetClientOfUserId(event.GetInt("userid"));
+
     if (!client)
     {
         return;
@@ -95,7 +96,10 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     profiler.Start();
 #endif
 
-    Distributor_OnPlayerSpawn(client);
+    if (event.GetInt("teamnum") > CS_TEAM_SPECTATOR)
+    {
+        Distributor_OnPlayerSpawn(client);
+    }
 #if defined DEBUG
     profiler.Stop();
     PrintToConsoleAll("[Distributor_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
