@@ -97,6 +97,11 @@ void SetRoundInProgress(bool value)
     GameRules_SetProp("m_bRoundInProgress", value);
 }
 
+bool IsRoundInProgress()
+{
+    return view_as<bool>(GameRules_GetProp("m_bRoundInProgress"));
+}
+
 void SetWaitingForPlayersState(bool state)
 {
     if (g_IsWaitingForPlayers == state)

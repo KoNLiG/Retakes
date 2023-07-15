@@ -70,6 +70,8 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
         return;
     }
 
+    int team = event.GetInt("teamnum");
+
 #if defined DEBUG
     static Profiler profiler;
     if (!profiler)
@@ -88,7 +90,10 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     profiler.Start();
 #endif
 
-    SpawnManager_OnPlayerSpawn(client);
+    if (team > CS_TEAM_SPECTATOR)
+    {
+        SpawnManager_OnPlayerSpawn(client);
+    }
 #if defined DEBUG
     profiler.Stop();
     PrintToConsoleAll("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
@@ -96,7 +101,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     profiler.Start();
 #endif
 
-    if (event.GetInt("teamnum") > CS_TEAM_SPECTATOR)
+    if (team > CS_TEAM_SPECTATOR)
     {
         Distributor_OnPlayerSpawn(client);
     }
