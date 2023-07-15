@@ -118,7 +118,8 @@ void Frame_DisplayRequiredPlayers()
 {
     if (!g_IsWaitingForPlayers)
     {
-        PrintCenterTextAll("");
+        PrintCenterTextAll(NULL_STRING);
+
         return;
     }
 
