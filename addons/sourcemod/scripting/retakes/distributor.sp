@@ -701,7 +701,7 @@ void Distributor_OnRoundPreStart()
 
     Loadout load_loadout;
 
-    char loadout_key[sizeof(Loadout::name)];
+    static char loadout_key[sizeof(Loadout::name)];
 
     int total_rounds_played = GameRules_GetProp("m_totalRoundsPlayed");
 
