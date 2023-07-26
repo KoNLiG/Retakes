@@ -8,7 +8,7 @@
     //}
 
     // Chat messages phrases.
-    "MessagesPrefix"
+    "Messages Prefix"
     {
         "en"	" Retakes | "
         "he"	" ריטייקים | "
@@ -53,7 +53,7 @@
     }
 
     // Menu text phrases.
-    "MenuPrefix"
+    "Menu Prefix"
     {
         "en"	"Retakes | "
         "he"	"ריטייקים | "
@@ -193,10 +193,10 @@
         "en"        "Secondary Weapon"
     }
 
-    "New Weapon"
+    "Weapon Selected"
     {
         "#format"   "{1:t},{2:t}"
-        "en"        "Weapon {2} set for {1}"
+        "en"        "Selected the weapon {2} for the loadout {1}"
     }
 
     "Team CT"

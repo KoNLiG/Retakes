@@ -102,7 +102,7 @@ void PlayerManager_OnPlayerConnectFull(int client)
     // Notify the player.
     char place[16];
     OrdinalSuffix(g_QueuedPlayers.Length, place, sizeof(place));
-    PrintToChat(client, "%T%T", "MessagesPrefix", client, "Placed In Queue", client, place);
+    PrintToChat(client, "%T%T", "Messages Prefix", client, "Placed In Queue", client, place);
 }
 
 void PlayerManager_OnPlayerTeam(int client, int team, bool disconnect)

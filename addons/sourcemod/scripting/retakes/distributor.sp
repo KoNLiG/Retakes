@@ -676,7 +676,6 @@ void Distributor_OnRoundPreStart()
     bool       maxed_out;
     CSWeaponID primary_weapon_id;
     CSWeaponID secondary_weapon_id;
-    bool       round_in_progress = IsRoundInProgress();
     static int max_weapon_ids[CSWeapon_MAX_WEAPONS_NO_KNIFES];
     static int weapon_indices[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX][CSWeapon_MAX_WEAPONS_NO_KNIFES];
 
@@ -768,135 +767,132 @@ void Distributor_OnRoundPreStart()
 
         g_Players[current_client].distributor.ClearLoadout();
 
-        if (round_in_progress)
+        if (!IsFakeClient(current_client))
         {
-            if (!IsFakeClient(current_client))
+            if (g_Players[current_client].distributor.weapons_map.GetArray(loadout.name, player_loadout, sizeof(player_loadout)))
             {
-                if (g_Players[current_client].distributor.weapons_map.GetArray(loadout.name, player_loadout, sizeof(player_loadout)))
+                primary_weapon_id = player_loadout.primary_weapon_id[current_team];
+
+                secondary_weapon_id = player_loadout.secondary_weapon_id[current_team];
+
+                if (primary_weapon_id > CSWeapon_NONE)
                 {
-                    primary_weapon_id = player_loadout.primary_weapon_id[current_team];
+                    loadout.items[current_team].GetArray(weapon_indices[current_team][LOADOUT_WEAPON_PRIMARY][primary_weapon_id], loadout_item, sizeof(loadout_item));
 
-                    secondary_weapon_id = player_loadout.secondary_weapon_id[current_team];
+                    maxed_out = loadout_item.max && max_weapon_ids[primary_weapon_id] < loadout_item.max;
 
-                    if (primary_weapon_id > CSWeapon_NONE)
+                    if (maxed_out)
                     {
-                        loadout.items[current_team].GetArray(weapon_indices[current_team][LOADOUT_WEAPON_PRIMARY][primary_weapon_id], loadout_item, sizeof(loadout_item));
-
-                        maxed_out = loadout_item.max && max_weapon_ids[primary_weapon_id] < loadout_item.max;
-
-                        if (maxed_out)
-                        {
-                            max_weapon_ids[primary_weapon_id]++;
-                        }
-
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = maxed_out ? CSWeapon_NONE : primary_weapon_id;
+                        max_weapon_ids[primary_weapon_id]++;
                     }
 
-                    if (secondary_weapon_id > CSWeapon_NONE)
+                    g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_PRIMARY] = maxed_out ? CSWeapon_NONE : primary_weapon_id;
+                }
+
+                if (secondary_weapon_id > CSWeapon_NONE)
+                {
+                    loadout.items[current_team].GetArray(weapon_indices[current_team][LOADOUT_WEAPON_SECONDARY][secondary_weapon_id], loadout_item, sizeof(loadout_item));
+
+                    maxed_out = loadout_item.max && max_weapon_ids[secondary_weapon_id] < loadout_item.max;
+
+                    if (maxed_out)
                     {
-                        loadout.items[current_team].GetArray(weapon_indices[current_team][LOADOUT_WEAPON_SECONDARY][secondary_weapon_id], loadout_item, sizeof(loadout_item));
-
-                        maxed_out = loadout_item.max && max_weapon_ids[secondary_weapon_id] < loadout_item.max;
-
-                        if (maxed_out)
-                        {
-                            max_weapon_ids[secondary_weapon_id]++;
-                        }
-
-                        g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = maxed_out ? CSWeapon_NONE : secondary_weapon_id;
+                        max_weapon_ids[secondary_weapon_id]++;
                     }
+
+                    g_Players[current_client].distributor.weapons_id[LOADOUT_WEAPON_SECONDARY] = maxed_out ? CSWeapon_NONE : secondary_weapon_id;
                 }
             }
+        }
 
-            for (int current_loadout; current_loadout <= LOADOUT_WEAPON_ITEM; current_loadout++)
+        for (int current_loadout; current_loadout <= LOADOUT_WEAPON_ITEM; current_loadout++)
+        {
+            if (g_Players[current_client].distributor.weapons_id[current_loadout])
             {
-                if (g_Players[current_client].distributor.weapons_id[current_loadout])
+                continue;
+            }
+
+            filtered_items[current_team][current_loadout].Sort(Sort_Random, Sort_Integer);
+
+            switch (current_loadout)
+            {
+                case LOADOUT_WEAPON_PRIMARY, LOADOUT_WEAPON_SECONDARY:
                 {
-                    continue;
+                    for (int current_weapon = filtered_items[current_team][current_loadout].Length - 1; current_weapon >= 0; current_weapon--)
+                    {
+                        loadout.items[current_team].GetArray(filtered_items[current_team][current_loadout].Get(current_weapon), loadout_item, sizeof(loadout_item));
+
+                        max_items = loadout_item.max ? loadout_item.max : -1;
+
+                        if (max_items != -1 && max_weapon_ids[loadout_item.id] >= max_items)
+                        {
+                            continue;
+                        }
+
+                        chance = loadout_item.chance ? loadout_item.chance : 1.0;
+
+                        if (GetURandomFloat() < chance || current_weapon == filtered_items[current_team][current_loadout].Length - 1)
+                        {
+                            g_Players[current_client].distributor.weapons_id[current_loadout] = loadout_item.id;
+
+                            max_weapon_ids[loadout_item.id]++;
+
+                            break;
+                        }
+                    }
                 }
 
-                filtered_items[current_team][current_loadout].Sort(Sort_Random, Sort_Integer);
-
-                switch (current_loadout)
+                case LOADOUT_WEAPON_GRENADE:
                 {
-                    case LOADOUT_WEAPON_PRIMARY, LOADOUT_WEAPON_SECONDARY:
+                    for (int grenade_output, grenade_slot_max[CSWeapon_MAX_WEAPONS_NO_KNIFES], current_nade = filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Length - 1; current_nade >= 0; current_nade--)
                     {
-                        for (int current_weapon = filtered_items[current_team][current_loadout].Length - 1; current_weapon >= 0; current_weapon--)
+                        if (grenade_output > 4)
                         {
-                            loadout.items[current_team].GetArray(filtered_items[current_team][current_loadout].Get(current_weapon), loadout_item, sizeof(loadout_item));
+                            break;
+                        }
 
-                            max_items = loadout_item.max ? loadout_item.max : -1;
+                        loadout.items[current_team].GetArray(filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Get(current_nade), loadout_item, sizeof(loadout_item));
 
-                            if (max_items != -1 && max_weapon_ids[loadout_item.id] >= max_items)
+                        max_items = loadout_item.max ? loadout_item.max : -1;
+
+                        if (max_items != -1 && max_weapon_ids[loadout_item.id] >= max_items || grenade_slot_max[loadout_item.id] > 1)
+                        {
+                            continue;
+                        }
+
+                        chance = loadout_item.chance ? loadout_item.chance : 1.0;
+
+                        if (GetURandomFloat() < chance)
+                        {
+                            grenade_output++;
+
+                            if (loadout_item.id == CSWeapon_MOLOTOV || loadout_item.id == CSWeapon_INCGRENADE || loadout_item.id == CSWeapon_SMOKEGRENADE)
                             {
-                                continue;
+                                grenade_slot_max[loadout_item.id]++;
                             }
 
-                            chance = loadout_item.chance ? loadout_item.chance : 1.0;
+                            max_weapon_ids[loadout_item.id]++;
 
-                            if (GetURandomFloat() < chance || current_weapon == filtered_items[current_team][current_loadout].Length - 1)
-                            {
-                                g_Players[current_client].distributor.weapons_id[current_loadout] = loadout_item.id;
-
-                                max_weapon_ids[loadout_item.id]++;
-
-                                break;
-                            }
+                            g_Players[current_client].distributor.weapons_id[grenade_output + LOADOUT_WEAPON_GRENADE_OFFSET] = loadout_item.id;
                         }
                     }
+                }
 
-                    case LOADOUT_WEAPON_GRENADE:
+                case LOADOUT_WEAPON_ITEM:
+                {
+                    for (int current_item = filtered_items[current_team][LOADOUT_WEAPON_ITEM].Length - 1; current_item >= 0; current_item--)
                     {
-                        for (int grenade_output, grenade_slot_max[CSWeapon_MAX_WEAPONS_NO_KNIFES], current_nade = filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Length - 1; current_nade >= 0; current_nade--)
+                        loadout.items[current_team].GetArray(filtered_items[current_team][LOADOUT_WEAPON_ITEM].Get(current_item), loadout_item, sizeof(loadout_item));
+
+                        chance = loadout_item.chance ? loadout_item.chance : 1.0;
+
+                        if (GetURandomFloat() < chance)
                         {
-                            if (grenade_output > 4)
+                            switch (loadout_item.id)
                             {
-                                break;
-                            }
-
-                            loadout.items[current_team].GetArray(filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Get(current_nade), loadout_item, sizeof(loadout_item));
-
-                            max_items = loadout_item.max ? loadout_item.max : -1;
-
-                            if (max_items != -1 && max_weapon_ids[loadout_item.id] >= max_items || grenade_slot_max[loadout_item.id] > 1)
-                            {
-                                continue;
-                            }
-
-                            chance = loadout_item.chance ? loadout_item.chance : 1.0;
-
-                            if (GetURandomFloat() < chance)
-                            {
-                                grenade_output++;
-
-                                if (loadout_item.id == CSWeapon_MOLOTOV || loadout_item.id == CSWeapon_INCGRENADE || loadout_item.id == CSWeapon_SMOKEGRENADE)
-                                {
-                                    grenade_slot_max[loadout_item.id]++;
-                                }
-
-                                max_weapon_ids[loadout_item.id]++;
-
-                                g_Players[current_client].distributor.weapons_id[grenade_output + LOADOUT_WEAPON_GRENADE_OFFSET] = loadout_item.id;
-                            }
-                        }
-                    }
-
-                    case LOADOUT_WEAPON_ITEM:
-                    {
-                        for (int current_item = filtered_items[current_team][LOADOUT_WEAPON_ITEM].Length - 1; current_item >= 0; current_item--)
-                        {
-                            loadout.items[current_team].GetArray(filtered_items[current_team][LOADOUT_WEAPON_ITEM].Get(current_item), loadout_item, sizeof(loadout_item));
-
-                            chance = loadout_item.chance ? loadout_item.chance : 1.0;
-
-                            if (GetURandomFloat() < chance)
-                            {
-                                switch (loadout_item.id)
-                                {
-                                    case CSWeapon_DEFUSER: g_Players[current_client].distributor.kit = (current_team == LOADOUT_TEAM_CT);
-                                    case CSWeapon_KEVLAR: g_Players[current_client].distributor.kevlar = true;
-                                    case CSWeapon_ASSAULTSUIT: g_Players[current_client].distributor.assult_suit = true;
-                                }
+                                case CSWeapon_DEFUSER: g_Players[current_client].distributor.kit = (current_team == LOADOUT_TEAM_CT);
+                                case CSWeapon_KEVLAR: g_Players[current_client].distributor.kevlar = true;
+                                case CSWeapon_ASSAULTSUIT: g_Players[current_client].distributor.assult_suit = true;
                             }
                         }
                     }
@@ -931,7 +927,7 @@ void Distributor_OnRoundFreezeEnd()
 
 void Distributor_OnPlayerSpawn(int client)
 {
-    if (GetPlanter() == client)
+    if (!IsRoundInProgress() || GetPlanter() == client)
     {
         return;
     }
@@ -993,7 +989,7 @@ void DisplayDistributorMenu(int client)
 
     Menu menu = new Menu(Handler_DistributorMenu);
 
-    FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "MenuPrefix", client, "Distributor", client);
+    FormatEx(buffer, sizeof(buffer), "%T%T:\n ", "Menu Prefix", client, "Distributor", client);
 
     menu.SetTitle(buffer);
 
@@ -1061,7 +1057,7 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int we
 
     Menu menu = new Menu(Handler_DistributorLoadoutMenu);
 
-    FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "MenuPrefix", client, loadout_name, client, weapon_type & WEAPON_TYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
+    FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "Menu Prefix", client, loadout_name, client, weapon_type & WEAPON_TYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
 
     menu.SetTitle(buffer);
 
@@ -1195,7 +1191,7 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                 DisplayDistributorMenu(client);
             }
 
-            PrintToChat(client, "%t%t", "MessagesPrefix", "New Weapon", weapon_type & WEAPON_TYPE_PRIMARY ? "Weapon Type Primary" : "Weapon Type Secondary", buffer);
+            PrintToChat(client, "%t%t", "Messages Prefix", "Weapon Selected", weapon_type & WEAPON_TYPE_PRIMARY ? "Weapon Type Primary" : "Weapon Type Secondary", buffer);
         }
 
         case MenuAction_Cancel:

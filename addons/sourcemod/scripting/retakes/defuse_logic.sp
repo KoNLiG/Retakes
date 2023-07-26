@@ -51,7 +51,7 @@ void DefuseLogic_OnBeginDefuse(int client, int planted_c4)
 
 void DefuseLogic_OnBombDefused()
 {
-    PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Success Defuse", LANG_SERVER);
+    PrintToChatAll("%T%T", "Messages Prefix", LANG_SERVER, "Success Defuse", LANG_SERVER);
 }
 
 void DefuseLogic_OnPlayerDeath(int client)
@@ -153,7 +153,7 @@ void InstaDefuseAttempt(DataPack dp)
     {
         if (!g_SentNotification)
         {
-            PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
+            PrintToChatAll("%T%T", "Messages Prefix", LANG_SERVER, "Close Inferno", LANG_SERVER);
             g_SentNotification = true;
         }
 
@@ -168,7 +168,7 @@ void InstaDefuseAttempt(DataPack dp)
     {
         if (!g_SentNotification)
         {
-            PrintToChatAll("%T%T", "MessagesPrefix", LANG_SERVER, "Fail Defuse", LANG_SERVER, remaining_time);
+            PrintToChatAll("%T%T", "Messages Prefix", LANG_SERVER, "Fail Defuse", LANG_SERVER, remaining_time);
 
             if (retakes_explode_no_time.BoolValue)
             {
