@@ -27,10 +27,6 @@
 #define LOADOUT_POSITION_SECONDARY4 6
 #define LOADOUT_POSITION_SMG1       9
 
-#define MAX_SLOT_FIREGRENADE  0
-#define MAX_SLOT_SMOKEGRENADE 1
-#define MAX_SLOT_MAX          2
-
 enum struct PlayerLoadout
 {
     CSWeaponID primary_weapon_id[LOADOUT_TEAM_MAX];
@@ -62,7 +58,7 @@ enum struct Loadout
 
     void Initialize(const char[] name)
     {
-        strcopy(this.name, sizeof(Loadout::name), name);
+        strcopy(this.name, sizeof(this.name), name);
 
         for (int i; i < LOADOUT_TEAM_MAX; i++)
         {
@@ -111,13 +107,13 @@ void Distributor_OnConfigsExecuted()
 
     char buffer[PLATFORM_MAX_PATH];
 
-    BuildPath(Path_SM, buffer, sizeof(buffer), "data/retakes/distributor.cfg");
+    BuildPath(Path_SM, buffer, sizeof(buffer), "data/retakes/retakes.cfg");
 
     file_exists = FileExists(buffer);
 
     if (!file_exists)
     {
-        SetFailState("Unable to find \"data/retakes/distributor.cfg\" file");
+        SetFailState("Unable to find \"data/retakes/retakes.cfg\" file");
 
         return;
     }
@@ -358,7 +354,7 @@ public Action Command_Distributor(int client, int args)
 void SMCParser_OnStart(SMCParser parser)
 {
 #if defined DEBUG
-    LogMessage("Loading distributor configuration file.");
+    LogMessage("Loading Retakes configuration file.");
 #endif
 }
 
@@ -592,12 +588,12 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 {
 #if defined DEBUG
     LogMessage("SMCParser finished parsing: %d loadouts", g_Loadouts.Length);
-    LogMessage("Distributor configuration file successfully loaded!");
+    LogMessage("Retakes configuration file successfully loaded!");
 #endif
 
     if (failed)
     {
-        SetFailState("There was a fatal error parsing the distributor config file at line %d", g_LineCount);
+        SetFailState("There was a fatal error parsing the retakes config file at line %d", g_LineCount);
 
         return;
     }
@@ -665,7 +661,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (fail_state)
     {
-        SetFailState("There are missing translation keys for the distributor part of this retakes plugin!");
+        SetFailState("There are missing translation keys for this retakes plugin!");
     }
 }
 
@@ -929,7 +925,7 @@ void Distributor_OnRoundFreezeEnd()
 
     if (planter != -1)
     {
-        Frame_DistributeWeapons(g_Players[planter].user_id);
+        Frame_DistributeLoadout(g_Players[planter].user_id);
     }
 }
 
@@ -940,10 +936,10 @@ void Distributor_OnPlayerSpawn(int client)
         return;
     }
 
-    RequestFrame(Frame_DistributeWeapons, g_Players[client].user_id);
+    RequestFrame(Frame_DistributeLoadout, g_Players[client].user_id);
 }
 
-void Frame_DistributeWeapons(int userid)
+void Frame_DistributeLoadout(int userid)
 {
     int client = GetClientOfUserId(userid);
 
@@ -952,7 +948,7 @@ void Frame_DistributeWeapons(int userid)
         return;
     }
 
-    char class_name[32];
+    char classname[32];
 
     for (int weapon, current_loadout = LOADOUT_WEAPON_MAX - 1; current_loadout >= 0; current_loadout--)
     {
@@ -961,10 +957,10 @@ void Frame_DistributeWeapons(int userid)
             continue;
         }
 
-        CS_WeaponIDToAlias(g_Players[client].distributor.weapons_id[current_loadout], class_name, sizeof(class_name));
-        Format(class_name, sizeof(class_name), "weapon_%s", class_name);
+        CS_WeaponIDToAlias(g_Players[client].distributor.weapons_id[current_loadout], classname, sizeof(classname));
+        Format(classname, sizeof(classname), "weapon_%s", classname);
 
-        weapon = GivePlayerItem(client, class_name);
+        weapon = GivePlayerItem(client, classname);
 
         if (current_loadout <= LOADOUT_WEAPON_SECONDARY || current_loadout == LOADOUT_WEAPON_KNIFE && weapon != -1)
         {
@@ -1033,9 +1029,9 @@ int Handler_DistributorMenu(Menu menu, MenuAction action, int client, int option
 
             menu.GetItem(option, buffer, sizeof(buffer));
 
-            strcopy(g_Players[client].distributor.current_loadout_name, sizeof(Distributor::current_loadout_name), buffer);
+            strcopy(g_Players[client].distributor.loadout_key, sizeof(Distributor::loadout_key), buffer);
 
-            g_Players[client].distributor.close_menu = false;
+            g_Players[client].distributor.should_close = false;
 
             DisplayDistributorLoadoutMenu(buffer, client);
         }
@@ -1049,7 +1045,7 @@ int Handler_DistributorMenu(Menu menu, MenuAction action, int client, int option
     return 0;
 }
 
-void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int view = WEAPON_TYPE_PRIMARY)
+void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int weapon_type = WEAPON_TYPE_PRIMARY)
 {
     char buffer[64];
 
@@ -1059,13 +1055,13 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 
     LoadoutItem loadout_item;
 
-    g_Players[client].distributor.current_loadout_view = view;
+    g_Players[client].distributor.loadout_type = weapon_type;
 
     int team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
     Menu menu = new Menu(Handler_DistributorLoadoutMenu);
 
-    FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "MenuPrefix", client, loadout_name, client, view & WEAPON_TYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
+    FormatEx(buffer, sizeof(buffer), "%T%T %T:\n\n%T\n ", "MenuPrefix", client, loadout_name, client, weapon_type & WEAPON_TYPE_PRIMARY ? "Primary Weapon" : "Secondary Weapon", client, team == LOADOUT_TEAM_CT ? "Team CT" : "Team T", client);
 
     menu.SetTitle(buffer);
 
@@ -1088,7 +1084,7 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
                 continue;
             }
 
-            if (loadout_item.flags ^ view)
+            if (loadout_item.flags ^ weapon_type)
             {
                 continue;
             }
@@ -1112,16 +1108,16 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 
     if (menu.ItemCount <= 0)
     {
-        int item_count = view & WEAPON_TYPE_PRIMARY ? loadout.item_primary_count[team] : loadout.item_secondary_count[team];
+        int item_count = weapon_type & WEAPON_TYPE_PRIMARY ? loadout.item_primary_count[team] : loadout.item_secondary_count[team];
 
         // Check if there are items and the menu is not supposed to be closed
-        if (item_count > 0 && !g_Players[client].distributor.close_menu)
+        if (item_count > 0 && !g_Players[client].distributor.should_close)
         {
             // Recursively open the loadout menu with the opposite view type
-            DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, view & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
+            DisplayDistributorLoadoutMenu(g_Players[client].distributor.loadout_key, client, weapon_type & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
         }
 
-        g_Players[client].distributor.close_menu = true;
+        g_Players[client].distributor.should_close = true;
 
         delete menu;
 
@@ -1130,7 +1126,6 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int vi
 
     FixMenuGap(menu);
 
-    menu.ExitButton     = true;
     menu.ExitBackButton = true;
 
     menu.Display(client, MENU_TIME_FOREVER);
@@ -1148,13 +1143,13 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
 
             CSWeaponID weapon_id = CS_AliasToWeaponID(buffer);
 
-            int view = g_Players[client].distributor.current_loadout_view;
+            int weapon_type = g_Players[client].distributor.loadout_type;
 
             if (g_GracePeriod > GetGameTime() - retakes_distributor_grace_period.FloatValue)
             {
-                if (!strcmp(g_Players[client].distributor.current_loadout_name, g_CurrentLoadout))
+                if (!strcmp(g_Players[client].distributor.loadout_key, g_CurrentLoadout))
                 {
-                    DisarmClient(client, view == WEAPON_TYPE_PRIMARY ? CS_SLOT_PRIMARY : CS_SLOT_SECONDARY);
+                    DisarmClient(client, weapon_type == WEAPON_TYPE_PRIMARY ? CS_SLOT_PRIMARY : CS_SLOT_SECONDARY);
 
                     int weapon = GivePlayerItem(client, buffer);
 
@@ -1169,16 +1164,16 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
             char          loadout_name[48];
             int           team = GetClientTeam(client) - LOADOUT_TEAM_MAX;
 
-            strcopy(loadout_name, sizeof(loadout_name), g_Players[client].distributor.current_loadout_name);
+            strcopy(loadout_name, sizeof(loadout_name), g_Players[client].distributor.loadout_key);
 
             if (g_Players[client].distributor.weapons_map.GetArray(loadout_name, player_loadout, sizeof(player_loadout)))
             {
-                if (view & WEAPON_TYPE_PRIMARY)
+                if (weapon_type & WEAPON_TYPE_PRIMARY)
                 {
                     player_loadout.primary_weapon_id[team] = weapon_id;
                 }
 
-                else if (view & WEAPON_TYPE_SECONDARY)
+                else if (weapon_type & WEAPON_TYPE_SECONDARY)
                 {
                     player_loadout.secondary_weapon_id[team] = weapon_id;
                 }
@@ -1187,12 +1182,12 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
             }
 
             // Check if the menu is not supposed to be closed
-            if (!g_Players[client].distributor.close_menu)
+            if (!g_Players[client].distributor.should_close)
             {
-                g_Players[client].distributor.close_menu = true;
+                g_Players[client].distributor.should_close = true;
 
                 // Recursively open the loadout menu with the opposite view type
-                DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, view & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
+                DisplayDistributorLoadoutMenu(g_Players[client].distributor.loadout_key, client, weapon_type & WEAPON_TYPE_PRIMARY ? WEAPON_TYPE_SECONDARY : WEAPON_TYPE_PRIMARY);
             }
 
             else
@@ -1200,17 +1195,17 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                 DisplayDistributorMenu(client);
             }
 
-            PrintToChat(client, "%t%t", "MessagesPrefix", "New Weapon", view & WEAPON_TYPE_PRIMARY ? "Weapon Type Primary" : "Weapon Type Secondary", buffer);
+            PrintToChat(client, "%t%t", "MessagesPrefix", "New Weapon", weapon_type & WEAPON_TYPE_PRIMARY ? "Weapon Type Primary" : "Weapon Type Secondary", buffer);
         }
 
         case MenuAction_Cancel:
         {
             if (option == MenuCancel_ExitBack)
             {
-                int view = g_Players[client].distributor.current_loadout_view;
+                int view = g_Players[client].distributor.loadout_type;
 
                 // Check if the current view has the WEAPON_TYPE_SECONDARY flag and the menu should be closed
-                if (view & WEAPON_TYPE_SECONDARY && g_Players[client].distributor.close_menu)
+                if (view & WEAPON_TYPE_SECONDARY && g_Players[client].distributor.should_close)
                 {
                     // If the menu is supposed to be closed, return to the main distributor menu
                     DisplayDistributorMenu(client);
@@ -1219,9 +1214,9 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                 if (view & WEAPON_TYPE_SECONDARY)
                 {
                     // Return to the primary loadout menu
-                    DisplayDistributorLoadoutMenu(g_Players[client].distributor.current_loadout_name, client, WEAPON_TYPE_PRIMARY);
+                    DisplayDistributorLoadoutMenu(g_Players[client].distributor.loadout_key, client, WEAPON_TYPE_PRIMARY);
 
-                    g_Players[client].distributor.close_menu = false;
+                    g_Players[client].distributor.should_close = false;
                 }
 
                 if (view & WEAPON_TYPE_PRIMARY)

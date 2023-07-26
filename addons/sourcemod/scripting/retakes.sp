@@ -106,17 +106,17 @@ enum struct Distributor
 
     CCSPlayerInventory inventory;
 
-    bool kit;
-
     bool assult_suit;
 
     bool kevlar;
 
-    char current_loadout_name[32];
+    bool kit;
 
-    int current_loadout_view;
+    char loadout_key[32];
 
-    bool close_menu;
+    int loadout_type;
+
+    bool should_close;
 
     //============================================//
     void Init()
@@ -136,12 +136,12 @@ enum struct Distributor
         }
 
         this.inventory = CCSPlayerInventory_NULL;
-        this.kit = false;
         this.assult_suit = false;
         this.kevlar = false;
-        this.current_loadout_name[0] = '\0';
-        this.current_loadout_view = 0;
-        this.close_menu = false;
+        this.kit = false;
+        this.loadout_key[0] = '\0';
+        this.loadout_type = 0;
+        this.should_close = false;
     }
 
     void ClearLoadout()
@@ -152,9 +152,9 @@ enum struct Distributor
             this.weapons_id[current_index] = CSWeapon_NONE;
         }
 
-        this.kit = false;
         this.assult_suit = false;
         this.kevlar = false;
+        this.kit = false;
     }
 }
 
