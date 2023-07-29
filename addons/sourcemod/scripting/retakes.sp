@@ -119,9 +119,13 @@ enum struct Distributor
     bool should_close;
 
     //============================================//
-    void Init()
+    void Init(bool fake)
     {
-        this.weapons_map = new StringMap();
+        if (!fake)
+        {
+            this.weapons_map = new StringMap();
+        }
+
         this.weapons_id[8] = CSWeapon_KNIFE;
     }
 
@@ -186,7 +190,7 @@ enum struct Player
         this.user_id = GetClientUserId(this.index);
         this.account_id = GetSteamAccountID(this.index);
 
-        this.distributor.Init();
+        this.distributor.Init(IsFakeClient(this.index));
     }
 
     void Close()
