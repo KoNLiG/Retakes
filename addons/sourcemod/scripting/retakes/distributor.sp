@@ -15,10 +15,10 @@
 
 #define LOADOUT_WEAPON_PRIMARY        0
 #define LOADOUT_WEAPON_SECONDARY      1
-#define LOADOUT_WEAPON_GRENADE        2
-#define LOADOUT_WEAPON_GRENADE_OFFSET (LOADOUT_WEAPON_SECONDARY + 2)
-#define LOADOUT_WEAPON_ITEM           3
-#define LOADOUT_WEAPON_KNIFE          8
+#define LOADOUT_WEAPON_KNIFE          2
+#define LOADOUT_WEAPON_GRENADE        3
+#define LOADOUT_WEAPON_GRENADE_OFFSET LOADOUT_WEAPON_ITEM
+#define LOADOUT_WEAPON_ITEM           4
 #define LOADOUT_WEAPON_MAX            9
 
 #define LOADOUT_POSITION_RIFLE1     15
@@ -77,14 +77,14 @@ enum struct Loadout
 
 enum struct Round
 {
-    int round_num;
+    int  round_num;
     char loadout_name[sizeof(Loadout::name)];
 }
 
 ArrayList g_Rounds;
 ArrayList g_Loadouts;
 float     g_GracePeriod;
-int       g_LineCount = -1;
+int       g_LineCount;
 int       g_SMCParserDepth;
 int       g_SMCParserCount;
 int       g_CurrentLoadoutTeam;
@@ -92,10 +92,10 @@ ConVar    ammo_grenade_limit_total;
 char      g_CurrentLoadout[sizeof(Loadout::name)];
 char      g_CurrentWeaponClassName[sizeof(LoadoutItem::classname)];
 
-void Distributor_OnConfigsExecuted()
+void Distributor_OnConfigsExecuted(bool reload = false)
 {
     // Don't cache if we already got our data.
-    if (g_Loadouts)
+    if (g_Loadouts && !reload)
     {
         return;
     }
@@ -113,10 +113,17 @@ void Distributor_OnConfigsExecuted()
 
     if (!file_exists)
     {
-        SetFailState("Unable to find \"data/retakes/retakes.cfg\" file");
+        SetFailState("Failed to find file '%s'. Make sure the file is located in the correct directory", buffer);
 
         return;
     }
+
+    g_LineCount = -1;
+    g_SMCParserCount = 0;
+    g_SMCParserDepth = 0;
+    g_CurrentLoadoutTeam = -1;
+    g_CurrentLoadout[0] = '\0';
+    g_CurrentWeaponClassName[0] = '\0';
 
     g_Rounds   = new ArrayList(sizeof(Round));
     g_Loadouts = new ArrayList(sizeof(Loadout));
@@ -136,7 +143,7 @@ void Distributor_OnConfigsExecuted()
     {
         parser.GetErrorString(error, buffer, sizeof(buffer));
 
-        SetFailState("%s", buffer);
+        SetFailState("An error occurred while loading the Retakes configuration file. %s", buffer);
 
         delete parser;
 
@@ -148,6 +155,7 @@ void Distributor_OnConfigsExecuted()
 
 public void Distributor_OnPluginStart()
 {
+    RegAdminCmd("sm_distributor_reload", Command_DistributorReload, ADMFLAG_CHEATS, "Reloads the distributor configuration file.");
 }
 
 public void PTaH_OnInventoryUpdatePost(int client, CCSPlayerInventory inventory)
@@ -170,7 +178,11 @@ void SQL_OnDistributorTableCreated(Database database, DBResultSet results, const
 {
     if (!database || !results)
     {
-        LogError("There was an error creating the distributor loadout table! (%s)", error);
+        char database_name[32];
+
+        retakes_database_entry.GetString(database_name, sizeof(database_name));
+
+        LogError("Failed to create distributor loadout table in database '%s'", database_name);
 
         return;
     }
@@ -180,7 +192,7 @@ void Distributor_OnClientPutInServer(int client)
 {
     Loadout loadout;
 
-    for (int current_loadouts = g_Loadouts.Length - 1; current_loadouts >= 0; current_loadouts--)
+    for (int current_loadouts; current_loadouts < g_Loadouts.Length; current_loadouts++)
     {
         if (!g_Loadouts.GetArray(current_loadouts, loadout, sizeof(loadout)))
         {
@@ -223,7 +235,7 @@ void Distributor_OnPlayerConnectFull(int client)
 
     if (inventory == CCSPlayerInventory_NULL)
     {
-        LogError("There was an error getting a players inventory pointer! (%d)", client);
+        LogError("Failed to get inventory pointer for player index %d. The pointer is null", client);
 
         return;
     }
@@ -250,7 +262,7 @@ void Distributor_OnClientDisconnect(int client)
 
     retakes_database_table_distributor.GetString(table_name, sizeof(table_name));
 
-    for (int i = loadout_snapshot.Length - 1; i >= 0; i--)
+    for (int i; i < loadout_snapshot.Length; i++)
     {
         loadout_snapshot.GetKey(i, loadout_name, sizeof(loadout_name));
 
@@ -286,17 +298,25 @@ void Distributor_OnClientDisconnect(int client)
 }
 
 #if defined DEBUG
-void        SQL_OnClientInfoSaved(Database db, any data, int numQueries, Handle[] results, any[] queryData)
+void        SQL_OnClientInfoSaved(Database db, any data, int num_queries, Handle[] results, any[] query_data)
 {
-    LogMessage("Player loadout data transaction completed successfully. (%d queries)", numQueries);
+    char database_name[32];
+
+    retakes_database_entry.GetString(database_name, sizeof(database_name));
+
+    LogMessage("Successfully saved player loadout data to database '%s'. %d queries were executed", database_name, num_queries);
 }
 #endif
 
-void SQL_OnClientInfoSavedError(Database database, any data, int numQueries, const char[] error, int failIndex, any[] queryData)
+void SQL_OnClientInfoSavedError(Database database, any data, int num_queries, const char[] error, int fail_index, any[] query_data)
 {
     if (!database || error[0])
     {
-        LogError("There was an error saving player loadout data! (%s)", error);
+        char database_name[32];
+
+        retakes_database_entry.GetString(database_name, sizeof(database_name));
+
+        LogError("Failed to save player loadout data to database '%s'. %s", database_name, error);
 
         return;
     }
@@ -304,9 +324,13 @@ void SQL_OnClientInfoSavedError(Database database, any data, int numQueries, con
 
 void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[] error, int userid)
 {
-    if (error[0])
+    if (!database || error[0])
     {
-        LogError("There was an error fetching player loadout data! (%s)", error);
+        char database_name[32];
+
+        retakes_database_entry.GetString(database_name, sizeof(database_name));
+
+        LogError("Failed to fetch player loadout data from database '%s'. %s", database_name, error);
 
         return;
     }
@@ -347,21 +371,46 @@ void SQL_OnClientInfoFetched(Database database, DBResultSet results, const char[
 
 public Action Command_Distributor(int client, int args)
 {
+    if (!g_Loadouts.Length)
+    {
+        PrintToChat(client, "%t", "Retakes Loadouts Are Unavailable");
+
+        return Plugin_Handled;
+    }
+
     DisplayDistributorMenu(client);
+
     return Plugin_Handled;
+}
+
+public Action Command_DistributorReload(int client, int args)
+{
+    Distributor_OnConfigsExecuted(true);
+
+    return Plugin_Handled;
+}
+
+public Action CS_OnTerminateRound(float& delay, CSRoundEndReason& reason)
+{
+    if (reason == CSRoundEnd_GameStart)
+    {
+
+    }
+
+    return Plugin_Continue;
 }
 
 void SMCParser_OnStart(SMCParser parser)
 {
 #if defined DEBUG
-    LogMessage("Loading Retakes configuration file.");
+    LogMessage("Retakes - Configuration file loading initiated");
 #endif
 }
 
 SMCResult SMCParser_OnEnterSection(SMCParser parser, const char[] name, bool opt_quotes)
 {
 #if defined DEBUG
-    LogMessage("SMCParser section parse: %s", name);
+    LogMessage("SMCParser - Entered section '%s' for parsing", name);
 #endif
 
     if (g_SMCParserDepth == 1)
@@ -416,16 +465,20 @@ SMCResult SMCParser_OnLeaveSectionn(SMCParser parser)
 SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] value, bool key_quotes, bool value_quotes)
 {
 #if defined DEBUG
-    LogMessage("SMCParser key parse: [%s] %s", key, value);
+    LogMessage("SMCParser - Processing key '%s' with value '%s'", key, value);
 #endif
+
     if (g_SMCParserDepth == 2 && g_SMCParserCount == 1)
     {
         static Round round;
 
-        round.round_num = StringToInt(key);
+        round.round_num = IsStringNumeric(key) ? StringToInt(key) : -1;
         strcopy(round.loadout_name, sizeof(Round::loadout_name), value);
 
-        g_Rounds.PushArray(round, sizeof(round));
+        if (round.round_num >= 0 && strlen(round.loadout_name))
+        {
+            g_Rounds.PushArray(round, sizeof(round));
+        }
     }
 
     else if (g_SMCParserDepth == 4 && g_SMCParserCount == 2)
@@ -524,6 +577,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
                 }
 
                 Format(buffer[i], 24, "sm_%s", buffer[i]);
+
                 RegConsoleCmd(buffer[i], Command_Distributor);
             }
         }
@@ -562,7 +616,7 @@ SMCResult SMCParser_OnKeyValue(SMCParser parser, const char[] key, const char[] 
                             loadout_item.chance = StringToFloat(value);
                         }
 
-                        if (!strcmp(key, "max"))
+                        if (!strcmp(key, "max_amount"))
                         {
                             loadout_item.max = StringToInt(value);
                         }
@@ -587,13 +641,20 @@ SMCResult SMCParser_OnRawLine(SMCParser parser, const char[] line, int line_num)
 void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 {
 #if defined DEBUG
-    LogMessage("SMCParser finished parsing: %d loadouts", g_Loadouts.Length);
-    LogMessage("Retakes configuration file successfully loaded!");
+    LogMessage("SMCParser - Parsing completed with %d loadouts processed", g_Loadouts.Length);
+    LogMessage("Retakes - Configuration file loaded successfully");
 #endif
 
-    if (failed)
+    if (failed || halted)
     {
         SetFailState("There was a fatal error parsing the retakes config file at line %d", g_LineCount);
+
+        return;
+    }
+
+    if (!g_Loadouts.Length)
+    {
+        SetFailState("There are no loadouts defined in the retakes config file");
 
         return;
     }
@@ -603,7 +664,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
     Loadout     loadout;
     LoadoutItem loadout_item;
 
-    for (int item_failed[CSWeapon_MAX_WEAPONS], item_count[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX], current_loadout = g_Loadouts.Length - 1; current_loadout >= 0; current_loadout--)
+    for (int item_failed[CSWeapon_MAX_WEAPONS], item_count[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX], current_loadout; current_loadout < g_Loadouts.Length; current_loadout++)
     {
         if (!g_Loadouts.GetArray(current_loadout, loadout, sizeof(loadout)))
         {
@@ -614,12 +675,12 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
         {
             fail_state = true;
 
-            LogError("Translation key \"%s\" for loadout not found!", loadout.name);
+            LogError("Translation key \"%s\" for loadout not found", loadout.name);
         }
 
         for (int current_team; current_team < LOADOUT_TEAM_MAX; current_team++)
         {
-            for (int current_item = loadout.items[current_team].Length - 1; current_item >= 0; current_item--)
+            for (int current_item; current_item < g_Loadouts.Length; current_item++)
             {
                 if (!loadout.items[current_team].GetArray(current_item, loadout_item, sizeof(loadout_item)))
                 {
@@ -632,7 +693,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
                     if (!item_failed[loadout_item.id])
                     {
-                        LogError("Translation key \"%s\" for weapon not found!", loadout_item.classname);
+                        LogError("Translation key \"%s\" for weapon not found", loadout_item.classname);
 
                         item_failed[loadout_item.id]++;
                     }
@@ -661,7 +722,7 @@ void SMCParser_OnEnd(SMCParser parser, bool halted, bool failed)
 
     if (fail_state)
     {
-        SetFailState("There are missing translation keys for this retakes plugin!");
+        SetFailState("There are missing translation keys for this retakes plugin. Make sure the translation files contain all the required keys");
     }
 }
 
@@ -681,9 +742,9 @@ void Distributor_OnRoundPreStart()
 
     static ArrayList filtered_items[LOADOUT_TEAM_MAX][LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET];
 
-    for (int i = LOADOUT_TEAM_MAX - 1; i >= 0; i--)
+    for (int i; i < LOADOUT_TEAM_MAX; i++)
     {
-        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET - 1; j >= 0; j--)
+        for (int j; j < LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET; j++)
         {
             if (!filtered_items[i][j])
             {
@@ -715,7 +776,7 @@ void Distributor_OnRoundPreStart()
         }
 
         strcopy(loadout_key, sizeof(loadout_key), round.loadout_name);
-        
+
         for (int j; j < g_Loadouts.Length; j++)
         {
             g_Loadouts.GetArray(j, load_loadout, sizeof(load_loadout));
@@ -731,9 +792,9 @@ void Distributor_OnRoundPreStart()
 
     strcopy(g_CurrentLoadout, sizeof(g_CurrentLoadout), loadout.name);
 
-    for (int current_team = LOADOUT_TEAM_MAX - 1; current_team >= 0; current_team--)
+    for (int current_team; current_team < LOADOUT_TEAM_MAX; current_team++)
     {
-        for (int current_item = loadout.items[current_team].Length - 1; current_item >= 0; current_item--)
+        for (int current_item; current_item < loadout.items[current_team].Length; current_item++)
         {
             loadout.items[current_team].GetArray(current_item, loadout_item, sizeof(loadout_item));
 
@@ -818,7 +879,7 @@ void Distributor_OnRoundPreStart()
             {
                 case LOADOUT_WEAPON_PRIMARY, LOADOUT_WEAPON_SECONDARY:
                 {
-                    for (int current_weapon = filtered_items[current_team][current_loadout].Length - 1; current_weapon >= 0; current_weapon--)
+                    for (int current_weapon; current_weapon < filtered_items[current_team][current_loadout].Length; current_weapon++)
                     {
                         loadout.items[current_team].GetArray(filtered_items[current_team][current_loadout].Get(current_weapon), loadout_item, sizeof(loadout_item));
 
@@ -844,7 +905,7 @@ void Distributor_OnRoundPreStart()
 
                 case LOADOUT_WEAPON_GRENADE:
                 {
-                    for (int grenade_output, grenade_slot_max[CSWeapon_MAX_WEAPONS_NO_KNIFES], current_nade = filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Length - 1; current_nade >= 0; current_nade--)
+                    for (int grenade_output, grenade_slot_max[CSWeapon_MAX_WEAPONS_NO_KNIFES], current_nade; current_nade < filtered_items[current_team][LOADOUT_WEAPON_GRENADE].Length; current_nade++)
                     {
                         if (grenade_output > 4)
                         {
@@ -880,7 +941,7 @@ void Distributor_OnRoundPreStart()
 
                 case LOADOUT_WEAPON_ITEM:
                 {
-                    for (int current_item = filtered_items[current_team][LOADOUT_WEAPON_ITEM].Length - 1; current_item >= 0; current_item--)
+                    for (int current_item; current_item < filtered_items[current_team][LOADOUT_WEAPON_ITEM].Length; current_item++)
                     {
                         loadout.items[current_team].GetArray(filtered_items[current_team][LOADOUT_WEAPON_ITEM].Get(current_item), loadout_item, sizeof(loadout_item));
 
@@ -901,9 +962,9 @@ void Distributor_OnRoundPreStart()
         }
     }
 
-    for (int i = LOADOUT_TEAM_MAX - 1; i >= 0; i--)
+    for (int i; i < LOADOUT_TEAM_MAX; i++)
     {
-        for (int j = LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET - 1; j >= 0; j--)
+        for (int j; j < LOADOUT_WEAPON_MAX - LOADOUT_WEAPON_GRENADE_OFFSET; j++)
         {
             filtered_items[i][j].Clear();
         }
@@ -946,7 +1007,7 @@ void Frame_DistributeLoadout(int userid)
 
     char classname[32];
 
-    for (int weapon, current_loadout = LOADOUT_WEAPON_MAX - 1; current_loadout >= 0; current_loadout--)
+    for (int weapon, current_loadout; current_loadout < LOADOUT_WEAPON_MAX; current_loadout++)
     {
         if (g_Players[client].distributor.weapons_id[current_loadout] == CSWeapon_NONE || current_loadout == LOADOUT_WEAPON_GRENADE || current_loadout == LOADOUT_WEAPON_ITEM)
         {
@@ -958,7 +1019,7 @@ void Frame_DistributeLoadout(int userid)
 
         weapon = GivePlayerItem(client, classname);
 
-        if (current_loadout <= LOADOUT_WEAPON_SECONDARY || current_loadout == LOADOUT_WEAPON_KNIFE && weapon != -1)
+        if (current_loadout <= LOADOUT_WEAPON_KNIFE && weapon != -1)
         {
             EquipPlayerWeapon(client, weapon);
         }
@@ -993,7 +1054,7 @@ void DisplayDistributorMenu(int client)
 
     menu.SetTitle(buffer);
 
-    for (int i = g_Loadouts.Length - 1; i >= 0; i--)
+    for (int i; i < g_Loadouts.Length; i++)
     {
         if (!g_Loadouts.GetArray(i, loadout, sizeof(loadout)))
         {
@@ -1061,25 +1122,15 @@ void DisplayDistributorLoadoutMenu(const char[] loadout_name, int client, int we
 
     menu.SetTitle(buffer);
 
-    for (int current_loadout = g_Loadouts.Length - 1; current_loadout >= 0; current_loadout--)
+    for (int current_loadout; current_loadout < g_Loadouts.Length; current_loadout++)
     {
-        if (!g_Loadouts.GetArray(current_loadout, loadout, sizeof(loadout)))
-        {
-            continue;
-        }
-
         if (strcmp(loadout.name, loadout_name))
         {
             continue;
         }
 
-        for (int current_item = loadout.items[team].Length - 1; current_item >= 0; current_item--)
+        for (int current_item; current_item < loadout.items[team].Length; current_item++)
         {
-            if (!loadout.items[team].GetArray(current_item, loadout_item, sizeof(loadout_item)))
-            {
-                continue;
-            }
-
             if (loadout_item.flags ^ weapon_type)
             {
                 continue;
@@ -1191,7 +1242,7 @@ int Handler_DistributorLoadoutMenu(Menu menu, MenuAction action, int client, int
                 DisplayDistributorMenu(client);
             }
 
-            PrintToChat(client, "%t%t", "Messages Prefix", "Weapon Selected", weapon_type & WEAPON_TYPE_PRIMARY ? "Weapon Type Primary" : "Weapon Type Secondary", buffer);
+            PrintToChat(client, "%t%t", "Messages Prefix", "Loadout Weapon Selected", buffer, team == LOADOUT_TEAM_CT ? "Counter Terrorist Abbreviation" : "Terrorist Abbreviation", loadout_name);
         }
 
         case MenuAction_Cancel:

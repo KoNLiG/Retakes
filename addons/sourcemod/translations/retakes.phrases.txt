@@ -173,6 +173,11 @@
         "en"        "Distributor"
     }
 
+    "Retakes Loadouts Are Unavailable"
+    {
+        "en"        "Retakes loadouts are not loaded yet. Please wait a few seconds and try again."
+    }
+
     "Primary Weapon"
     {
         "en"        "Primary Weapon"
@@ -183,28 +188,28 @@
         "en"        "Secondary Weapon"
     }
 
-    "Weapon Type Primary"
+    "Loadout Weapon Selected"
     {
-        "en"        "Primary Weapon"
+        "#format"   "{1:t},{2:t},{3:t}"
+        "en"        "The weapon \x08{1} \x01has been chosen for team {2}'s loadout {3}"
     }
 
-    "Weapon Type Secondary"
+    "Counter Terrorist Abbreviation"
     {
-        "en"        "Secondary Weapon"
+        "en"        "\x06CT\x01"
     }
 
-    "Weapon Selected"
+    "Terrorist Abbreviation"
     {
-        "#format"   "{1:t},{2:t}"
-        "en"        "Selected the weapon {2} for the loadout {1}"
+        "en"        "\x09T\x01"
     }
 
-    "Team CT"
+    "Counter Terrorist"
     {
         "en"        "Counter Terrorist Team"
     }
 
-    "Team T"
+    "Terrorist"
     {
         "en"        "Terrorist Team"
     }

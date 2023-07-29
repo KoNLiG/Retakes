@@ -4,6 +4,8 @@
 
 #assert defined COMPILING_FROM_MAIN
 
+#define TIME_CONVERSION_FACTOR 1000.0
+
 // Hook events.
 void Events_OnPluginStart()
 {
@@ -25,25 +27,123 @@ void Events_OnPluginStart()
 
 void Event_RoundPreStart(Event event, const char[] name, bool dontBroadcast)
 {
+#if defined DEBUG
+    static Profiler profiler;
+    if (!profiler)
+    {
+        profiler = new Profiler();
+    }
+    profiler.Start();
+#endif
+
     Gameplay_OnRoundPreStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Gameplay_OnRoundPreStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     PlayerManager_OnRoundPreStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[PlayerManager_OnRoundPreStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     PlantLogic_OnRoundPreStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[PlantLogic_OnRoundPreStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     DefuseLogic_OnRoundPreStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[DefuseLogic_OnRoundPreStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     Distributor_OnRoundPreStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Distributor_OnRoundPreStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+#endif
 }
 
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
+#if defined DEBUG
+    static Profiler profiler;
+    if (!profiler)
+    {
+        profiler = new Profiler();
+    }
+    profiler.Start();
+#endif
+
     Gameplay_OnRoundStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Gameplay_OnRoundStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     Distributor_OnRoundStart();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Distributor_OnRoundStart] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+#endif
 }
 
 void Event_RoundFreezeEnd(Event event, const char[] name, bool dontBroadcast)
 {
+#if defined DEBUG
+    static Profiler profiler;
+    if (!profiler)
+    {
+        profiler = new Profiler();
+    }
+    profiler.Start();
+#endif
+
     PlantLogic_OnRoundFreezeEnd();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[PlantLogic_OnRoundFreezeEnd] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     PlayerManager_OnRoundFreezeEnd();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[PlayerManager_OnRoundFreezeEnd] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     Gameplay_OnRoundFreezeEnd();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Gameplay_OnRoundFreezeEnd] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+    profiler.Start();
+#endif
+
     Distributor_OnRoundFreezeEnd();
+
+#if defined DEBUG
+    profiler.Stop();
+    PrintToConsoleAll("[Distributor_OnRoundFreezeEnd] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
+#endif
 }
 
 void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
@@ -85,7 +185,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     PlayerManager_OnPlayerSpawn(client);
 #if defined DEBUG
     profiler.Stop();
-    PrintToConsoleAll("[PlayerManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+    PrintToConsoleAll("[PlayerManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
 
     profiler.Start();
 #endif
@@ -96,7 +196,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     }
 #if defined DEBUG
     profiler.Stop();
-    PrintToConsoleAll("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+    PrintToConsoleAll("[SpawnManager_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
 
     profiler.Start();
 #endif
@@ -107,7 +207,7 @@ void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
     }
 #if defined DEBUG
     profiler.Stop();
-    PrintToConsoleAll("[Distributor_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * 1000.0);
+    PrintToConsoleAll("[Distributor_OnPlayerSpawn] VPROF: %fs, %fms", profiler.Time, profiler.Time * TIME_CONVERSION_FACTOR);
 #endif
 }
 

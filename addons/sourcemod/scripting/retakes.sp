@@ -508,3 +508,16 @@ int IsValueInArray(int value, int[] arr, int size)
 
     return -1;
 }
+
+bool IsStringNumeric(const char[] string)
+{
+    for (int i; i < strlen(string); i++)
+    {
+        if (!IsCharNumeric(string[i]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
